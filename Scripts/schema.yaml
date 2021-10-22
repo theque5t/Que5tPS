@@ -1,0 +1,53 @@
+---
+que5tgram:
+  visual_type: network # network, sequence
+  animation:
+    delay: 30
+  style:
+    shadowing: false
+    background:
+      color: black
+    text:
+      alignment: center
+  nodes:
+    - type: circle
+      alias: node1
+      text: One
+      style:
+        color: 
+          shape: lime
+          background: black
+        size: 0.25
+      visible_when: always
+    - type: circle
+      alias: node2
+      text: Two
+      style:
+        color: 
+          shape: cyan
+          background: black
+        size: 0.5
+      visible_when: connection
+  actions:
+    - { from: node1, to: node1, type: -down-, text: test, 
+        style: { 
+          line: { 
+            thickness: 1, color: green 
+          } 
+        } 
+      }
+    - { from: node1, to: node2, type: -down-, text: test, 
+        style: { 
+          line: { 
+            thickness: 0.5, color: red 
+          } 
+        } 
+      }
+    - { from: node2, to: node2, type: -down-, text: test, 
+        style: { 
+          line: { 
+            thickness: 2, color: blue 
+          } 
+        } 
+      }
+  
