@@ -5,3 +5,5 @@ function prompt {
 }
 
 $(Get-ChildItem -Path "$PSScriptRoot/Scripts" -Filter *.ps1).ForEach({. $_.FullName})
+
+Set-Location -Path 'C:\'
