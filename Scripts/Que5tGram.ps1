@@ -67,38 +67,36 @@ function Add-Que5tGramFileSet {
         $Que5tGram
     )
     
-    if(Test-Path $Que5tGram.GramDir.Path){
-        throw "$($Que5tGram.GramDir.Path) already exists"
-    }
+    $baseDir = $Que5tGram.Dir.Base
+    if(Test-Path $baseDir) { throw "$baseDir already exists" }
 
-    @('GramDir','GramFramesDir','PumlFileMain','PumlFileStyle','PumlFileNodes','PumlFileNodeTypes','PumlFileActions'
-     ).ForEach({ New-Item -ItemType $Que5tGram[$_].Type -Path $Que5tGram[$_].Path | Out-Null })
+    $Que5tGram.Dir.Values.Foreach({
+        New-Item "$_" -ItemType 'Directory' | `
+        Out-Null
+    })
+
+    $Que5tGram.File.Values.Foreach({
+        New-Item "$($que5tGram.Dir.Base)\$_" -ItemType 'File' | `
+        Out-Null
+    })    
+
 
     @('@startuml'
-      "!include $($Que5tGram.PumlFileStyle.File)"
-      "!include $($Que5tGram.PumlFileNodeTypes.File)"
-      "!include $($Que5tGram.PumlFileNodes.File)"
-      "!include $($Que5tGram.PumlFileActions.File)"
+      "!include $($Que5tGram.File.Style)"
+      "!include $($Que5tGram.File.NodeTypes)"
+      "!include $($Que5tGram.File.Nodes)"
+      "!include $($Que5tGram.File.Actions)"
       '@enduml'
-    ).ForEach({ Add-Content -Value $_ -Path $Que5tGram.PumlFileMain.Path })
+    ).ForEach({ 
+        Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.Main)" 
+    })
 
-    @("BackgroundColor $($Que5tgram.BackgroundColor)"
-      "Shadowing $($Que5tGram.Shadowing)"
-      "defaultTextAlignment $($Que5tGram.TextAlignment)"
-      "ArrowColor $($Que5tGram.ActionLineColor)"
-      "ArrowThickness $($Que5tGram.ActionLineThickness)"
-      "ArrowFontColor $($Que5tgram.ActionMessageFontColor)"
-      "ParticipantBorderColor $($Que5tGram.NodeBorderColor)"
-      "ParticipantBackgroundColor $($Que5tGram.NodeBackgroundColor)"
-      "ParticipantFontColor $($Que5tGram.NodeFontColor)"
-      "RectangleBorderColor $($Que5tGram.NodeBorderColor)"
-      "RectangleBackgroundColor $($Que5tGram.NodeBackgroundColor)"
-      "RectangleFontColor $($Que5tGram.NodeFontColor)"
-      "InterfaceBorderColor $($Que5tGram.NodeBorderColor)"
-      "InterfaceBackgroundColor $($Que5tGram.NodeBackgroundColor)"
-      "InterfaceFontColor $($Que5tGram.NodeFontColor)"
-      "LifeLineBorderColor $($Que5tGram.NodeLineColor)"
-    ).ForEach({ Add-Content -Value "skinParam $_" -Path $Que5tGram.PumlFileStyle.Path })
+    @("BackgroundColor $($Que5tgram.Config.style.background.color)"
+      "Shadowing $($Que5tGram.Config.style.shadowing)"
+      "defaultTextAlignment $($Que5tGram.Config.style.text.alignment)"
+    ).ForEach({ 
+        Add-Content "skinParam $_" -Path "$baseDir\$($Que5tGram.File.Style)" 
+    })
 
     @("!define PLANTUML_ICON_FONT_SPRITES $($Que5tGram.PumlIcons)\plantuml-icon-font-sprites"
       '!include PLANTUML_ICON_FONT_SPRITES/common.puml'
@@ -106,7 +104,9 @@ function Add-Que5tGramFileSet {
       '!define node(e_scale,e_type,e_color,e_sprite,e_label,e_alias,e_stereo) e_type "<color:e_color><$e_sprite{scale=e_scale}></color>e_label" as e_alias <<e_stereo>>'
       '!define circle(_alias, _label, _shape, _color, _size) node(_size,_shape,_color,circle,_label,_alias,FA CIRCLE)'
       '!define sequence_circle(_alias, _label, _color, _size) circle(_alias, _label, participant, _color, _size)'
-    ).ForEach({ Add-Content -Value $_ -Path $Que5tGram.PumlFileNodeTypes.Path })
+    ).ForEach({ 
+        Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.NodeTypes)" 
+    })
 }
 
 function Add-Que5tGramNode {
