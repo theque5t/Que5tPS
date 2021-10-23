@@ -46,40 +46,17 @@ function New-Que5tGramObject {
         $Params
     )
     $que5tGram = $Params
-    $que5tGram['Name'] = Get-NextQue5tGramName @Params
-    $que5tGram['GramDir'] = @{ 
-        Type = 'Directory'
-        Path = $($que5tGram.Name)
-    }
-    $que5tGram['GramFramesDir'] = @{ 
-        Type = 'Directory'
-        Path = "$($que5tGram.GramDir.Path)\frames"
-    }
-    $que5tGram['PumlFileMain'] = @{ 
-        Type = 'File'
-        Path = "$($que5tGram.GramDir.Path)\$($que5tGram.Name).puml"
-        File = "$($que5tGram.Name).puml"
-    }
-    $que5tGram['PumlFileStyle'] = @{
-        Type = 'File'
-        Path = "$($que5tGram.GramDir.Path)\$($que5tGram.Name).style.puml"
-        File = "$($que5tGram.Name).style.puml"
-    }
-    $que5tGram['PumlFileNodeTypes'] = @{
-        Type = 'File'
-        Path = "$($que5tGram.GramDir.Path)\$($que5tGram.Name).nodetypes.puml"
-        File = "$($que5tGram.Name).nodetypes.puml"
-    }
-    $que5tGram['PumlFileNodes'] = @{
-        Type = 'File'
-        Path = "$($que5tGram.GramDir.Path)\$($que5tGram.Name).nodes.puml"
-        File = "$($que5tGram.Name).nodes.puml"
-    }
-    $que5tGram['PumlFileActions'] = @{
-        Type = 'File'
-        Path = "$($que5tGram.GramDir.Path)\$($que5tGram.Name).actions.puml"
-        File = "$($que5tGram.Name).actions.puml"
-    }
+    $que5tGram.Config = $que5tGram.Config | ConvertFrom-Yaml
+    $que5tGram.Name = Get-NextQue5tGramName @Params
+    $que5tGram.Dir = @{}
+    $que5tGram.File = @{}
+    $que5tGram.Dir.Base = $que5tGram.Name
+    $que5tGram.Dir.Frames = "$($que5tGram.Dir.Base)\frames"
+    $que5tGram.File.Main = "$($que5tGram.Name).puml"
+    $que5tGram.File.Style = "$($que5tGram.Name).style.puml"
+    $que5tGram.File.NodeTypes = "$($que5tGram.Name).nodetypes.puml"
+    $que5tGram.File.Nodes = "$($que5tGram.Name).nodes.puml"
+    $que5tGram.File.Actions = "$($que5tGram.Name).actions.puml"
 
     return $que5tGram
 }
