@@ -7,7 +7,9 @@ function New-ParamsObject {
     foreach($h in $Invocation.MyCommand.Parameters.GetEnumerator()) {
         try {
             $key = $h.Key
-            $val = Get-Variable -Name $key -ErrorAction Stop | Select-Object -ExpandProperty Value -ErrorAction Stop
+            $val = Get-Variable -Name $key -ErrorAction Stop | `
+                   Select-Object -ExpandProperty Value -ErrorAction Stop
+            
             if (([String]::IsNullOrEmpty($val) -and (!$BoundParameters.ContainsKey($key)))) {
                 throw "A blank value that wasn't supplied by the user."
             }
@@ -21,15 +23,20 @@ function New-ParamsObject {
 
 function Get-NextQue5tGramName {
     param(
-        $SeriesName,
-        $Path
+        $SeriesName
     )
     $name = "$($SeriesName)-1"
-    $seriesDirs = $(Get-ChildItem -Path $Path).Where({ $_.Name -match "^$SeriesName-[0-9]+$" })
+    $seriesDirs = $(Get-ChildItem).Where({ $_.Name -match "^$SeriesName-[0-9]+$" })
     if($seriesDirs)
     {
-        $ToNaturalOrder = { [regex]::Replace($_, '\d+', { $args[0].Value.PadLeft(20) }) }
-        $name="$SeriesName-$([int]$($seriesDirs | Sort-Object -Descending $ToNaturalOrder | Select-Object -First 1).Name.Split("-")[1]+1)"
+        $naturalOrder = { [regex]::Replace($_, '\d+', { $args[0].Value.PadLeft(20) }) }
+        $name="$SeriesName-$(
+            [int]$(
+                $seriesDirs | `
+                Sort-Object -Descending $naturalOrder | `
+                Select-Object -First 1
+            ).Name.Split("-")[1]+1
+        )"
     }
     return $name
 }
