@@ -3,9 +3,9 @@ visual_type: network # network, sequence
 animation:
   delay: 30
 style:
-    shadowing: false
   background:
     color: black
+  shadowing: false
   text:
     alignment: center
 nodes:
