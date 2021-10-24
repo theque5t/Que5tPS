@@ -57,7 +57,6 @@ function Add-Que5tGramFileSet {
         Out-Null
     })    
 
-
     @('@startuml'
       "!include $($Que5tGram.File.Style)"
       "!include $($Que5tGram.File.NodeTypes)"
@@ -89,17 +88,10 @@ function Add-Que5tGramFileSet {
 function Add-Que5tGramNode {
     param(
         [parameter(ValueFromPipeline)]
-        $Que5tGram,
         $Node
     )
 
-    $nodeProperties = @{
-        Alias = $Que5tGram.Nodes.IndexOf($Node)+1
-        Label = ''
-        Color = $Que5tGram.NodeBackgroundColor
-        Size = $Que5tgram.NodeSize
-        BackgroundColor = $Que5tGram.BackgroundColor
-    }    
+    
 
     switch ($Que5tGram.NodeTextPatternType) {
         'string' {
@@ -137,54 +129,11 @@ function Add-Que5tGramNode {
 function Add-Que5tGramAction {
     param(
         [parameter(ValueFromPipeline)]
-        $Que5tGram
+        $Action,
+        $Path
     )
 
-    $action = @{ 
-        Type = $Que5tGram.ActionType
-        From = ""
-        To = ""
-        Message = "" 
-    }
-
-    switch ($Que5tGram.NodeVisibilityMethod) {
-        'alwaysVisible' { 
-            $Que5tGram.Nodes.ForEach({
-                Write-Verbose -Message "Set node $_ visible"
-                $Que5tGram | Add-Que5tGramNode -Node $_
-            })
-        }
-
-        'appearOnConnection' {}
-    }
-
-    ('From','To').ForEach({
-        $property = $_
-        switch ($Que5tGram["Action$($property)PatternType"]) {
-            'string' {
-                Write-Verbose -Message "Set action.$property with string"
-                $action[$property] = $Que5tGram["Action$($property)Pattern"]
-            }
-            
-            'randomSpecifiedNode' {
-                Write-Verbose -Message "Set action.$property with randomSpecifiedNode"
-                $action[$property] = Get-Random -InputObject $Que5tGram.Nodes
-            }
-
-            'regexCaptureGroup1' {}
-        }
-    })
-
-    
-    switch ($Que5tGram.ActionMessagePatternType) {
-        'string' { 
-            $action.Message = $Que5tGram.ActionMessagePattern
-         }
-
-         'regexCaptureGroup1' {}
-    }
-
-    Add-Content -Value "$($action.From) $($action.Type) $($action.To) : $($action.Message)" -Path $Que5tGram.PumlFileActions.Path
+    Add-Content "$($Action.from) $($Action.type) $($Action.to) : $($Action.text)" $Path
 }
 
 function Add-Que5tGramFrames {
@@ -192,16 +141,26 @@ function Add-Que5tGramFrames {
         [parameter(ValueFromPipeline)]
         $Que5tGram
     )
+    $actions = $Que5tGram.Config.actions
+    $nodes = $Que5tGram.Config.nodes
 
-    $workingFrameFile = "$($Que5tGram.GramDir.Path)\$($Que5tGram.Name).png"
-    $actionIdPadding = $Que5tGram.Actions.Count.ToString().length
-    $actionIdCurrent = 1
-    $Que5tGram.Actions.ForEach({ 
-        $Que5tGram | Add-Que5tGramAction
-        Invoke-PlantUML $Que5tGram.PumlFileMain.Path
-        $frameFile = "$($Que5tGram.GramFramesDir.Path)\frame_$("$actionIdCurrent".PadLeft($actionIdPadding,'0')).png"
-        Copy-Item $workingFrameFile -Destination $frameFile
-        $actionIdCurrent++ 
+    $nodes.Where({ $_.visible_when -eq "always" }).Foreach({ 
+        $_ | Add-Que5tGramNode 
+    })
+
+    $padding = "{0:d$($actions.Count.ToString().length)}"
+    $actionId = 1
+    $actions.ForEach({
+        $action = $_
+        $nodes.Where({ $_.alias -in ($action.from, $action.to) }).Foreach({ 
+            $_ | Add-Que5tGramNode 
+        })
+        $action | Add-Que5tGramAction -Path $Que5tGram.File.Actions
+        Invoke-PlantUML $Que5tGram.File.Main
+        Copy-Item `
+            -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).png" `
+            -Dest "$($Que5tGram.Dir.Frames)\$($padding -f $actionId).png"
+        $actionId++ 
     })
 }
 
@@ -230,57 +189,18 @@ function Add-Que5tGramAnimation {
 function New-Que5tGram {
     [cmdletbinding()]
     param(
-        [ValidateSet('network','sequence')]
-        $VisualType = 'network',
-
         $SeriesName = "Que5tGram",
-
-        [array]$Nodes = @('Node'),
-        [array]$Actions = @('An action'),
-
-        [ValidateSet('string','randomSpecifiedNode','regexCaptureGroup1')]
-        $ActionFromPatternType = 'randomSpecifiedNode',
-        $ActionFromPattern = '',
-        [ValidateSet('string','randomSpecifiedNode','regexCaptureGroup1')]
-        $ActionToPatternType = 'randomSpecifiedNode',
-        $ActionToPattern = '',
-        [ValidateSet('->','<-','-','-down-')]
-        $ActionType = '->',
-        [ValidateSet('string','regexCaptureGroup1')]
-        $ActionMessagePatternType = 'string',
-        $ActionMessagePattern = '',
-        $ActionMessageFontColor = 'white',
-        $ActionLineColor = 'white',
-        $ActionLineThickness = 1,
-        [ValidateSet('TODO')]
-        $ActionLineType = 'TODO',
-
-        [ValidateSet('alwaysVisible','appearOnConnection')]
-        $NodeVisibilityMethod = 'appearOnConnection',
-        [ValidateSet('circle','rectangle')]
-        $NodeType = 'circle',
-        [ValidateSet('string','node','nodeProperty')]
-        $NodeTextPatternType = 'string',
-        $NodeTextPattern = '',
-        $NodeBackgroundColor = 'black',
-        $NodeBorderColor = 'white',
-        $NodeFontColor = 'white',
-        $NodeLineColor = 'white',
-        $NodeSize = '0.25',
-
-        $BackgroundColor = 'black',
-        $Shadowing = 'false',
-        $TextAlignment = 'center',
-        $Delay = 30,
+        [Parameter(Mandatory=$true)]
+        $Config,
         $PumlIcons = $env:PLANTUML_ICONS
     )
-
     try {
-        $params = New-ParamsObject -Invocation $MyInvocation -BoundParameters $PSBoundParameters
-        $que5tGram = New-Que5tGramObject -Params $params
+        $params = New-ParamsObject $MyInvocation $PSBoundParameters
+        $que5tGram = New-Que5tGramObject $params
         $que5tGram | Add-Que5tGramFileSet
-        $que5tGram | Add-Que5tGramFrames
-        $que5tGram | Add-Que5tGramAnimation
+
+        # $que5tGram | Add-Que5tGramFrames
+        # $que5tGram | Add-Que5tGramAnimation
     }
     catch {
         $_.Exception.Message
