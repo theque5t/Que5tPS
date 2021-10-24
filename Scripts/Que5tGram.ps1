@@ -1,26 +1,3 @@
-function New-ParamsObject {
-    param(
-        $Invocation,
-        $BoundParameters
-    )
-    $params = @{}
-    foreach($h in $Invocation.MyCommand.Parameters.GetEnumerator()) {
-        try {
-            $key = $h.Key
-            $val = Get-Variable -Name $key -ErrorAction Stop | `
-                   Select-Object -ExpandProperty Value -ErrorAction Stop
-            
-            if (([String]::IsNullOrEmpty($val) -and (!$BoundParameters.ContainsKey($key)))) {
-                throw "A blank value that wasn't supplied by the user."
-            }
-            Write-Verbose "$key => '$val'"
-            $params[$key] = $val
-        } 
-        catch {}
-    }
-    return $params
-}
-
 function Get-NextQue5tGramName {
     param(
         $SeriesName
@@ -69,7 +46,7 @@ function Add-Que5tGramFileSet {
     
     $baseDir = $Que5tGram.Dir.Base
     if(Test-Path $baseDir) { throw "$baseDir already exists" }
-
+    
     $Que5tGram.Dir.Values.Foreach({
         New-Item "$_" -ItemType 'Directory' | `
         Out-Null
