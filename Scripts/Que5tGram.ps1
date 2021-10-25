@@ -43,7 +43,6 @@ function Add-Que5tGramFileSet {
         [parameter(ValueFromPipeline)]
         $Que5tGram
     )
-    
     $baseDir = $Que5tGram.Dir.Base
     if(Test-Path $baseDir) { throw "$baseDir already exists" }
     
@@ -74,56 +73,61 @@ function Add-Que5tGramFileSet {
         Add-Content "skinParam $_" -Path "$baseDir\$($Que5tGram.File.Style)" 
     })
 
-    @("!define PLANTUML_ICON_FONT_SPRITES $($Que5tGram.PumlIcons)\plantuml-icon-font-sprites"
-      '!include PLANTUML_ICON_FONT_SPRITES/common.puml'
-      '!include PLANTUML_ICON_FONT_SPRITES/font-awesome/circle.puml'
-      '!define node(e_scale,e_type,e_color,e_sprite,e_label,e_alias,e_stereo) e_type "<color:e_color><$e_sprite{scale=e_scale}></color>e_label" as e_alias <<e_stereo>>'
-      '!define circle(_alias, _label, _shape, _color, _size) node(_size,_shape,_color,circle,_label,_alias,FA CIRCLE)'
-      '!define sequence_circle(_alias, _label, _color, _size) circle(_alias, _label, participant, _color, _size)'
+    @("!define icons_home $($Que5tGram.PumlIcons)"
+      '!define lib_font_sprites icons_home\plantuml-icon-font-sprites'
+      '!include lib_font_sprites/common.puml'
+      '!include lib_font_sprites/font-awesome/circle.puml'
+      '!include lib_font_sprites/font-awesome/square.puml'
+      '!definelong sprite(e_scale,e_type,e_color,e_sprite,e_label,e_alias,e_stereo)'
+          'e_type "<color:e_color><$e_sprite{scale=e_scale}></color>e_label" \'
+          'as e_alias <<e_stereo>>'
+      '!enddefinelong'
+      '!definelong circle(_alias, _label, _shape, _color, _size)'
+          'sprite(_size,_shape,_color,circle,_label,_alias,FA CIRCLE)'
+      '!enddefinelong'
+      '!definelong square(_alias, _label, _shape, _color, _size)'
+          'sprite(_size,_shape,_color,square,_label,_alias,FA SQUARE)'
+      '!enddefinelong'
+      '!definelong sequence_circle(_alias, _label, _color, _size)'
+          'circle(_alias, _label, participant, _color, _size)'
+      '!enddefinelong'
+      '!definelong sequence_square(_alias, _label, _color, _size)'
+          'square(_alias, _label, participant, _color, _size)'
+      '!enddefinelong'
+      '!definelong network_circle(_alias, _label, _color, _size)'
+          'circle(_alias, _label, rectangle, _color, _size)'
+      '!enddefinelong'
+      '!definelong network_square(_alias, _label, _color, _size)'
+          'square(_alias, _label, rectangle, _color, _size)'
+      '!enddefinelong'
     ).ForEach({ 
         Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.NodeTypes)" 
     })
 }
 
-function Add-Que5tGramNode {
+function Set-Que5tGramNodes {
     param(
-        [parameter(ValueFromPipeline)]
-        $Node
+        [hashtable]$Nodes,
+        $Path,
+        $VisualType
     )
-
+    Clear-Content $Path
     
+    $puml = '{0}_{1}({2},{3},{4},{5}) #{6}'
 
-    switch ($Que5tGram.NodeTextPatternType) {
-        'string' {
-            $nodeProperties.Label = $Que5tGram.NodeTextPattern
-        }
-        
-        'node' {
-            $nodeProperties.Label = $nodeProperties.Alias
-        }
-        
-        'nodeProperty' {
-            $nodeProperties.Label = $Node[$NodeTextPattern]
-        }
-    }
-
-    $nodeDeclarationOptions = @{
-        'network' = @{
-            'circle' = "() $($nodeProperties.Alias)"
-            'rectangle' = "rectangle $($nodeProperties.Alias)"
-        }
-        'sequence' = @{
-            'circle' = "sequence_circle($($nodeProperties.Alias),$($nodeProperties.Label),$($nodeProperties.Color),$($nodeProperties.Size)) #$($nodeProperties.BackgroundColor)"
-            'rectangle' = "participant $($nodeProperties.Alias)"
-        }
-    }
-
-    $nodeDeclaration = $nodeDeclarationOptions[$Que5tGram.VisualType][$Que5tGram.NodeType]
-    Write-Verbose -Message "nodeDeclaration: $nodeDeclaration"
-    if(-not $(Get-Content -Path $Que5tGram.PumlFileNodes.Path | Select-String -Pattern $nodeDeclaration))
-    {
-        Add-Content -Value $nodeDeclaration -Path $Que5tGram.PumlFileNodes.Path
-    }
+    $Nodes.GetEnumerator().ForEach({
+        Add-Content -Path $path -Value $(
+            $puml -f (
+                $VisualType,
+                $_.type,
+                $_.alias,
+                $_.text,
+                $_.style.color.shape,
+                $_.size,
+                $_.style.color.background
+            )
+        )    
+    })
 }
 
 function Add-Que5tGramAction {
@@ -132,8 +136,16 @@ function Add-Que5tGramAction {
         $Action,
         $Path
     )
+    $puml = '{0} {1} {2} : {3}'
 
-    Add-Content "$($Action.from) $($Action.type) $($Action.to) : $($Action.text)" $Path
+    Add-Content -Path $Path -Value $(
+        $puml -f (
+            $Action.from,
+            $Action.type,
+            $Action.to,
+            $Action.text
+        )
+    )
 }
 
 function Add-Que5tGramFrames {
@@ -144,22 +156,26 @@ function Add-Que5tGramFrames {
     $actions = $Que5tGram.Config.actions
     $nodes = $Que5tGram.Config.nodes
 
-    $nodes.Where({ $_.visible_when -eq "always" }).Foreach({ 
-        $_ | Add-Que5tGramNode 
-    })
-
     $padding = "{0:d$($actions.Count.ToString().length)}"
+    $frameRendered = "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).png"
+    $frameFinal = "$($Que5tGram.Dir.Frames)\$($padding).png"
+
     $actionId = 1
     $actions.ForEach({
         $action = $_
-        $nodes.Where({ $_.alias -in ($action.from, $action.to) }).Foreach({ 
-            $_ | Add-Que5tGramNode 
-        })
+
+         Set-Que5tGramNodes `
+            -Nodes $nodes.Where({ 
+                $_.alias -in ($action.from, $action.to) -or
+                $_.visible_when -eq "always"
+             }) `
+            -Path $Que5tGram.File.Nodes `
+            -VisualType $Que5tGram.visual_type 
+
         $action | Add-Que5tGramAction -Path $Que5tGram.File.Actions
+        
         Invoke-PlantUML $Que5tGram.File.Main
-        Copy-Item `
-            -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).png" `
-            -Dest "$($Que5tGram.Dir.Frames)\$($padding -f $actionId).png"
+        Copy-Item -Path $frameRendered -Dest $($frameFinal -f $actionId)
         $actionId++ 
     })
 }
@@ -169,7 +185,6 @@ function Add-Que5tGramAnimation {
         [parameter(ValueFromPipeline)]
         $Que5tGram
     )
-
     $magickArgs = @(
         'convert',
         '-delay', $Que5tGram.Delay,
@@ -198,9 +213,8 @@ function New-Que5tGram {
         $params = New-ParamsObject $MyInvocation $PSBoundParameters
         $que5tGram = New-Que5tGramObject $params
         $que5tGram | Add-Que5tGramFileSet
-
-        # $que5tGram | Add-Que5tGramFrames
-        # $que5tGram | Add-Que5tGramAnimation
+        $que5tGram | Add-Que5tGramFrames
+        $que5tGram | Add-Que5tGramAnimation
     }
     catch {
         $_.Exception.Message
