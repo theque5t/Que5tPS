@@ -23,7 +23,7 @@ function New-Que5tGramObject {
         $Params
     )
     $que5tGram = $Params
-    $que5tGram.Config = $que5tGram.Config | ConvertFrom-Yaml
+    $que5tGram.Config = $(Get-Content $que5tGram.Config | ConvertFrom-Yaml)
     $que5tGram.Name = Get-NextQue5tGramName @Params
     $que5tGram.Dir = @{}
     $que5tGram.File = @{}
@@ -46,14 +46,12 @@ function Add-Que5tGramFileSet {
     $baseDir = $Que5tGram.Dir.Base
     if(Test-Path $baseDir) { throw "$baseDir already exists" }
     
-    $Que5tGram.Dir.Values.Foreach({
-        New-Item "$_" -ItemType 'Directory' | `
-        Out-Null
+    ($Que5tGram.Dir.Base, $Que5tGram.Dir.Frames).ForEach({
+        New-Item $_ -ItemType 'Directory' | Out-Null
     })
 
-    $Que5tGram.File.Values.Foreach({
-        New-Item "$($que5tGram.Dir.Base)\$_" -ItemType 'File' | `
-        Out-Null
+    $Que5tGram.File.Values.ForEach({
+        New-Item "$baseDir\$_" -ItemType 'File' | Out-Null
     })    
 
     @('@startuml'
@@ -66,7 +64,7 @@ function Add-Que5tGramFileSet {
         Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.Main)" 
     })
 
-    @("BackgroundColor $($Que5tgram.Config.style.background.color)"
+    @("BackgroundColor $($Que5tgram.Config.style.color.background)"
       "Shadowing $($Que5tGram.Config.style.shadowing)"
       "defaultTextAlignment $($Que5tGram.Config.style.text.alignment)"
     ).ForEach({ 
@@ -107,7 +105,7 @@ function Add-Que5tGramFileSet {
 
 function Set-Que5tGramNodes {
     param(
-        [hashtable]$Nodes,
+        $Nodes,
         $Path,
         $VisualType
     )
@@ -164,15 +162,17 @@ function Add-Que5tGramFrames {
     $actions.ForEach({
         $action = $_
 
-         Set-Que5tGramNodes `
+        Set-Que5tGramNodes `
             -Nodes $nodes.Where({ 
                 $_.alias -in ($action.from, $action.to) -or
                 $_.visible_when -eq "always"
              }) `
-            -Path $Que5tGram.File.Nodes `
-            -VisualType $Que5tGram.visual_type 
+            -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Nodes)" `
+            -VisualType $Que5tGram.visual_type
 
-        $action | Add-Que5tGramAction -Path $Que5tGram.File.Actions
+        Add-Que5tGramAction `
+            -Action $action `
+            -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Actions)"
         
         Invoke-PlantUML $Que5tGram.File.Main
         Copy-Item -Path $frameRendered -Dest $($frameFinal -f $actionId)
@@ -187,17 +187,16 @@ function Add-Que5tGramAnimation {
     )
     $magickArgs = @(
         'convert',
-        '-delay', $Que5tGram.Delay,
-        "$($Que5tGram.GramFramesDir.Path)\*.png",
+        '-delay', $Que5tGram.animation.delay,
+        "$($Que5tGram.Dir.Frames)\*.png",
         '-resize', '1024x1024',
         '-gravity', 'Center',
-        '-background', $Que5tGram.BackgroundColor,
+        '-background', $Que5tGram.style.color.background,
         '-extent', '1024x1024',
         '-loop', 0,
-        "$($Que5tGram.GramDir.Path)\$($Que5tGram.Name).gif"
+        "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).gif"
     )
 
-    Write-Verbose "magickArgs: $magickArgs"
     magick @magickArgs
 }
 

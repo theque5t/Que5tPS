@@ -3,8 +3,8 @@ visual_type: network # network, sequence
 animation:
   delay: 30
 style:
-  background:
-    color: black
+  color: 
+    background: black
   shadowing: false
   text:
     alignment: center
