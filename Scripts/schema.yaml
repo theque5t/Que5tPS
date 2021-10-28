@@ -28,25 +28,39 @@ nodes:
       size: 0.25
     visible_when: connection
 actions:
-  - { from: node1, to: node1, type: -down-, text: test, 
-      style: { 
-        line: { 
-          thickness: 1, color: green 
-        } 
-      } 
-    }
-  - { from: node1, to: node2, type: -down-, text: test, 
-      style: { 
-        line: { 
-          thickness: 0.5, color: red 
-        } 
-      } 
-    }
-  - { from: node2, to: node2, type: -down-, text: test, 
-      style: { 
-        line: { 
-          thickness: 2, color: blue 
-        } 
-      } 
-    }
-  
+  - from: node1
+    to: node1
+    text: test
+    style:
+      line:
+        from: '-'
+        to: '->>'
+        type: bold
+        direction: down
+        color: green
+        thickness: 1
+  - from: node1
+    to: node2
+    text: test
+    style:
+      line:
+        from: '<-'
+        to: '->'
+        type: dashed
+        direction: down
+        color: red
+        thickness: 3
+  - from: node2
+    to: node2
+    text: test
+    style:
+      line:
+        from: '-'
+        to: '-'
+        type: plain
+        direction: down
+        color:
+          - yellow
+          - orange
+          - blue
+        thickness: 2

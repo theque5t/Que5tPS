@@ -135,12 +135,17 @@ function Add-Que5tGramAction {
         $Action,
         $Path
     )
-    $puml = '{0} {1} {2} : {3}'
+    $puml = '{0} {1}[#{2},{3},thickness={4}]{5}{6} {7} : {8}'
 
     Add-Content -Path $Path -Value $(
         $puml -f (
             $Action.from,
-            $Action.type,
+            $Action.style.line.from,
+            $($Action.style.line.color -join ';#'),
+            $Action.style.line.type,
+            $Action.style.line.thickness,
+            $Action.style.line.direction,
+            $Action.style.line.to,
             $Action.to,
             $Action.text
         )
