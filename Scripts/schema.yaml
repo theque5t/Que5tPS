@@ -11,7 +11,7 @@ style:
 nodes:
   - type: circle
     alias: node1
-    text: One
+    text: 
     style:
       color: 
         shape: lime
@@ -20,12 +20,12 @@ nodes:
     visible_when: always
   - type: circle
     alias: node2
-    text: Two
+    text:
     style:
       color: 
         shape: cyan
         background: black
-      size: 0.5
+      size: 0.25
     visible_when: connection
 actions:
   - { from: node1, to: node1, type: -down-, text: test, 

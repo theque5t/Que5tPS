@@ -77,8 +77,9 @@ function Add-Que5tGramFileSet {
       '!include lib_font_sprites/font-awesome/circle.puml'
       '!include lib_font_sprites/font-awesome/square.puml'
       '!definelong sprite(e_scale,e_type,e_color,e_sprite,e_label,e_alias,e_stereo)'
-          'e_type "<color:e_color><$e_sprite{scale=e_scale}></color>e_label" \'
-          'as e_alias <<e_stereo>>'
+      'e_type ' +
+      '"<color:e_color><$e_sprite{scale=e_scale}></color>e_label" ' +
+      'as e_alias <<e_stereo>>'
       '!enddefinelong'
       '!definelong circle(_alias, _label, _shape, _color, _size)'
           'sprite(_size,_shape,_color,circle,_label,_alias,FA CIRCLE)'
@@ -121,7 +122,7 @@ function Set-Que5tGramNodes {
                 $_.alias,
                 $_.text,
                 $_.style.color.shape,
-                $_.size,
+                $_.style.size,
                 $_.style.color.background
             )
         )    
@@ -159,7 +160,7 @@ function Add-Que5tGramFrames {
     $frameFinal = "$($Que5tGram.Dir.Frames)\$($padding).png"
 
     $actionId = 1
-    $actions.ForEach({
+    $actions.GetEnumerator().ForEach({
         $action = $_
 
         Set-Que5tGramNodes `
@@ -168,13 +169,13 @@ function Add-Que5tGramFrames {
                 $_.visible_when -eq "always"
              }) `
             -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Nodes)" `
-            -VisualType $Que5tGram.visual_type
+            -VisualType $Que5tGram.Config.visual_type
 
         Add-Que5tGramAction `
             -Action $action `
             -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Actions)"
         
-        Invoke-PlantUML $Que5tGram.File.Main
+        Invoke-PlantUML "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Main)"
         Copy-Item -Path $frameRendered -Dest $($frameFinal -f $actionId)
         $actionId++ 
     })
@@ -187,16 +188,17 @@ function Add-Que5tGramAnimation {
     )
     $magickArgs = @(
         'convert',
-        '-delay', $Que5tGram.animation.delay,
+        '-delay', $Que5tGram.Config.animation.delay,
         "$($Que5tGram.Dir.Frames)\*.png",
         '-resize', '1024x1024',
         '-gravity', 'Center',
-        '-background', $Que5tGram.style.color.background,
+        '-background', $Que5tGram.Config.style.color.background,
         '-extent', '1024x1024',
         '-loop', 0,
         "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).gif"
     )
 
+    Write-Verbose "magick args: $magickArgs"
     magick @magickArgs
 }
 
