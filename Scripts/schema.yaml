@@ -27,6 +27,24 @@ nodes:
         background: black
       size: 0.25
     visible_when: connection
+  - type: circle
+    alias: node3
+    text:
+    style:
+      color: 
+        shape: orange
+        background: black
+      size: 0.35
+    visible_when: connection
+  - type: circle
+    alias: node4
+    text:
+    style:
+      color: 
+        shape: blue
+        background: black
+      size: 0.25
+    visible_when: connection
 actions:
   - from: node1
     to: node1
@@ -64,3 +82,25 @@ actions:
           - orange
           - blue
         thickness: 2
+  - from: node2
+    to: node3
+    text: test
+    style:
+      line:
+        from: '-'
+        to: '-|>'
+        type: dotted
+        direction: right
+        color: purple
+        thickness: 1
+  - from: node3
+    to: node4
+    text: test
+    style:
+      line:
+        from: '-'
+        to: '-@'
+        type: plain
+        direction: up
+        color: cyan
+        thickness: 1
