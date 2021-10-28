@@ -135,15 +135,21 @@ function Add-Que5tGramAction {
         $Action,
         $Path
     )
-    $puml = '{0} {1}[#{2},{3},thickness={4}]{5}{6} {7} : {8}'
+    $puml = '{0} {1}[{2}]{3}{4} {5} : {6}'
 
     Add-Content -Path $Path -Value $(
         $puml -f (
             $Action.from,
             $Action.style.line.from,
-            $($Action.style.line.color -join ';#'),
-            $Action.style.line.type,
-            $Action.style.line.thickness,
+            $(
+                (
+                    $('#{0}' -f $($Action.style.line.color -join ';#')),
+                    "$($Action.style.line.type)",
+                    "$(if($Action.style.line.thickness){ 
+                        "thickness=$($Action.style.line.thickness)" 
+                    })"
+                ).Where({ ![string]::IsNullOrWhitespace($_) }) -join ','
+            ),
             $Action.style.line.direction,
             $Action.style.line.to,
             $Action.to,
@@ -164,15 +170,18 @@ function Add-Que5tGramFrames {
     $frameRendered = "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).png"
     $frameFinal = "$($Que5tGram.Dir.Frames)\$($padding).png"
 
+    $setNodes = @{}
     $actionId = 1
     $actions.GetEnumerator().ForEach({
         $action = $_
 
+        $setNodes = $nodes.Where({ 
+            $_.alias -in ($action.from, $action.to) -or
+            $_.visible_when -eq "always" -or
+            $_.alias -in $setNodes.alias
+         })
         Set-Que5tGramNodes `
-            -Nodes $nodes.Where({ 
-                $_.alias -in ($action.from, $action.to) -or
-                $_.visible_when -eq "always"
-             }) `
+            -Nodes $setNodes `
             -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Nodes)" `
             -VisualType $Que5tGram.Config.visual_type
 
