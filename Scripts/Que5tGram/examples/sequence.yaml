@@ -1,7 +1,7 @@
 ---
 visual_type: sequence
 animation:
-  delay: 40
+  delay: 30
 style:
   color: 
     background: black
@@ -14,8 +14,9 @@ nodes:
     text: 
     style:
       color: 
-        shape: lime
         background: black
+        border: yellow
+        shape: lime
       size: 0.25
     visible_when: always
   - type: circle
@@ -23,8 +24,9 @@ nodes:
     text:
     style:
       color: 
-        shape: cyan
         background: black
+        border: black
+        shape: cyan
       size: 0.25
     visible_when: connection
   - type: circle
@@ -32,8 +34,9 @@ nodes:
     text:
     style:
       color: 
-        shape: orange
         background: black
+        border: lime
+        shape: orange
       size: 0.35
     visible_when: connection
   - type: circle
@@ -41,9 +44,10 @@ nodes:
     text:
     style:
       color: 
-        shape: blue
         background: black
-      size: .20
+        border: white
+        shape: blue
+      size: 0.20
     visible_when: connection
 actions:
   - from: node1

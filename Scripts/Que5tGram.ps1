@@ -64,9 +64,14 @@ function Add-Que5tGramFileSet {
         Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.Main)" 
     })
 
-    @("BackgroundColor $($Que5tgram.Config.style.color.background)"
-      "Shadowing $($Que5tGram.Config.style.shadowing)"
-      "defaultTextAlignment $($Que5tGram.Config.style.text.alignment)"
+    (@("BackgroundColor $($Que5tgram.Config.style.color.background)"
+       "Shadowing $($Que5tGram.Config.style.shadowing)"
+       "defaultTextAlignment $($Que5tGram.Config.style.text.alignment)"
+      ) + 
+      $Que5tGram.Config.nodes.GetEnumerator().ForEach({
+       "rectangleBorderColor<<$($_.alias)>> $($_.style.color.border)"
+       "participantBorderColor<<$($_.alias)>> $($_.style.color.border)"
+      })
     ).ForEach({ 
         Add-Content "skinParam $_" -Path "$baseDir\$($Que5tGram.File.Style)" 
     })
@@ -81,23 +86,23 @@ function Add-Que5tGramFileSet {
       '"<color:e_color><$e_sprite{scale=e_scale}></color>e_label" ' +
       'as e_alias <<e_stereo>>'
       '!enddefinelong'
-      '!definelong circle(_alias, _label, _shape, _color, _size)'
-          'sprite(_size,_shape,_color,circle,_label,_alias,FA CIRCLE)'
+      '!definelong circle(_alias,_label,_shape,_color,_size,_stereo)'
+          'sprite(_size,_shape,_color,circle,_label,_alias,_stereo)'
       '!enddefinelong'
-      '!definelong square(_alias, _label, _shape, _color, _size)'
-          'sprite(_size,_shape,_color,square,_label,_alias,FA SQUARE)'
+      '!definelong square(_alias,_label,_shape,_color,_size,_stereo)'
+          'sprite(_size,_shape,_color,square,_label,_alias,_stereo)'
       '!enddefinelong'
-      '!definelong sequence_circle(_alias, _label, _color, _size)'
-          'circle(_alias, _label, participant, _color, _size)'
+      '!definelong sequence_circle(_alias,_label,_color,_size,_stereo)'
+          'circle(_alias,_label,participant,_color,_size,_stereo)'
       '!enddefinelong'
-      '!definelong sequence_square(_alias, _label, _color, _size)'
-          'square(_alias, _label, participant, _color, _size)'
+      '!definelong sequence_square(_alias,_label,_color,_size,_stereo)'
+          'square(_alias,_label,participant,_color,_size,_stereo)'
       '!enddefinelong'
-      '!definelong network_circle(_alias, _label, _color, _size)'
-          'circle(_alias, _label, rectangle, _color, _size)'
+      '!definelong network_circle(_alias,_label,_color,_size,_stereo)'
+          'circle(_alias,_label,rectangle,_color,_size,_stereo)'
       '!enddefinelong'
-      '!definelong network_square(_alias, _label, _color, _size)'
-          'square(_alias, _label, rectangle, _color, _size)'
+      '!definelong network_square(_alias,_label,_color,_size,_stereo)'
+          'square(_alias,_label,rectangle,_color,_size,_stereo)'
       '!enddefinelong'
     ).ForEach({ 
         Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.NodeTypes)" 
@@ -112,7 +117,7 @@ function Set-Que5tGramNodes {
     )
     Clear-Content $Path
     
-    $puml = '{0}_{1}({2},{3},{4},{5}) #{6}'
+    $puml = '{0}_{1}({2},{3},{4},{5},{6}) #{7}'
 
     $Nodes.GetEnumerator().ForEach({
         Add-Content -Path $path -Value $(
@@ -123,6 +128,7 @@ function Set-Que5tGramNodes {
                 $_.text,
                 $_.style.color.shape,
                 $_.style.size,
+                $_.alias,
                 $_.style.color.background
             )
         )    

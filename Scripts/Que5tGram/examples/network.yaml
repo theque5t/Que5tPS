@@ -14,8 +14,9 @@ nodes:
     text: 
     style:
       color: 
-        shape: lime
         background: black
+        border: yellow
+        shape: lime
       size: 0.25
     visible_when: always
   - type: circle
@@ -23,8 +24,9 @@ nodes:
     text:
     style:
       color: 
-        shape: cyan
         background: black
+        border: black
+        shape: cyan
       size: 0.25
     visible_when: connection
   - type: circle
@@ -32,8 +34,9 @@ nodes:
     text:
     style:
       color: 
-        shape: orange
         background: black
+        border: lime
+        shape: orange
       size: 0.35
     visible_when: connection
   - type: circle
@@ -41,9 +44,10 @@ nodes:
     text:
     style:
       color: 
-        shape: blue
         background: black
-      size: 0.25
+        border: white
+        shape: blue
+      size: 0.20
     visible_when: connection
 actions:
   - from: node1
@@ -52,7 +56,7 @@ actions:
     style:
       line:
         from: '-'
-        to: '->>'
+        to: '->'
         type: bold
         direction: down
         color: green
@@ -74,13 +78,12 @@ actions:
     style:
       line:
         from: '-'
-        to: '-'
+        to: '->'
         type: plain
         direction: down
         color:
           - yellow
           - orange
-          - blue
         thickness: 2
   - from: node2
     to: node3
@@ -88,7 +91,7 @@ actions:
     style:
       line:
         from: '-'
-        to: '-|>'
+        to: '->'
         type: dotted
         direction: right
         color: purple
@@ -99,7 +102,7 @@ actions:
     style:
       line:
         from: '-'
-        to: '-@'
+        to: '->'
         type: plain
         direction: up
         color: cyan
