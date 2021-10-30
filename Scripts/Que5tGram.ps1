@@ -65,6 +65,7 @@ function Add-Que5tGramFileSet {
     })
 
     (@("BackgroundColor $($Que5tgram.Config.style.color.background)"
+       "sequenceLifeLineBorderColor $($Que5tGram.Config.style.color.grid)"
        "Shadowing $($Que5tGram.Config.style.shadowing)"
        "defaultTextAlignment $($Que5tGram.Config.style.text.alignment)"
       ) + 

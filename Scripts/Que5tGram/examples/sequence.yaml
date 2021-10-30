@@ -5,6 +5,7 @@ animation:
 style:
   color: 
     background: black
+    grid: white
   shadowing: false
   text:
     alignment: center
