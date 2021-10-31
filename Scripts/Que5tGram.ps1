@@ -246,3 +246,32 @@ function New-Que5tGram {
         $_.ScriptStackTrace
     }
 }
+
+function New-Que5tGramSeries {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('CardanoUtxo')]
+        $SeriesType
+    )
+ 
+    DynamicParam {        
+        if ($SeriesType -eq 'CardanoUtxo') {
+            $blocks = New-DynamicParameter -Name Blocks -Attributes @{ Mandatory = $true } -Type psobject
+            New-DynamicParameterDictionary -Parameters $blocks
+        }
+    }
+ 
+    begin {
+        $Blocks = $PSBoundParameters['Blocks']
+    }
+ 
+    process {
+        if ($SeriesType -eq 'CardanoUtxo') {
+            Write-Output $Blocks
+        }
+        else {
+            Write-Output "Idk what todo?"
+        }
+    }
+}
