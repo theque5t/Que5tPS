@@ -254,21 +254,20 @@ function New-Que5tGramSeries {
         [ValidateSet('CardanoUtxo')]
         $SeriesType
     )
- 
     DynamicParam {        
-        if ($SeriesType -eq 'CardanoUtxo') {
-            $blocks = New-DynamicParameter -Name Blocks -Attributes @{ Mandatory = $true } -Type psobject
-            New-DynamicParameterDictionary -Parameters $blocks
+        switch ($SeriesType) {
+            'CardanoUtxo' { 
+                DynamicParameterDictionary (
+                    (DynamicParameter -Name Blocks -Attributes @{ Mandatory = $true } -Type psobject),
+                    (DynamicParameter -Name Style -Attributes @{ Mandatory = $false } -Type string)
+                )
+            }
         }
     }
- 
-    begin {
-        $Blocks = $PSBoundParameters['Blocks']
-    }
- 
     process {
         if ($SeriesType -eq 'CardanoUtxo') {
-            Write-Output $Blocks
+            Write-Output $PSBoundParameters.Blocks
+            Write-Output $PSBoundParameters.Style
         }
         else {
             Write-Output "Idk what todo?"
