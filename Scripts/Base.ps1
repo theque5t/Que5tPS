@@ -20,3 +20,30 @@ function New-ParamsObject {
     }
     return $params
 }
+
+function New-DynamicParameter {
+    param(
+        [string]$Name,
+        [hashtable]$Attributes,
+        [Type]$Type = [psobject]
+    )
+    $paramAttributes = New-Object `
+        -Type System.Management.Automation.ParameterAttribute
+            
+    $Attributes.GetEnumerator().ForEach({
+        $paramAttributes.$($_.Key) = $_.Value
+    })
+
+    $paramAttributesCollect = New-Object `
+        -Type System.Collections.ObjectModel.Collection[System.Attribute]
+    $paramAttributesCollect.Add($paramAttributes)
+
+    $dynParam = New-Object -Type `
+        System.Management.Automation.RuntimeDefinedParameter(
+            $Name,
+            $Type,
+            $paramAttributesCollect
+    )
+
+    return $dynParam
+}
