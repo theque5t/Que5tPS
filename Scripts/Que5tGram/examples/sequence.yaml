@@ -6,6 +6,7 @@ style:
   color: 
     background: black
     grid: white
+    text: orange
   shadowing: false
   text:
     alignment: center

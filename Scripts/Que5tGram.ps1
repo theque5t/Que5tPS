@@ -65,10 +65,13 @@ function Add-Que5tGramFileSet {
     })
 
     (@("BackgroundColor $($Que5tgram.Config.style.color.background)"
-       "sequenceLifeLineBorderColor $($Que5tGram.Config.style.color.grid)"
+       "defaultFontColor $($Que5tGram.Config.style.color.text)"
        "Shadowing $($Que5tGram.Config.style.shadowing)"
        "defaultTextAlignment $($Que5tGram.Config.style.text.alignment)"
       ) + 
+      @(if($Que5tgram.Config.visual_type -eq 'sequence'){ 
+        "sequenceLifeLineBorderColor $($Que5tGram.Config.style.color.grid)"
+      }) +
       $Que5tGram.Config.nodes.GetEnumerator().ForEach({
        "rectangleBorderColor<<$($_.alias)>> $($_.style.color.border)"
        "participantBorderColor<<$($_.alias)>> $($_.style.color.border)"
