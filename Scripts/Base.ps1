@@ -21,8 +21,9 @@ function New-ParamsObject {
     return $params
 }
 
-function New-DynamicParameter {
+function DynamicParameter {
     param(
+        [parameter(Mandatory=$true)]
         [string]$Name,
         [hashtable]$Attributes,
         [Type]$Type = [psobject]
@@ -48,17 +49,17 @@ function New-DynamicParameter {
     return $dynParam
 }
 
-function New-DynamicParameterDictionary {
+function DynamicParameterDictionary {
     param
     (
         [parameter(Mandatory=$true,Position=0)]
         [System.Management.Automation.RuntimeDefinedParameter[]]$Parameters
     )
-    $paramDictionary = New-Object `
+    $parameterDictionary = New-Object `
         -Type System.Management.Automation.RuntimeDefinedParameterDictionary
     $Parameters.ForEach({
-        $paramDictionary.Add($_.Name, $_)
+        $parameterDictionary.Add($_.Name, $_)
     })
 
-    return $paramDictionary
+    return $parameterDictionary
 }
