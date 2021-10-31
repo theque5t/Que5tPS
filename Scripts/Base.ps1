@@ -47,3 +47,18 @@ function New-DynamicParameter {
 
     return $dynParam
 }
+
+function New-DynamicParameterDictionary {
+    param
+    (
+        [parameter(Mandatory=$true,Position=0)]
+        [System.Management.Automation.RuntimeDefinedParameter[]]$Parameters
+    )
+    $paramDictionary = New-Object `
+        -Type System.Management.Automation.RuntimeDefinedParameterDictionary
+    $Parameters.ForEach({
+        $paramDictionary.Add($_.Name, $_)
+    })
+
+    return $paramDictionary
+}
