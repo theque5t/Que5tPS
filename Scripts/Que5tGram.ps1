@@ -258,19 +258,31 @@ function New-Que5tGramSeries {
         switch ($SeriesType) {
             'CardanoUtxo' { 
                 DynamicParameterDictionary (
-                    (DynamicParameter -Name Blocks -Attributes @{ Mandatory = $true } -Type psobject),
-                    (DynamicParameter -Name Style -Attributes @{ Mandatory = $false } -Type string)
+                    (DynamicParameter -Name Blocks -Attributes @{ Mandatory = $true } -Type psobject)
                 )
             }
         }
     }
     process {
-        if ($SeriesType -eq 'CardanoUtxo') {
-            Write-Output $PSBoundParameters.Blocks
-            Write-Output $PSBoundParameters.Style
-        }
-        else {
-            Write-Output "Idk what todo?"
+        switch ($SeriesType) {
+            'CardanoUtxo' { 
+                # Create 1 gram per block
+                $config = @{}
+                Write-Verbose "1"
+                $PSBoundParameters.Blocks.ForEach({
+                    Write-Verbose "2"
+                    $block = $_
+                    $config.$block = @{}
+                    $config.$block.Block = $block
+                    $config.$block.BlockTxs = Get-CardanoBlockTransactions -Block $block
+                    $config.$block.Utxos = @{}
+                    $config.$block.BlockTxs.ForEach({
+                        $tx = $_
+                        $config.$block.Utxos.$tx = Get-CardanoTransactionUtxos -Hash $tx
+                    })
+                })
+                return $config
+            }
         }
     }
 }
