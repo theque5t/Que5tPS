@@ -18,7 +18,7 @@ function Get-NextQue5tGramName {
     return $name
 }
 
-function New-Que5tGramObject {
+function New-Que5tGramParameters {
     param(
         $Params
     )
@@ -38,7 +38,7 @@ function New-Que5tGramObject {
     return $que5tGram
 }
 
-function Add-Que5tGramFileSet {
+function New-Que5tGramFileSet {
     param(
         [parameter(ValueFromPipeline)]
         $Que5tGram
@@ -168,7 +168,7 @@ function Add-Que5tGramAction {
     )
 }
 
-function Add-Que5tGramFrames {
+function New-Que5tGramFrames {
     param(
         [parameter(ValueFromPipeline)]
         $Que5tGram
@@ -205,7 +205,7 @@ function Add-Que5tGramFrames {
     })
 }
 
-function Add-Que5tGramAnimation {
+function New-Que5tGramAnimation {
     param(
         [parameter(ValueFromPipeline)]
         $Que5tGram
@@ -226,7 +226,96 @@ function Add-Que5tGramAnimation {
     magick @magickArgs
 }
 
-function New-Que5tGram {
+
+class Que5tGramAnimation {
+    $delay = 30
+}
+
+class Que5tGramStyle {
+    $color = @{
+        background = 'black'
+        text = 'white'
+    }
+    $shadowing = $false
+    $text = @{
+        alignment = 'center'
+    }
+}
+
+class Que5tGramNodeStyle {
+    $color = @{
+        background = 'black'
+        border = 'black'
+        shape = 'white'
+    }
+    $size = 0.25
+}
+
+class Que5tGramNode {
+    [ValidateSet('circle','square')]
+    $type
+    $alias
+    $text
+    [Que5tGramNodeStyle]$style = [Que5tGramNodeStyle]::new()
+    $visible_when
+
+    Que5tGramNode(
+        $_alias
+    ){
+        $this.alias = $_alias
+    }    
+}
+
+class Que5tGramActionStyle {
+    $line = @{
+        from = '-'
+        to = '->'
+        type = 'plain'
+        direction = 'down'
+        color = 'white'
+        thickness = 1
+    }
+}
+
+class Que5tGramAction {
+    $from
+    $to
+    $text
+    [Que5tGramActionStyle]$style = [Que5tGramActionStyle]::new()
+    
+    Que5tGramAction(
+        $_from,
+        $_to
+    ){
+        $this.from = $_from
+        $this.to = $_to
+    }
+}
+
+class Que5tGram {
+    [ValidateSet('network','sequence')]
+    $visual_type
+    
+    [Que5tGramAnimation]
+    $animation = [Que5tGramAnimation]::new()
+
+    [Que5tGramStyle]
+    $style = [Que5tGramStyle]::new()
+
+    [Que5tGramNode[]]
+    $nodes
+    
+    [Que5tGramAction[]]
+    $actions
+
+    Que5tGram(
+        $_visual_type
+    ){
+        $this.visual_type = $_visual_type
+    }
+}
+
+function New-Que5tGramRendering {
     [cmdletbinding()]
     param(
         $SeriesName = "Que5tGram",
@@ -236,10 +325,10 @@ function New-Que5tGram {
     )
     try {
         $params = New-ParamsObject $MyInvocation $PSBoundParameters
-        $que5tGram = New-Que5tGramObject $params
-        $que5tGram | Add-Que5tGramFileSet
-        $que5tGram | Add-Que5tGramFrames
-        $que5tGram | Add-Que5tGramAnimation
+        $que5tGram = New-Que5tGramParameters $params
+        $que5tGram | New-Que5tGramFileSet
+        $que5tGram | New-Que5tGramFrames
+        $que5tGram | New-Que5tGramAnimation
     }
     catch {
         $_.Exception.Message
@@ -247,11 +336,11 @@ function New-Que5tGram {
     }
 }
 
-function New-Que5tGramSeries {
+function New-Que5tGramConfigs {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
-        [ValidateSet('CardanoUtxo')]
+        [ValidateSet('CardanoUtxo','GitFileEvo')]
         $SeriesType
     )
     DynamicParam {        
@@ -268,21 +357,29 @@ function New-Que5tGramSeries {
             'CardanoUtxo' { 
                 # Create 1 gram per block
                 $config = @{}
-                Write-Verbose "1"
                 $PSBoundParameters.Blocks.ForEach({
-                    Write-Verbose "2"
                     $block = $_
                     $config.$block = @{}
                     $config.$block.Block = $block
-                    $config.$block.BlockTxs = Get-CardanoBlockTransactions -Block $block
+                    $config.$block.Txs = Get-CardanoBlockTransactions -Block $block
                     $config.$block.Utxos = @{}
-                    $config.$block.BlockTxs.ForEach({
+                    $config.$block.Txs.ForEach({
                         $tx = $_
                         $config.$block.Utxos.$tx = Get-CardanoTransactionUtxos -Hash $tx
                     })
                 })
-                return $config
+                $config.GetEnumerator().ForEach({
+                    $_.Config = [Que5tGram]::new('network')
+                    $_.Utxos.Values.ForEach({
+
+                    })
+                })
+
             }
         }
     }
+}
+
+function New-Que5tGramRenderings {
+    Write-Output TODO
 }
