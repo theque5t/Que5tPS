@@ -257,13 +257,26 @@ class Que5tGramNode {
     $alias
     $text
     [Que5tGramNodeStyle]$style = [Que5tGramNodeStyle]::new()
-    $visible_when
+    [ValidateSet('always','connection')]
+    $visible_when = 'connection'
 
     Que5tGramNode(
+        $_type,
         $_alias
     ){
+        $this.type = $_type
         $this.alias = $_alias
-    }    
+    }
+
+    Que5tGramNode(
+        $_type,
+        $_alias,
+        $_text
+    ){
+        $this.type = $_type
+        $this.alias = $_alias
+        $this.text = $_text
+    }
 }
 
 class Que5tGramActionStyle {
@@ -290,6 +303,16 @@ class Que5tGramAction {
         $this.from = $_from
         $this.to = $_to
     }
+
+    Que5tGramAction(
+        $_from,
+        $_to,
+        $_text
+    ){
+        $this.from = $_from
+        $this.to = $_to
+        $this.text = $_text
+    }
 }
 
 class Que5tGram {
@@ -312,6 +335,32 @@ class Que5tGram {
         $_visual_type
     ){
         $this.visual_type = $_visual_type
+    }
+
+    AddNode(
+        $_type,
+        $_alias,
+        $_text
+    ){ 
+        $this.nodes += [Que5tGramNode]::new($_type, $_alias, $_text)
+    }
+
+    AddUniqueNode(
+        $_type,
+        $_alias,
+        $_text
+    ){
+        if($this.nodes.alias -notcontains $_alias){ 
+            $this.AddNode($_type, $_alias, $_text) 
+        }
+    }
+
+    AddAction(
+        $_from,
+        $_to,
+        $_text
+    ){
+        $this.actions += [Que5tGramAction]::new($_from, $_to, $_text)
     }
 }
 
@@ -367,14 +416,25 @@ function New-Que5tGramConfigs {
                         $tx = $_
                         $config.$block.Utxos.$tx = Get-CardanoTransactionUtxos -Hash $tx
                     })
-                })
-                $config.GetEnumerator().ForEach({
-                    $_.Config = [Que5tGram]::new('network')
-                    $_.Utxos.Values.ForEach({
 
+                    $config.$block.Que5tGram = [Que5tGram]::new('network')
+                    $config.$block.Utxos.GetEnumerator().ForEach({
+                        $utxo = $_.value
+                        $($utxo.inputs + $utxo.outputs).ForEach({
+                            $io = $_
+                            $ioAddressShort = $(
+                                $io.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
+                            )
+                            $config.$block.Que5tGram.AddUniqueNode(
+                                'circle',
+                                $io.address,
+                                $ioAddressShort
+                            )
+                        })
+                        # TODO: add action logic
                     })
                 })
-
+                return $config
             }
         }
     }
