@@ -199,7 +199,9 @@ function New-Que5tGramFrames {
             -Action $action `
             -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Actions)"
         
-        Invoke-PlantUML "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Main)"
+        Invoke-PlantUML `
+            -charset 'UTF-8' `
+            "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Main)"
         Copy-Item -Path $frameRendered -Dest $($frameFinal -f $actionId)
         $actionId++ 
     })
@@ -243,12 +245,24 @@ class Que5tGramStyle {
 }
 
 class Que5tGramNodeStyle {
-    $color = @{
-        background = 'black'
-        border = 'black'
-        shape = 'white'
+    $color 
+    $size
+
+    Que5tGramNodeStyle(){
+        $this.color = @{
+            background = 'black'
+            border = 'black'
+            shape = 'white'
+        }
+        $this.size = 0.25
     }
-    $size = 0.25
+
+    Que5tGramNodeStyle(
+        $_color
+    ){
+        $this.color = $_color
+        $this.size = 0.25
+    }
 }
 
 class Que5tGramNode {
@@ -261,21 +275,27 @@ class Que5tGramNode {
     $visible_when = 'connection'
 
     Que5tGramNode(
-        $_type,
-        $_alias
+        $_type, $_alias
     ){
         $this.type = $_type
         $this.alias = $_alias
     }
 
     Que5tGramNode(
-        $_type,
-        $_alias,
-        $_text
+        $_type, $_alias, $_text
     ){
         $this.type = $_type
         $this.alias = $_alias
         $this.text = $_text
+    }
+
+    Que5tGramNode(
+        $_type, $_alias, $_text, $_color
+    ){
+        $this.type = $_type
+        $this.alias = $_alias
+        $this.text = $_text
+        $this.style = [Que5tGramNodeStyle]::new($_color)
     }
 }
 
@@ -297,17 +317,14 @@ class Que5tGramAction {
     [Que5tGramActionStyle]$style = [Que5tGramActionStyle]::new()
     
     Que5tGramAction(
-        $_from,
-        $_to
+        $_from, $_to
     ){
         $this.from = $_from
         $this.to = $_to
     }
 
     Que5tGramAction(
-        $_from,
-        $_to,
-        $_text
+        $_from, $_to, $_text
     ){
         $this.from = $_from
         $this.to = $_to
@@ -338,27 +355,23 @@ class Que5tGram {
     }
 
     AddNode(
-        $_type,
-        $_alias,
-        $_text
+        $_type, $_alias, $_text, $_color
     ){ 
-        $this.nodes += [Que5tGramNode]::new($_type, $_alias, $_text)
+        $this.nodes += [Que5tGramNode]::new(
+            $_type, $_alias, $_text, $_color
+        )
     }
 
     AddUniqueNode(
-        $_type,
-        $_alias,
-        $_text
+        $_type, $_alias, $_text, $_color
     ){
         if($this.nodes.alias -notcontains $_alias){ 
-            $this.AddNode($_type, $_alias, $_text) 
+            $this.AddNode($_type, $_alias, $_text, $_color) 
         }
     }
 
     AddAction(
-        $_from,
-        $_to,
-        $_text
+        $_from, $_to, $_text
     ){
         $this.actions += [Que5tGramAction]::new($_from, $_to, $_text)
     }
@@ -403,41 +416,62 @@ function New-Que5tGramConfigs {
     }
     process {
         switch ($SeriesType) {
-            'CardanoUtxo' { 
+            'CardanoUtxo' {
                 # Create 1 gram per block
                 $config = @{}
                 $PSBoundParameters.Blocks.ForEach({
                     $block = $_
                     $config.$block = @{}
                     $config.$block.Block = $block
-                    $config.$block.Txs = Get-CardanoBlockTransactions -Block $block
+                    $config.$block.BlocksTxs = Get-CardanoBlockTransactions -Block $block
+                    $config.$block.Txs = @{}
                     $config.$block.Utxos = @{}
-                    $config.$block.Txs.ForEach({
+                    $config.$block.BlocksTxs.ForEach({
                         $tx = $_
+                        $config.$block.Txs.$tx = Get-CardanoTransaction -Hash $tx
                         $config.$block.Utxos.$tx = Get-CardanoTransactionUtxos -Hash $tx
                     })
 
                     $config.$block.Que5tGram = [Que5tGram]::new('network')
                     $config.$block.Utxos.GetEnumerator().ForEach({
                         $utxo = $_.value
+                        $tx = $config.$block.Txs[$utxo.hash]
 
-                        # Add utxo hash to node list (should look different/black box maybe?)
+                        # Add tx hash to node list (should look different/black box maybe?)
                         $config.$block.Que5tGram.AddUniqueNode(
                                 'square',
-                                $utxo.hash,
-                                $utxo.hash.Substring(0,7)
+                                $tx.hash,
+                                $('{0}\n-{1}' -f $(
+                                    $tx.hash.Substring(0,7), 
+                                    $(ConvertTo-ADA $tx.fees))
+                                ),
+                                @{ background = 'black'; border = 'black'; shape = '2a71d0' }
                         )
 
                         # Add input and output addresses to node list (inputs should look different than outputs)
-                        $($utxo.inputs + $utxo.outputs).ForEach({
-                            $io = $_
-                            $ioAddressShort = $(
-                                $io.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
+                        $utxo.inputs.ForEach({
+                            $input = $_
+                            $inputAddressShort = $(
+                                $input.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
                             )
                             $config.$block.Que5tGram.AddUniqueNode(
                                 'circle',
-                                $io.address,
-                                $ioAddressShort
+                                $input.address,
+                                $inputAddressShort,
+                                @{ background = 'red'; border = 'red'; shape = 'black' }
+                            )
+                        })
+
+                        $utxo.outputs.ForEach({
+                            $output = $_
+                            $outputAddressShort = $(
+                                $output.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
+                            )
+                            $config.$block.Que5tGram.AddUniqueNode(
+                                'circle',
+                                $output.address,
+                                $outputAddressShort,
+                                @{ background = 'black'; border = 'black'; shape = 'red' }
                             )
                         })
 
@@ -447,7 +481,7 @@ function New-Que5tGramConfigs {
                             $config.$block.Que5tGram.AddAction(
                                 $input.address,
                                 $utxo.hash,
-                                $input.amount.where({$_.unit -eq 'lovelace'}).quantity
+                                $(ConvertTo-ADA $input.amount)
                             )
                         })
 
@@ -457,7 +491,7 @@ function New-Que5tGramConfigs {
                             $config.$block.Que5tGram.AddAction(
                                 $utxo.hash,
                                 $output.address,
-                                $output.amount.where({$_.unit -eq 'lovelace'}).quantity
+                                $(ConvertTo-ADA $output.amount)
                             )
                         })
                     })
