@@ -420,6 +420,15 @@ function New-Que5tGramConfigs {
                     $config.$block.Que5tGram = [Que5tGram]::new('network')
                     $config.$block.Utxos.GetEnumerator().ForEach({
                         $utxo = $_.value
+
+                        # Add utxo hash to node list (should look different/black box maybe?)
+                        $config.$block.Que5tGram.AddUniqueNode(
+                                'square',
+                                $utxo.hash,
+                                $utxo.hash.Substring(0,7)
+                        )
+
+                        # Add input and output addresses to node list (inputs should look different than outputs)
                         $($utxo.inputs + $utxo.outputs).ForEach({
                             $io = $_
                             $ioAddressShort = $(
@@ -431,7 +440,26 @@ function New-Que5tGramConfigs {
                                 $ioAddressShort
                             )
                         })
-                        # TODO: add action logic
+
+                        # Add each input as an action from input address to the transaction hash
+                        $utxo.inputs.ForEach({
+                            $input = $_
+                            $config.$block.Que5tGram.AddAction(
+                                $input.address,
+                                $utxo.hash,
+                                $input.amount.where({$_.unit -eq 'lovelace'}).quantity
+                            )
+                        })
+
+                        # Add each output as an action from transaction hash to the output address
+                        $utxo.outputs.ForEach({
+                            $output = $_
+                            $config.$block.Que5tGram.AddAction(
+                                $utxo.hash,
+                                $output.address,
+                                $output.amount.where({$_.unit -eq 'lovelace'}).quantity
+                            )
+                        })
                     })
                 })
                 return $config
