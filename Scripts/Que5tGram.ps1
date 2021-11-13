@@ -454,6 +454,7 @@ function New-Que5tGramConfigs {
                         $tx = $config.$block.Txs[$utxo.hash]
 
                         # Add tx hash to node list (should look different/black box maybe?)
+                        # Cardano blue hex = 2a71d0
                         $config.$block.Que5tGram.AddUniqueNode(
                                 'square',
                                 $tx.hash,
@@ -461,33 +462,21 @@ function New-Que5tGramConfigs {
                                     $tx.hash.Substring(0,7), 
                                     $(ConvertTo-ADA $tx.fees))
                                 ),
-                                @{ background = 'black'; border = 'black'; shape = '2a71d0' }
+                                @{ background = 'black'; border = 'F00413-white'; shape = 'black' }
                         )
 
-                        # Add input and output addresses to node list (inputs should look different than outputs)
-                        $utxo.inputs.ForEach({
-                            $input = $_
-                            $inputAddressShort = $(
-                                $input.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
-                            )
-                            $config.$block.Que5tGram.AddUniqueNode(
-                                'circle',
-                                $input.address,
-                                $inputAddressShort,
-                                @{ background = 'black'; border = 'black'; shape = 'F00413' }
-                            )
-                        })
 
-                        $utxo.outputs.ForEach({
-                            $output = $_
-                            $outputAddressShort = $(
-                                $output.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
+                        # Add input and output addresses to node list
+                        $($utxo.inputs + $utxo.outputs).ForEach({
+                            $io = $_
+                            $ioAddressShort = $(
+                                $io.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
                             )
                             $config.$block.Que5tGram.AddUniqueNode(
                                 'circle',
-                                $output.address,
-                                $outputAddressShort,
-                                @{ background = 'black'; border = 'black'; shape = 'white' }
+                                $io.address,
+                                $ioAddressShort,
+                                @{ background = 'black'; border = 'black'; shape = '2a71d0' }                                
                             )
                         })
 
