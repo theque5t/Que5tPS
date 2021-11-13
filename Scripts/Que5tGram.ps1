@@ -286,7 +286,7 @@ class Que5tGramNode {
     ){
         $this.type = $_type
         $this.alias = $_alias
-        $this.text = $_text
+        $this.text = "\n$_text"
     }
 
     Que5tGramNode(
@@ -294,7 +294,7 @@ class Que5tGramNode {
     ){
         $this.type = $_type
         $this.alias = $_alias
-        $this.text = $_text
+        $this.text = "\n$_text"
         $this.style = [Que5tGramNodeStyle]::new($_color)
     }
 }
@@ -307,6 +307,13 @@ class Que5tGramActionStyle {
         direction = 'down'
         color = 'white'
         thickness = 1
+    }
+    Que5tGramActionStyle(){}
+
+    Que5tGramActionStyle(
+        $_color
+    ){
+        $this.line.color = $_color
     }
 }
 
@@ -328,7 +335,16 @@ class Que5tGramAction {
     ){
         $this.from = $_from
         $this.to = $_to
-        $this.text = $_text
+        $this.text = " $_text"
+    }
+
+    Que5tGramAction(
+        $_from, $_to, $_text, $_color
+    ){
+        $this.from = $_from
+        $this.to = $_to
+        $this.text = "`" $($_text)`""
+        $this.style = [Que5tGramActionStyle]::new($_color)
     }
 }
 
@@ -371,9 +387,9 @@ class Que5tGram {
     }
 
     AddAction(
-        $_from, $_to, $_text
+        $_from, $_to, $_text, $_color
     ){
-        $this.actions += [Que5tGramAction]::new($_from, $_to, $_text)
+        $this.actions += [Que5tGramAction]::new($_from, $_to, $_text, $_color)
     }
 }
 
@@ -458,7 +474,7 @@ function New-Que5tGramConfigs {
                                 'circle',
                                 $input.address,
                                 $inputAddressShort,
-                                @{ background = 'red'; border = 'red'; shape = 'black' }
+                                @{ background = 'black'; border = 'black'; shape = 'F00413' }
                             )
                         })
 
@@ -471,7 +487,7 @@ function New-Que5tGramConfigs {
                                 'circle',
                                 $output.address,
                                 $outputAddressShort,
-                                @{ background = 'black'; border = 'black'; shape = 'red' }
+                                @{ background = 'black'; border = 'black'; shape = 'white' }
                             )
                         })
 
@@ -481,7 +497,8 @@ function New-Que5tGramConfigs {
                             $config.$block.Que5tGram.AddAction(
                                 $input.address,
                                 $utxo.hash,
-                                $(ConvertTo-ADA $input.amount)
+                                $(ConvertTo-ADA $input.amount),
+                                'F00413'
                             )
                         })
 
@@ -491,7 +508,8 @@ function New-Que5tGramConfigs {
                             $config.$block.Que5tGram.AddAction(
                                 $utxo.hash,
                                 $output.address,
-                                $(ConvertTo-ADA $output.amount)
+                                $(ConvertTo-ADA $output.amount),
+                                'white'
                             )
                         })
                     })
