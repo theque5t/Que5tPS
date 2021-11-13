@@ -20,14 +20,14 @@ function Get-NextQue5tGramName {
 
 function New-Que5tGramParameters {
     param(
-        $Params
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
+        $Config,
+        $PumlIcons = $env:PLANTUML_ICONS
     )
-    $que5tGram = $Params
-    $que5tGram.Config = $(Get-Content $que5tGram.Config | ConvertFrom-Yaml)
-    $que5tGram.Name = Get-NextQue5tGramName @Params
+    $que5tGram.Config = $Config
     $que5tGram.Dir = @{}
     $que5tGram.File = @{}
-    $que5tGram.Dir.Base = $que5tGram.Name
+    $que5tGram.Dir.Base = $que5tGram.Config.label.name
     $que5tGram.Dir.Frames = "$($que5tGram.Dir.Base)\frames"
     $que5tGram.File.Main = "$($que5tGram.Name).puml"
     $que5tGram.File.Style = "$($que5tGram.Name).style.puml"
@@ -45,6 +45,8 @@ function New-Que5tGramFileSet {
     )
     $baseDir = $Que5tGram.Dir.Base
     if(Test-Path $baseDir) { throw "$baseDir already exists" }
+
+    $Que5tGram.Config | ConvertTo-Yaml | Out-File "$baseDir\config.yml"
     
     ($Que5tGram.Dir.Base, $Que5tGram.Dir.Frames).ForEach({
         New-Item $_ -ItemType 'Directory' | Out-Null
@@ -86,9 +88,12 @@ function New-Que5tGramFileSet {
       '!include lib_font_sprites/font-awesome/circle.puml'
       '!include lib_font_sprites/font-awesome/square.puml'
       '!definelong sprite(e_scale,e_type,e_color,e_sprite,e_label,e_alias,e_stereo)'
-      'e_type ' +
-      '"<color:e_color><$e_sprite{scale=e_scale}></color>e_label" ' +
-      'as e_alias <<e_stereo>>'
+          'e_type ' +
+          '"<color:e_color><$e_sprite{scale=e_scale}></color>e_label" ' +
+          'as e_alias <<e_stereo>>'
+      '!enddefinelong'
+      '!definelong builtin(e_type,e_label,e_alias,e_stereo)'
+          'e_type "e_label" as e_alias <<e_stereo>>'
       '!enddefinelong'
       '!definelong circle(_alias,_label,_shape,_color,_size,_stereo)'
           'sprite(_size,_shape,_color,circle,_label,_alias,_stereo)'
@@ -102,11 +107,17 @@ function New-Que5tGramFileSet {
       '!definelong sequence_square(_alias,_label,_color,_size,_stereo)'
           'square(_alias,_label,participant,_color,_size,_stereo)'
       '!enddefinelong'
+      '!definelong sequence_container(_alias,_label,_stereo)'
+          'builtin(participant,_label,_alias,_stereo)'
+      '!enddefinelong'
       '!definelong network_circle(_alias,_label,_color,_size,_stereo)'
           'circle(_alias,_label,rectangle,_color,_size,_stereo)'
       '!enddefinelong'
       '!definelong network_square(_alias,_label,_color,_size,_stereo)'
           'square(_alias,_label,rectangle,_color,_size,_stereo)'
+      '!enddefinelong'
+      '!definelong network_container(_alias,_label,_stereo)'
+          'builtin(rectangle,_label,_alias,_stereo)'
       '!enddefinelong'
     ).ForEach({ 
         Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.NodeTypes)" 
@@ -121,18 +132,21 @@ function Set-Que5tGramNodes {
     )
     Clear-Content $Path
     
-    $puml = '{0}_{1}({2},{3},{4},{5},{6}) #{7}'
+    $puml = '{0}_{1}({2}) #{3}'
 
     $Nodes.GetEnumerator().ForEach({
         Add-Content -Path $path -Value $(
             $puml -f (
                 $VisualType,
                 $_.type,
-                $_.alias,
-                $_.text,
-                $_.style.color.shape,
-                $_.style.size,
-                $_.alias,
+                $(
+                    @($_.alias,
+                      $_.text,
+                      $_.style.color.shape,
+                      $_.style.size,
+                      $_.alias
+                    ).Where({ $_ }) -join ','
+                ),
                 $_.style.color.background
             )
         )    
@@ -244,58 +258,30 @@ class Que5tGramStyle {
     }
 }
 
-class Que5tGramNodeStyle {
-    $color 
-    $size
-
-    Que5tGramNodeStyle(){
-        $this.color = @{
-            background = 'black'
-            border = 'black'
-            shape = 'white'
-        }
-        $this.size = 0.25
-    }
-
-    Que5tGramNodeStyle(
-        $_color
-    ){
-        $this.color = $_color
-        $this.size = 0.25
-    }
-}
-
 class Que5tGramNode {
-    [ValidateSet('circle','square')]
+    [ValidateSet('container','circle','square')]
     $type
     $alias
     $text
-    [Que5tGramNodeStyle]$style = [Que5tGramNodeStyle]::new()
+    [hashtable]$style
     [ValidateSet('always','connection')]
     $visible_when = 'connection'
 
     Que5tGramNode(
-        $_type, $_alias
+        $_type, $_alias, $_style
     ){
         $this.type = $_type
         $this.alias = $_alias
+        $this.style = $_style
     }
 
     Que5tGramNode(
-        $_type, $_alias, $_text
+        $_type, $_alias, $_text, $_style
     ){
         $this.type = $_type
         $this.alias = $_alias
-        $this.text = "\n$_text"
-    }
-
-    Que5tGramNode(
-        $_type, $_alias, $_text, $_color
-    ){
-        $this.type = $_type
-        $this.alias = $_alias
-        $this.text = "\n$_text"
-        $this.style = [Que5tGramNodeStyle]::new($_color)
+        $this.text = $_text
+        $this.style = $_style
     }
 }
 
@@ -335,7 +321,7 @@ class Que5tGramAction {
     ){
         $this.from = $_from
         $this.to = $_to
-        $this.text = " $_text"
+        $this.text = "`" $($_text)`""
     }
 
     Que5tGramAction(
@@ -348,7 +334,30 @@ class Que5tGramAction {
     }
 }
 
+class Que5tGramLabel {
+    [ValidateSet('CardanoUtxo','GitFileEvo')]
+    $set
+    
+    [int]
+    $series
+    
+    $name
+    
+    $creator = 'theque5t'
+
+    Que5tGramLabel(
+        $_set, $_series, $_name
+    ){
+        $this.set = $_set
+        $this.series = $_series
+        $this.name = $_name
+    }
+}
+
 class Que5tGram {
+    [Que5tGramLabel]
+    $label
+    
     [ValidateSet('network','sequence')]
     $visual_type
     
@@ -365,24 +374,29 @@ class Que5tGram {
     $actions
 
     Que5tGram(
-        $_visual_type
+        $_set, $_series, $_name, $_visual_type
     ){
+        $this.label = [Que5tGramLabel]::new(
+            $_set,
+            $_series,
+            $_name
+        )
         $this.visual_type = $_visual_type
     }
 
     AddNode(
-        $_type, $_alias, $_text, $_color
+        $_type, $_alias, $_text, $_style
     ){ 
         $this.nodes += [Que5tGramNode]::new(
-            $_type, $_alias, $_text, $_color
+            $_type, $_alias, $_text, $_style
         )
     }
 
     AddUniqueNode(
-        $_type, $_alias, $_text, $_color
+        $_type, $_alias, $_text, $_style
     ){
         if($this.nodes.alias -notcontains $_alias){ 
-            $this.AddNode($_type, $_alias, $_text, $_color) 
+            $this.AddNode($_type, $_alias, $_text, $_style) 
         }
     }
 
@@ -392,6 +406,7 @@ class Que5tGram {
         $this.actions += [Que5tGramAction]::new($_from, $_to, $_text, $_color)
     }
 }
+
 
 function New-Que5tGramRendering {
     [cmdletbinding()]
@@ -404,7 +419,6 @@ function New-Que5tGramRendering {
     try {
         $params = New-ParamsObject $MyInvocation $PSBoundParameters
         $que5tGram = New-Que5tGramParameters $params
-        $que5tGram | New-Que5tGramFileSet
         $que5tGram | New-Que5tGramFrames
         $que5tGram | New-Que5tGramAnimation
     }
@@ -419,10 +433,13 @@ function New-Que5tGramConfigs {
     param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('CardanoUtxo','GitFileEvo')]
-        $SeriesType
+        $Set,
+        
+        [int]
+        $Series
     )
     DynamicParam {        
-        switch ($SeriesType) {
+        switch ($Set) {
             'CardanoUtxo' { 
                 DynamicParameterDictionary (
                     (DynamicParameter -Name Blocks -Attributes @{ Mandatory = $true } -Type psobject)
@@ -431,7 +448,7 @@ function New-Que5tGramConfigs {
         }
     }
     process {
-        switch ($SeriesType) {
+        switch ($Set) {
             'CardanoUtxo' {
                 # Create 1 gram per block
                 $config = @{}
@@ -447,8 +464,12 @@ function New-Que5tGramConfigs {
                         $config.$block.Txs.$tx = Get-CardanoTransaction -Hash $tx
                         $config.$block.Utxos.$tx = Get-CardanoTransactionUtxos -Hash $tx
                     })
-
-                    $config.$block.Que5tGram = [Que5tGram]::new('network')
+                    $config.$block.Que5tGram = [Que5tGram]::new(
+                        $Set,
+                        $Series,
+                        "Block $block",
+                        'network'
+                    )
                     $config.$block.Utxos.GetEnumerator().ForEach({
                         $utxo = $_.value
                         $tx = $config.$block.Txs[$utxo.hash]
@@ -456,15 +477,18 @@ function New-Que5tGramConfigs {
                         # Add tx hash to node list (should look different/black box maybe?)
                         # Cardano blue hex = 2a71d0
                         $config.$block.Que5tGram.AddUniqueNode(
-                                'square',
+                                'container',
                                 $tx.hash,
                                 $('{0}\n-{1}' -f $(
                                     $tx.hash.Substring(0,7), 
                                     $(ConvertTo-ADA $tx.fees))
                                 ),
-                                @{ background = 'black'; border = 'F00413-white'; shape = 'black' }
+                                @{ color = @{
+                                        background = 'black'
+                                        border = 'F00413-white' 
+                                    }
+                                }
                         )
-
 
                         # Add input and output addresses to node list
                         $($utxo.inputs + $utxo.outputs).ForEach({
@@ -475,8 +499,14 @@ function New-Que5tGramConfigs {
                             $config.$block.Que5tGram.AddUniqueNode(
                                 'circle',
                                 $io.address,
-                                $ioAddressShort,
-                                @{ background = 'black'; border = 'black'; shape = '2a71d0' }                                
+                                "\n$ioAddressShort",
+                                @{ color = @{
+                                        background = 'black'
+                                        border = 'black'
+                                        shape = '2a71d0' 
+                                   }
+                                   size = 0.25
+                                }
                             )
                         })
 
@@ -502,8 +532,9 @@ function New-Que5tGramConfigs {
                             )
                         })
                     })
+                    $que5tGram = $($config.$block.Que5tGram | New-Que5tGramParameters)
+                    $que5tGram | New-Que5tGramFileSet
                 })
-                return $config
             }
         }
     }
