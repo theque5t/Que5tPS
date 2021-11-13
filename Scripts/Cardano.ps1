@@ -15,7 +15,7 @@ function ConvertTo-ADA{
     }
 
     if($WithSymbol){
-        $ada = "₳$ada"
+        $ada = "₳ $ada"
     }
     return $ada
 }
