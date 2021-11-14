@@ -18,29 +18,52 @@ function Get-NextQue5tGramName {
     return $name
 }
 
+function Get-Que5tGramBaseDir {
+    param(
+        [parameter(ValueFromPipeline)]
+        $Que5tGram
+    )
+    return @(
+        $Que5tGram.label.set
+        $Que5tGram.label.series
+        $Que5tGram.label.name
+    ) -join '-'
+}
+
+function New-Que5tGramConfig {
+    param(
+        [parameter(ValueFromPipeline)]
+        $Que5tGram
+    )
+    $baseDir = $Que5tGram | Get-Que5tGramBaseDir
+
+    if(Test-Path $baseDir){ throw "$baseDir already exists" }
+
+    New-Item $baseDir -ItemType 'Directory' | Out-Null
+
+    $Que5tGram | ConvertTo-Yaml | Out-File "$baseDir\config.yml"
+}
+
+function Import-Que5tGramConfig {
+    param(
+        $Path
+    )
+    return Get-Content "$Path/config.yml" | ConvertFrom-Yaml
+}
+
 function New-Que5tGramFileSet {
     param(
         [parameter(ValueFromPipeline)]
         $Que5tGram,
         $PumlIcons = $env:PLANTUML_ICONS
     )
-    $baseDir = @(
-        $Que5tGram.label.set
-        $Que5tGram.label.series
-        $Que5tGram.label.name
-    ) -join '-'
+    $baseDir = $Que5tGram | Get-Que5tGramBaseDir
 
-    if(Test-Path $baseDir) { throw "$baseDir already exists" }
-
-    ($baseDir, "$baseDir\frames").ForEach({
-        New-Item $_ -ItemType 'Directory' | Out-Null
-    })
+    New-Item "$baseDir\frames" -ItemType 'Directory' | Out-Null
 
     @("main","style","nodetypes","nodes","actions").ForEach({
         New-Item "$baseDir\$_.puml" -ItemType 'File' | Out-Null
     })    
-
-    $Que5tGram.Config | ConvertTo-Yaml | Out-File "$baseDir\config.yml"
 
     @('@startuml'
       "!include style.puml"
@@ -110,6 +133,16 @@ function New-Que5tGramFileSet {
     })
 }
 
+function Remove-Que5tGramFileSet {
+    param(
+        [parameter(ValueFromPipeline)]
+        $Que5tGram
+    )
+    $baseDir = $Que5tGram | Get-Que5tGramBaseDir
+
+    Remove-Item $baseDir/* -Exclude 'config.yml' -Recurse
+}
+
 function Set-Que5tGramNodes {
     param(
         $Nodes,
@@ -173,16 +206,12 @@ function New-Que5tGramFrames {
         [parameter(ValueFromPipeline)]
         $Que5tGram
     )
-    $baseDir = @(
-        $Que5tGram.label.set
-        $Que5tGram.label.series
-        $Que5tGram.label.name
-    ) -join '-'
+    $baseDir = $Que5tGram | Get-Que5tGramBaseDir
     $actions = $Que5tGram.actions
     $nodes = $Que5tGram.nodes
 
     $padding = "{0:d$($actions.Count.ToString().length)}"
-    $frameRendered = "$baseDir\rendering.png"
+    $frameRendered = "$baseDir\main.png"
     $frameFinal = "$baseDir\frames\$($padding).png"
 
     $setNodes = @{}
@@ -217,6 +246,8 @@ function New-Que5tGramAnimation {
         [parameter(ValueFromPipeline)]
         $Que5tGram
     )
+    $baseDir = $Que5tGram | Get-Que5tGramBaseDir
+
     $magickArgs = @(
         'convert',
         '-delay', $Que5tGram.animation.delay,
@@ -226,7 +257,7 @@ function New-Que5tGramAnimation {
         '-background', $Que5tGram.style.color.background,
         '-extent', '1024x1024',
         '-loop', 0,
-        "$baseDir\$($Que5tGram.Name).gif"
+        "$baseDir\main.gif"
     )
 
     Write-Verbose "magick args: $magickArgs"
@@ -405,7 +436,9 @@ function New-Que5tGramRendering {
         $Path = $(Get-Location)
     )
     try {
-        $que5tGram = Get-Content "$Path/config.yml" | ConvertFrom-Yaml
+        $que5tGram = Import-Que5tGramConfig $Path
+        $que5tGram | Remove-Que5tGramFileSet
+        $que5tGram | New-Que5tGramFileSet
         $que5tGram | New-Que5tGramFrames
         $que5tGram | New-Que5tGramAnimation
     }
@@ -438,32 +471,32 @@ function New-Que5tGramConfigs {
         switch ($Set) {
             'CardanoUtxo' {
                 # Create 1 gram per block
-                $config = @{}
+                $configs = @{}
                 $PSBoundParameters.Blocks.ForEach({
                     $block = $_
-                    $config.$block = @{}
-                    $config.$block.Block = $block
-                    $config.$block.BlocksTxs = Get-CardanoBlockTransactions -Block $block
-                    $config.$block.Txs = @{}
-                    $config.$block.Utxos = @{}
-                    $config.$block.BlocksTxs.ForEach({
+                    $configs.$block = @{}
+                    $configs.$block.Block = $block
+                    $configs.$block.BlocksTxs = Get-CardanoBlockTransactions -Block $block
+                    $configs.$block.Txs = @{}
+                    $configs.$block.Utxos = @{}
+                    $configs.$block.BlocksTxs.ForEach({
                         $tx = $_
-                        $config.$block.Txs.$tx = Get-CardanoTransaction -Hash $tx
-                        $config.$block.Utxos.$tx = Get-CardanoTransactionUtxos -Hash $tx
+                        $configs.$block.Txs.$tx = Get-CardanoTransaction -Hash $tx
+                        $configs.$block.Utxos.$tx = Get-CardanoTransactionUtxos -Hash $tx
                     })
-                    $config.$block.Que5tGram = [Que5tGram]::new(
+                    $configs.$block.Que5tGram = [Que5tGram]::new(
                         $Set,
                         $Series,
                         "Block-$block",
                         'network'
                     )
-                    $config.$block.Utxos.GetEnumerator().ForEach({
+                    $configs.$block.Utxos.GetEnumerator().ForEach({
                         $utxo = $_.value
-                        $tx = $config.$block.Txs[$utxo.hash]
+                        $tx = $configs.$block.Txs[$utxo.hash]
 
                         # Add tx hash to node list (should look different/black box maybe?)
                         # Cardano blue hex = 2a71d0
-                        $config.$block.Que5tGram.AddUniqueNode(
+                        $configs.$block.Que5tGram.AddUniqueNode(
                                 'container',
                                 $tx.hash,
                                 $('{0}\n-{1}' -f $(
@@ -483,7 +516,7 @@ function New-Que5tGramConfigs {
                             $ioAddressShort = $(
                                 $io.address -replace '(Ae2|DdzFF|addr1).*(......)$','$1...$2'
                             )
-                            $config.$block.Que5tGram.AddUniqueNode(
+                            $configs.$block.Que5tGram.AddUniqueNode(
                                 'circle',
                                 $io.address,
                                 "\n$ioAddressShort",
@@ -500,7 +533,7 @@ function New-Que5tGramConfigs {
                         # Add each input as an action from input address to the transaction hash
                         $utxo.inputs.ForEach({
                             $input = $_
-                            $config.$block.Que5tGram.AddAction(
+                            $configs.$block.Que5tGram.AddAction(
                                 $input.address,
                                 $utxo.hash,
                                 $(ConvertTo-ADA $input.amount),
@@ -511,7 +544,7 @@ function New-Que5tGramConfigs {
                         # Add each output as an action from transaction hash to the output address
                         $utxo.outputs.ForEach({
                             $output = $_
-                            $config.$block.Que5tGram.AddAction(
+                            $configs.$block.Que5tGram.AddAction(
                                 $utxo.hash,
                                 $output.address,
                                 $(ConvertTo-ADA $output.amount),
@@ -520,12 +553,14 @@ function New-Que5tGramConfigs {
                         })
                     })
 
-                    $config.$block.Que5tGram | New-Que5tGramFileSet
+                    $configs.$block.Que5tGram | New-Que5tGramConfig
                 })
             }
         }
     }
 }
+
+
 
 function New-Que5tGramRenderings {
     Write-Output TODO
