@@ -18,71 +18,57 @@ function Get-NextQue5tGramName {
     return $name
 }
 
-function New-Que5tGramParameters {
-    param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
-        $Config,
-        $PumlIcons = $env:PLANTUML_ICONS
-    )
-    $que5tGram.Config = $Config
-    $que5tGram.Dir = @{}
-    $que5tGram.File = @{}
-    $que5tGram.Dir.Base = $que5tGram.Config.label.name
-    $que5tGram.Dir.Frames = "$($que5tGram.Dir.Base)\frames"
-    $que5tGram.File.Main = "$($que5tGram.Name).puml"
-    $que5tGram.File.Style = "$($que5tGram.Name).style.puml"
-    $que5tGram.File.NodeTypes = "$($que5tGram.Name).nodetypes.puml"
-    $que5tGram.File.Nodes = "$($que5tGram.Name).nodes.puml"
-    $que5tGram.File.Actions = "$($que5tGram.Name).actions.puml"
-
-    return $que5tGram
-}
-
 function New-Que5tGramFileSet {
     param(
         [parameter(ValueFromPipeline)]
-        $Que5tGram
+        $Que5tGram,
+        $PumlIcons = $env:PLANTUML_ICONS
     )
-    $baseDir = $Que5tGram.Dir.Base
+    $baseDir = @(
+        $Que5tGram.label.set
+        $Que5tGram.label.series
+        $Que5tGram.label.name
+    ) -join '-'
+
     if(Test-Path $baseDir) { throw "$baseDir already exists" }
 
-    $Que5tGram.Config | ConvertTo-Yaml | Out-File "$baseDir\config.yml"
-    
-    ($Que5tGram.Dir.Base, $Que5tGram.Dir.Frames).ForEach({
+    ($baseDir, "$baseDir\frames").ForEach({
         New-Item $_ -ItemType 'Directory' | Out-Null
     })
 
-    $Que5tGram.File.Values.ForEach({
-        New-Item "$baseDir\$_" -ItemType 'File' | Out-Null
+    @("main","style","nodetypes","nodes","actions").ForEach({
+        New-Item "$baseDir\$_.puml" -ItemType 'File' | Out-Null
     })    
 
+    $Que5tGram.Config | ConvertTo-Yaml | Out-File "$baseDir\config.yml"
+
     @('@startuml'
-      "!include $($Que5tGram.File.Style)"
-      "!include $($Que5tGram.File.NodeTypes)"
-      "!include $($Que5tGram.File.Nodes)"
-      "!include $($Que5tGram.File.Actions)"
+      "!include style.puml"
+      "!include nodetypes.puml"
+      "!include nodes.puml"
+      "!include actions.puml"
       '@enduml'
     ).ForEach({ 
-        Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.Main)" 
+        Add-Content "$_" -Path "$baseDir\main.puml" 
     })
 
-    (@("BackgroundColor $($Que5tgram.Config.style.color.background)"
-       "defaultFontColor $($Que5tGram.Config.style.color.text)"
-       "Shadowing $($Que5tGram.Config.style.shadowing)"
-       "defaultTextAlignment $($Que5tGram.Config.style.text.alignment)"
+    (@("BackgroundColor $($Que5tGram.style.color.background)"
+       "defaultFontColor $($Que5tGram.style.color.text)"
+       "Shadowing $($Que5tGram.style.shadowing)"
+       "defaultTextAlignment $($Que5tGram.style.text.alignment)"
       ) + 
-      @(if($Que5tgram.Config.visual_type -eq 'sequence'){ 
-        "sequenceLifeLineBorderColor $($Que5tGram.Config.style.color.grid)"
+      @(if($Que5tGram.visual_type -eq 'sequence'){ 
+        "sequenceLifeLineBorderColor $($Que5tGram.style.color.grid)"
       }) +
-      $Que5tGram.Config.nodes.GetEnumerator().ForEach({
+      $Que5tGram.nodes.GetEnumerator().ForEach({
        "rectangleBorderColor<<$($_.alias)>> $($_.style.color.border)"
        "participantBorderColor<<$($_.alias)>> $($_.style.color.border)"
       })
     ).ForEach({ 
-        Add-Content "skinParam $_" -Path "$baseDir\$($Que5tGram.File.Style)" 
+        Add-Content "skinParam $_" -Path "$baseDir\style.puml" 
     })
 
-    @("!define icons_home $($Que5tGram.PumlIcons)"
+    @("!define icons_home $PumlIcons"
       '!define lib_font_sprites icons_home\plantuml-icon-font-sprites'
       '!include lib_font_sprites/common.puml'
       '!include lib_font_sprites/font-awesome/circle.puml'
@@ -120,7 +106,7 @@ function New-Que5tGramFileSet {
           'builtin(rectangle,_label,_alias,_stereo)'
       '!enddefinelong'
     ).ForEach({ 
-        Add-Content "$_" -Path "$baseDir\$($Que5tGram.File.NodeTypes)" 
+        Add-Content "$_" -Path "$baseDir\nodetypes.puml" 
     })
 }
 
@@ -187,12 +173,17 @@ function New-Que5tGramFrames {
         [parameter(ValueFromPipeline)]
         $Que5tGram
     )
-    $actions = $Que5tGram.Config.actions
-    $nodes = $Que5tGram.Config.nodes
+    $baseDir = @(
+        $Que5tGram.label.set
+        $Que5tGram.label.series
+        $Que5tGram.label.name
+    ) -join '-'
+    $actions = $Que5tGram.actions
+    $nodes = $Que5tGram.nodes
 
     $padding = "{0:d$($actions.Count.ToString().length)}"
-    $frameRendered = "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).png"
-    $frameFinal = "$($Que5tGram.Dir.Frames)\$($padding).png"
+    $frameRendered = "$baseDir\rendering.png"
+    $frameFinal = "$baseDir\frames\$($padding).png"
 
     $setNodes = @{}
     $actionId = 1
@@ -206,16 +197,16 @@ function New-Que5tGramFrames {
          })
         Set-Que5tGramNodes `
             -Nodes $setNodes `
-            -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Nodes)" `
-            -VisualType $Que5tGram.Config.visual_type
+            -Path "$baseDir\nodes.puml" `
+            -VisualType $Que5tGram.visual_type
 
         Add-Que5tGramAction `
             -Action $action `
-            -Path "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Actions)"
+            -Path "$baseDir\actions.puml"
         
         Invoke-PlantUML `
             -charset 'UTF-8' `
-            "$($Que5tGram.Dir.Base)\$($Que5tGram.File.Main)"
+            "$baseDir\main.puml"
         Copy-Item -Path $frameRendered -Dest $($frameFinal -f $actionId)
         $actionId++ 
     })
@@ -228,14 +219,14 @@ function New-Que5tGramAnimation {
     )
     $magickArgs = @(
         'convert',
-        '-delay', $Que5tGram.Config.animation.delay,
-        "$($Que5tGram.Dir.Frames)\*.png",
+        '-delay', $Que5tGram.animation.delay,
+        "$baseDir\frames\*.png",
         '-resize', '1024x1024',
         '-gravity', 'Center',
-        '-background', $Que5tGram.Config.style.color.background,
+        '-background', $Que5tGram.style.color.background,
         '-extent', '1024x1024',
         '-loop', 0,
-        "$($Que5tGram.Dir.Base)\$($Que5tGram.Name).gif"
+        "$baseDir\$($Que5tGram.Name).gif"
     )
 
     Write-Verbose "magick args: $magickArgs"
@@ -411,14 +402,10 @@ class Que5tGram {
 function New-Que5tGramRendering {
     [cmdletbinding()]
     param(
-        $SeriesName = "Que5tGram",
-        [Parameter(Mandatory=$true)]
-        $Config,
-        $PumlIcons = $env:PLANTUML_ICONS
+        $Path = $(Get-Location)
     )
     try {
-        $params = New-ParamsObject $MyInvocation $PSBoundParameters
-        $que5tGram = New-Que5tGramParameters $params
+        $que5tGram = Get-Content "$Path/config.yml" | ConvertFrom-Yaml
         $que5tGram | New-Que5tGramFrames
         $que5tGram | New-Que5tGramAnimation
     }
@@ -467,7 +454,7 @@ function New-Que5tGramConfigs {
                     $config.$block.Que5tGram = [Que5tGram]::new(
                         $Set,
                         $Series,
-                        "Block $block",
+                        "Block-$block",
                         'network'
                     )
                     $config.$block.Utxos.GetEnumerator().ForEach({
@@ -532,8 +519,8 @@ function New-Que5tGramConfigs {
                             )
                         })
                     })
-                    $que5tGram = $($config.$block.Que5tGram | New-Que5tGramParameters)
-                    $que5tGram | New-Que5tGramFileSet
+
+                    $config.$block.Que5tGram | New-Que5tGramFileSet
                 })
             }
         }
