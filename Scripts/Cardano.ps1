@@ -100,16 +100,16 @@ Set-Alias -Name cardano-cli -Value Invoke-CardanoCLI
 function Set-CardanoNodeSocketPath {
     if(-not $env:CARDANO_NODE_SOCKET_PATH){
     
-    $process = $(
-        Get-Process -Name cardano-node
-    ).Where({ 
-        $_.Path -eq "$env:DEADALUS_MAINNET_HOME\cardano-node.exe" 
-    })
-
-    $pattern = '--socket-path\s(?<socket_path>.*?)\s-'
-    $process.CommandLine -match $pattern | Out-Null
-
-    $env:CARDANO_NODE_SOCKET_PATH = $Matches.socket_path
+        $process = $(
+            Get-Process -Name cardano-node
+        ).Where({ 
+            $_.Path -eq "$env:DEADALUS_MAINNET_HOME\cardano-node.exe" 
+        })
+    
+        $pattern = '--socket-path\s(?<socket_path>.*?)\s-'
+        $process.CommandLine -match $pattern | Out-Null
+    
+        $env:CARDANO_NODE_SOCKET_PATH = $Matches.socket_path
     }
 }
 
@@ -126,4 +126,14 @@ function Get-CardanoNodeTip {
 function Test-CardanoNodeInSync {
     return $(Get-CardanoNodeTip).syncProgress -eq '100.00'
 }
+
+function Sync-CardanoNode {
+    [CmdletBinding()]
+    param()
+
+    do{
+        Write-Verbose "Sync percentage: $(Get-CardanoNodeTip).syncProgress"
+        Start-Sleep -Seconds 1
+    }
+    while(-not $(Test-CardanoNodeInSync))
 }
