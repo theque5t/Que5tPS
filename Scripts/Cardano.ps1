@@ -98,6 +98,8 @@ function Invoke-CardanoCLI {
 Set-Alias -Name cardano-cli -Value Invoke-CardanoCLI
 
 function Set-CardanoNodeSocketPath {
+    if(-not $env:CARDANO_NODE_SOCKET_PATH){
+    
     $process = $(
         Get-Process -Name cardano-node
     ).Where({ 
@@ -108,4 +110,6 @@ function Set-CardanoNodeSocketPath {
     $process.CommandLine -match $pattern | Out-Null
 
     $env:CARDANO_NODE_SOCKET_PATH = $Matches.socket_path
+    }
+}
 }
