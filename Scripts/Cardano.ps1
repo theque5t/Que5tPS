@@ -96,3 +96,16 @@ function Invoke-CardanoCLI {
 }
 
 Set-Alias -Name cardano-cli -Value Invoke-CardanoCLI
+
+function Set-CardanoNodeSocketPath {
+    $process = $(
+        Get-Process -Name cardano-node
+    ).Where({ 
+        $_.Path -eq "$env:DEADALUS_MAINNET_HOME\cardano-node.exe" 
+    })
+
+    $pattern = '--socket-path\s(?<socket_path>.*?)\s-'
+    $process.CommandLine -match $pattern | Out-Null
+
+    $env:CARDANO_NODE_SOCKET_PATH = $Matches.socket_path
+}
