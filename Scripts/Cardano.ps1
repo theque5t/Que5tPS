@@ -132,7 +132,7 @@ function Sync-CardanoNode {
     param()
 
     do{
-        Write-Verbose "Sync percentage: $($(Get-CardanoNodeTip).syncProgress)"
+        Write-Verbose "$(Get-Date) Sync percentage: $($(Get-CardanoNodeTip).syncProgress)"
         Start-Sleep -Seconds 1
     }
     while(-not $(Test-CardanoNodeInSync))
