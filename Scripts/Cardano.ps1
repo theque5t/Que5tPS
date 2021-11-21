@@ -112,4 +112,14 @@ function Set-CardanoNodeSocketPath {
     $env:CARDANO_NODE_SOCKET_PATH = $Matches.socket_path
     }
 }
+
+function Get-CardanoNodeTip {
+    param(
+        [ValidateSet('mainnet','testnet')]
+        $Network = 'mainnet'
+    )
+    Set-CardanoNodeSocketPath
+    $query = Invoke-CardanoCLI query tip --$Network
+    return $($query | ConvertFrom-Json)
+}
 }
