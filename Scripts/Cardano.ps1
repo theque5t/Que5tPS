@@ -90,3 +90,9 @@ function Get-CardanoTransactionUtxos {
     )
     return Get-BlockfrostApiResponse -ApiPath "txs/$Hash/utxos"
 }
+
+function Invoke-CardanoCLI {
+    &"$env:DEADALUS_MAINNET_HOME\cardano-cli.exe" @args
+}
+
+Set-Alias -Name cardano-cli -Value Invoke-CardanoCLI
