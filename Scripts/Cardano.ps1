@@ -122,4 +122,8 @@ function Get-CardanoNodeTip {
     $query = Invoke-CardanoCLI query tip --$Network
     return $($query | ConvertFrom-Json)
 }
+
+function Test-CardanoNodeInSync {
+    return $(Get-CardanoNodeTip).syncProgress -eq '100.00'
+}
 }
