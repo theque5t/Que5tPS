@@ -91,6 +91,12 @@ function Get-CardanoTransactionUtxos {
     return Get-BlockfrostApiResponse -ApiPath "txs/$Hash/utxos"
 }
 
+# The following commands assume the Deadulus Wallet (comes with full node and cli) is setup.
+# If necessary, the commands could be modified to use different node setups, but for now 
+# Deadalus is the only option.
+# https://docs.cardano.org/cardano-components/daedalus-wallet
+# https://daedaluswallet.io/
+
 function Invoke-CardanoCLI {
     $output = &"$env:DEADALUS_MAINNET_HOME\cardano-cli.exe" @args 2>&1
     if($LastExitCode){
@@ -141,7 +147,7 @@ function Set-CardanoNodeProcessStopped{
 
     if($(Test-CardanoNodeIsRunning)){
         Write-VerboseLog 'Stopping Cardano node process...'
-        Get-CardanoNodeProcess | Stop-Process
+        Get-Process -Name 'Daedalus Mainnet' | Stop-Process
         Write-VerboseLog 'Cardano node process stopped'
     }
 }
