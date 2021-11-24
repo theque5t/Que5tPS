@@ -63,3 +63,11 @@ function DynamicParameterDictionary {
 
     return $parameterDictionary
 }
+
+function Write-VerboseLog {
+    [CmdletBinding()]
+    param(
+        $Message
+    )  
+    Write-Verbose "$(Get-Date -Format "o") | $Message"
+}
