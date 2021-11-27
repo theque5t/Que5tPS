@@ -98,7 +98,7 @@ function Get-CardanoTransactionUtxos {
 # https://daedaluswallet.io/
 
 function Invoke-CardanoCLI {
-    $output = &"$env:DEADALUS_MAINNET_HOME\cardano-cli.exe" @args 2>&1
+    $output = &"$env:DEADALUS_HOME\cardano-cli.exe" @args 2>&1
     if($LastExitCode){
         $commandException = $output
         throw "$commandException"
@@ -109,8 +109,17 @@ function Invoke-CardanoCLI {
 Set-Alias -Name cardano-cli -Value Invoke-CardanoCLI
 
 function Get-CardanoNodeProcess {
-    $process = $(Get-Process).Where({ 
-        $_.Name -eq 'cardano-node' 
+    $process = $(Get-Process -Verbose:$false).Where({ 
+        $_.Name -eq 'cardano-node' -and
+        $_.Path -eq "$env:DEADALUS_HOME\cardano-node.exe"
+    })
+
+    return $process
+}
+
+function Get-DeadalusProcess {
+    $process = $(Get-Process -Verbose:$false).Where({
+        $_.Path -like "$env:DEADALUS_HOME\Daedalus*"
         })
     
     return $process
@@ -129,8 +138,8 @@ function Set-CardanoNodeProcessRunning{
     if(-not $(Test-CardanoNodeIsRunning)){
         Write-VerboseLog 'Starting Cardano node process...'
         Start-Process `
-            -FilePath "$env:DEADALUS_MAINNET_HOME\cardano-launcher.exe" `
-            -WorkingDirectory $env:DEADALUS_MAINNET_HOME
+            -FilePath "$env:DEADALUS_HOME\cardano-launcher.exe" `
+            -WorkingDirectory $env:DEADALUS_HOME
         
         while(-not $(Test-CardanoNodeIsRunning)){
             Write-VerboseLog 'Waiting for Cardano node to start...'
@@ -147,18 +156,22 @@ function Set-CardanoNodeProcessStopped{
 
     if($(Test-CardanoNodeIsRunning)){
         Write-VerboseLog 'Stopping Cardano node process...'
-        Get-Process -Name 'Daedalus Mainnet' | Stop-Process
+        Get-DeadalusProcess | Stop-Process
         Write-VerboseLog 'Cardano node process stopped'
     }
 }
 
 function Get-CardanoNodeTip {
-    param(
-        [ValidateSet('mainnet','testnet')]
-        $Network = 'mainnet'
-    )
     try{
-    $query = Invoke-CardanoCLI query tip --$Network
+        $Network = $env:CARDANO_NODE_NETWORK
+        $NetworkMagicId = $env:CARDANO_NODE_NETWORK_MAGIC_ID
+        switch ($Network) {
+            'testnet' {
+                $Network = "$Network-magic"
+            }
+        }
+
+        $query = Invoke-CardanoCLI query tip --$Network $NetworkMagicId
     return $($query | ConvertFrom-Json)
 }
     catch{}
@@ -179,8 +192,23 @@ function Set-CardanoNodeSocketPath {
 
 function Open-CardanoNodeSession {
     [CmdletBinding()]
-    param()
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('mainnet','testnet')]
+        $Network
+    )
     Write-VerboseLog 'Opening Cardano node session...'
+
+    $env:DEADALUS_HOME = "C:\Program Files\Daedalus $Network"
+    $env:CARDANO_NODE_NETWORK = $Network
+    switch ($Network) {
+        'mainnet' {
+            $env:CARDANO_NODE_NETWORK_MAGIC_ID = '' 
+        }
+        'testnet' {
+            $env:CARDANO_NODE_NETWORK_MAGIC_ID = 1097911063 
+        }
+    }
 
     Set-CardanoNodeProcessRunning
     Set-CardanoNodeSocketPath
@@ -191,6 +219,7 @@ function Open-CardanoNodeSession {
     }
     while(-not $(Get-CardanoNodeTip))
 
+    $env:CARDANO_NODE_SESSION = $true
     Write-VerboseLog 'Cardano node session opened'
 }
 
@@ -200,7 +229,13 @@ function Close-CardanoNodeSession {
 
     Write-VerboseLog 'Closing Cardano node session...'
     Set-CardanoNodeProcessStopped
-    Remove-Item Env:\CARDANO_NODE_SOCKET_PATH
+    @('DEADALUS_HOME',
+      'CARDANO_NODE_NETWORK',
+      'CARDANO_NODE_NETWORK_MAGIC_ID',
+      'CARDANO_NODE_SESSION'
+      'CARDANO_NODE_SOCKET_PATH'
+    ).ForEach({ Remove-Item "env:\$_" })
+    
     Write-VerboseLog 'Cardano node session closed'
 }
 
@@ -212,7 +247,9 @@ function Sync-CardanoNode {
     [CmdletBinding()]
     param()
 
-    Open-CardanoNodeSession
+    if(-not $env:CARDANO_NODE_SESSION){
+        throw 'No cardano node session. Use: Open-CardanoNodeSession'
+    }
     
     do{
         Write-VerboseLog "Sync percentage: $($(Get-CardanoNodeTip).syncProgress)"
