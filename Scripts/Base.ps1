@@ -88,3 +88,8 @@ function Write-FalseAssertionError {
     Write-TerminatingError "False Assertion: $(Get-FunctionName -StackNumber 2)"
 }
 
+function Assert-CommandSuccessful{
+    if($LastExitCode){
+        Write-FalseAssertionError
+    }
+}
