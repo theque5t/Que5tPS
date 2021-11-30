@@ -98,12 +98,15 @@ function Get-CardanoTransactionUtxos {
 # https://daedaluswallet.io/
 
 function Invoke-CardanoCLI {
+    try{
     $output = &"$env:DEADALUS_HOME\cardano-cli.exe" @args 2>&1
-    if($LastExitCode){
-        $commandException = $output
-        throw "$commandException"
-    }
+        Assert-CommandSuccessful
     return $output
+}
+    catch{
+        $_
+        Write-Output $output
+    }
 }
 
 Set-Alias -Name cardano-cli -Value Invoke-CardanoCLI
@@ -134,7 +137,6 @@ function Test-CardanoNodeIsRunning {
 function Set-CardanoNodeProcessRunning{
     [CmdletBinding()]
     param()
-    
     if(-not $(Test-CardanoNodeIsRunning)){
         Write-VerboseLog 'Starting Cardano node process...'
         Start-Process `
@@ -153,7 +155,6 @@ function Set-CardanoNodeProcessRunning{
 function Set-CardanoNodeProcessStopped{
     [CmdletBinding()]
     param()
-
     if($(Test-CardanoNodeIsRunning)){
         Write-VerboseLog 'Stopping Cardano node process...'
         Get-DeadalusProcess | Stop-Process
@@ -180,13 +181,28 @@ function Get-CardanoNodeTip {
 function Set-CardanoNodeSocketPath {
     [CmdletBinding()]
     param()
-    
-    if(-not $env:CARDANO_NODE_SOCKET_PATH -and $(Test-CardanoNodeIsRunning)){
+    if(-not $env:CARDANO_NODE_SOCKET_PATH){
         $process = Get-CardanoNodeProcess
         $pattern = '--socket-path\s(?<socket_path>.*?)\s-'
         $process.CommandLine -match $pattern | Out-Null
         $env:CARDANO_NODE_SOCKET_PATH = $Matches.socket_path
         Write-VerboseLog "Set Cardano node socket path to $env:CARDANO_NODE_SOCKET_PATH"
+    }
+}
+
+function Test-CardanoNodeSessionIsOpen {
+    return Test-Path env:CARDANO_NODE_SESSION
+}
+
+function Assert-CardanoNodeSessionIsOpen {
+    if(-not $(Test-CardanoNodeSessionIsOpen)){
+        Write-FalseAssertionError
+    }
+}
+
+function Assert-CardanoNodeSessionIsClosed {
+    if($(Test-CardanoNodeSessionIsOpen)){
+        Write-FalseAssertionError
     }
 }
 
@@ -197,6 +213,8 @@ function Open-CardanoNodeSession {
         [ValidateSet('mainnet','testnet')]
         $Network
     )
+    Assert-CardanoNodeSessionIsClosed
+
     Write-VerboseLog 'Opening Cardano node session...'
 
     $env:DEADALUS_HOME = "C:\Program Files\Daedalus $Network"
@@ -226,8 +244,10 @@ function Open-CardanoNodeSession {
 function Close-CardanoNodeSession {
     [CmdletBinding()]
     param()
+    Assert-CardanoNodeSessionIsOpen
 
     Write-VerboseLog 'Closing Cardano node session...'
+    
     Set-CardanoNodeProcessStopped
     @('DEADALUS_HOME',
       'CARDANO_NODE_NETWORK',
@@ -246,10 +266,7 @@ function Test-CardanoNodeInSync {
 function Sync-CardanoNode {
     [CmdletBinding()]
     param()
-
-    if(-not $env:CARDANO_NODE_SESSION){
-        throw 'No cardano node session. Use: Open-CardanoNodeSession'
-    }
+    Assert-CardanoNodeSessionIsOpen
     
     do{
         Write-VerboseLog "Sync percentage: $($(Get-CardanoNodeTip).syncProgress)"
