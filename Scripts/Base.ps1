@@ -83,3 +83,8 @@ function Write-TerminatingError {
 function Get-FunctionName ([int]$StackNumber = 1) {
     return [string]$(Get-PSCallStack)[$StackNumber].FunctionName
 }
+
+function Write-FalseAssertionError {
+    Write-TerminatingError "False Assertion: $(Get-FunctionName -StackNumber 2)"
+}
+
