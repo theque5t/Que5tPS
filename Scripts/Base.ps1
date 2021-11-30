@@ -71,3 +71,15 @@ function Write-VerboseLog {
     )  
     Write-Verbose "$(Get-Date -Format "o") | $Message"
 }
+
+
+function Write-TerminatingError {
+    param(
+        $Exception
+    )
+    throw "$Exception"
+}
+
+function Get-FunctionName ([int]$StackNumber = 1) {
+    return [string]$(Get-PSCallStack)[$StackNumber].FunctionName
+}
