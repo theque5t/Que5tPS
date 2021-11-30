@@ -274,3 +274,245 @@ function Sync-CardanoNode {
     }
     while(-not $(Test-CardanoNodeInSync))
 }
+
+function Assert-CardanoNodeInSync {
+    Assert-CardanoNodeSessionIsOpen
+    if(-not $(Test-CardanoNodeInSync)){
+        Write-FalseAssertionError
+    }
+}
+
+function Test-CardanoHomeExists {
+    return Test-Path env:CARDANO_HOME
+}
+
+function Assert-CardanoHomeExists {
+    if(-not $(Test-CardanoHomeExists)){
+        Write-FalseAssertionError
+    }
+}
+
+function Test-CardanoWalletExists {
+    param(
+        [Parameter(Mandatory=$true)]
+        $Name
+    )
+    return $(Test-CardanoHomeExists) -and $(Test-Path "$env:CARDANO_HOME\$Name")
+}
+
+function Assert-CardanoWalletExists {
+    param(
+        [Parameter(Mandatory=$true)]
+        $Name
+    )
+    if(-not $(Test-CardanoWalletExists $Name)){
+        Write-FalseAssertionError
+    }
+}
+
+function Assert-CardanoWalletDoesNotExist {
+    param(
+        [Parameter(Mandatory=$true)]
+        $Name
+    )
+    if($(Test-CardanoWalletExists $Name)){
+        Write-FalseAssertionError
+    }
+}
+
+function Add-WalletConfigKey {
+    param(
+        $Wallet,
+        $Key,
+        $Value
+    )
+    $walletPath = "$env:CARDANO_HOME\$Wallet"
+    $walletConfig = "$walletPath\.config"
+    Write-VerboseLog "Adding config key $Key value $Value to $wallet wallet..."
+    New-Item "$walletConfig\$Key" -ItemType File | Out-Null
+    Add-Content "$walletConfig\$Key" -Value "$Value" | Out-Null
+}
+
+function Get-WalletConfig {
+    param(
+        $Wallet
+    )
+    $walletConfigHashtable = @{}
+    $walletPath = "$env:CARDANO_HOME\$Wallet"
+    $walletConfig = "$walletPath\.config"
+    $(Get-ChildItem $walletConfig).ForEach({
+        $key = $_
+        $value = Get-Content $key
+        $walletConfigHashtable[$key.Name] = $value
+    })
+    return $walletConfigHashtable
+}
+
+function Add-CardanoWallet {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        $Name,
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('plaintext','secret')]
+        $SigningKeyType
+    )
+    DynamicParam {        
+        switch ($SigningKeyType) {
+            'secret' { 
+                DynamicParameterDictionary (
+                    (
+                        DynamicParameter `
+                        -Name RegisterVault `
+                        -Attributes @{ 
+                            Mandatory = $true
+                            ParameterSetName = 'RegisterVault' } `
+                        -Type switch
+                    ),
+                    (
+                        DynamicParameter `
+                        -Name UseVault `
+                        -Attributes @{ 
+                            Mandatory = $true
+                            ParameterSetName = 'UseVault' } `
+                        -Type string
+                    )
+                )
+            }
+        }
+    }
+    process {
+        Assert-CardanoNodeInSync
+        Assert-CardanoHomeExists
+        Assert-CardanoWalletDoesNotExist $Name
+        
+        Write-VerboseLog "Adding wallet $Name..."
+
+        $walletPath = "$env:CARDANO_HOME\$Name"
+        $walletConfig = "$walletPath\.config"
+
+        Write-VerboseLog "Creating wallet file set..."
+        New-Item $walletConfig -ItemType Directory | Out-Null
+
+        switch ($SigningKeyType) {
+            'secret' {
+                Add-WalletConfigKey -Wallet $Name -Key SigningKeyType -Value $_
+                $walletVault = $Name
+                switch ($PsCmdlet.ParameterSetName) {
+                    'RegisterVault' { 
+                        Write-VerboseLog "Registering wallet vault $walletVault..."
+                        Add-WalletConfigKey `
+                            -Wallet $Name `
+                            -Key RegisteredVault `
+                            -Value $true
+                        Register-SecretVault `
+                            -Name $walletVault `
+                            -ModuleName Microsoft.PowerShell.SecretStore `
+                            -DefaultVault:$false
+                    }
+                    'UseVault' {
+                        Add-WalletConfigKey `
+                            -Wallet $Name `
+                            -Key RegisteredVault `
+                            -Value $false
+                        $walletVault = $PSBoundParameters.UseVault
+                    }
+                }
+
+                Write-VerboseLog "Generating wallet keys..."
+                # $keys = Invoke-CardanoCLI key-gen ...
+                $keys = @{ signing_key = 'mockSigningKey'}
+                
+                $secretName = New-Guid
+                Set-Secret `
+                    -Name $secretName `
+                    -Secret $keys.signing_key `
+                    -Vault $walletVault `
+                    -Metadata @{ 
+                        createdBy = 'PSCardano'
+                        wallet = $Name 
+                        keyType = 'signing'
+                    } `
+                    -NoClobber
+                Write-VerboseLog `
+                    "Saved signing key as secret $secretName to wallet vault $walletVault..."
+            }
+            'plaintext' {
+                $signingKeyFile = "$walletPath\$Name.skey"
+                Add-WalletConfigKey -Wallet $Name -Key SigningKeyType -Value $_
+                Write-VerboseLog "Generating wallet keys..."
+                # Invoke-CardanoCLI key-gen ... --signing-key-file $signingKeyFile
+                Write-VerboseLog "Saved signing key as plain text in file $signingKeyFile..."
+            }
+        }
+
+        Write-VerboseLog "Wallet $Name added"
+    }
+}
+
+function Remove-CardanoWallet {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param(
+        $Name
+    )
+    if($PSCmdlet.ShouldProcess($Name)){
+        Assert-CardanoWalletExists $Name
+        
+        Write-VerboseLog "Removing wallet $Name..."
+        
+        $walletConfig = Get-WalletConfig $Name
+
+        switch ($walletConfig.SigningKeyType) {
+            'secret' { 
+                $signingKeySecret = $(Get-SecretInfo).Where({
+                    $_.Metadata.wallet -eq $Name -and
+                    $_.Metadata.keyType -eq 'signing'
+                }) 
+                $signingKeySecret | Remove-Secret
+                
+                Write-VerboseLog `
+                    "Removed signing key secret $($signingKeySecret.Name)`
+                     from wallet vault $($signingKeySecret.VaultName)..."
+                
+                if($walletConfig.RegisteredVault -eq $true){
+                    $walletVault = $Name
+                    Write-VerboseLog "Unregistering wallet vault $walletVault..."
+                    Unregister-SecretVault -Name $walletVault
+                }
+            }
+        }
+
+        Write-VerboseLog "Removing wallet file set..."
+        Remove-Item "$env:CARDANO_HOME\$Name" -Recurse
+
+        Write-VerboseLog "Wallet $Name removed"
+    }
+}
+
+function Get-CardanoWallet {
+    param(
+        [Parameter(Mandatory, ParameterSetName = 'All')]
+        [switch]$All,
+
+        [Parameter(Mandatory,ParameterSetName = 'ByName')]
+        $Name
+    )
+    $wallets = Get-ChildItem "$env:CARDANO_HOME"
+    switch ($PsCmdlet.ParameterSetName) {
+        'ByName' { $wallets = $wallets.Where({ $_.Name -eq $Name }) }
+    }
+    return $wallets
+}
+
+function Open-CardanoWallet {}
+
+function Get-CardanoWalletTransactions {}
+
+function Get-CardanoWalletAddress {}
+
+function New-CardanoTransaction {}
+
+function Set-CardanoTransaction {}
+
+function Submit-CardanoTransaction {}
+
