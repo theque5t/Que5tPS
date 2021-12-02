@@ -301,8 +301,13 @@ function Add-CardanoWalletFileSet {
     $walletPath = "$env:CARDANO_HOME\$Name"
     $walletConfig = "$walletPath\.config"
     $walletKeys = "$walletPath\keys"
+    $walletAddresses = "$walletPath\addresses"
     Write-VerboseLog "Creating wallet file set..."
-    @($walletPath, $walletConfig, $walletKeys).ForEach({
+    @($walletPath,
+      $walletConfig,
+      $walletKeys,
+      $walletAddresses
+    ).ForEach({
         New-Item $_ -ItemType Directory | Out-Null
     })
     Assert-CardanoWalletExists $Name
@@ -386,7 +391,7 @@ function Assert-CardanoWalletDoesNotExist {
 }
 
 
-function Add-CardanoWalletConfigKey {
+function Set-CardanoWalletConfigKey {
     param(
         $Name,
         $Key,
@@ -395,9 +400,8 @@ function Add-CardanoWalletConfigKey {
     $walletPath = $(Get-CardanoWallet $Name).FullName
     $walletConfig = "$walletPath\.config"
     Write-VerboseLog `
-        "Adding config key $Key value $Value to $Name wallet..."
-    New-Item "$walletConfig\$Key" -ItemType File | Out-Null
-    Add-Content "$walletConfig\$Key" -Value "$Value" | Out-Null
+        "Setting config key $Key value $Value to $Name wallet..."
+    Set-Content "$walletConfig\$Key" -Value "$Value" | Out-Null
 }
 
 function Get-CardanoWalletConfig {
@@ -446,6 +450,7 @@ function New-CardanoWalletKeys {
     param(
         $Name
     )
+    Assert-CardanoWalletExists $Name
     Write-VerboseLog "Generating wallet keys..."
     $walletPath = $(Get-CardanoWallet $Name).FullName
     $walletKeys = "$walletPath\keys"
@@ -456,14 +461,45 @@ function New-CardanoWalletKeys {
         --signing-key-file $signingKey
 }
 
+function Get-CardanoWalletAddressFile {
+    param(
+        $Name
+    )
+    Assert-CardanoWalletExists $Name
+    $walletPath = $(Get-CardanoWallet $Name).FullName
+    $walletAddresses = Get-ChildItem $walletPath\addresses
+    return $walletAddresses
+}
+
 function New-CardanoWalletAddress {
     param(
         $Name
     )
+    Assert-CardanoWalletExists $Name
     Write-VerboseLog "Generating wallet address..."
+
+    $Network = $env:CARDANO_NODE_NETWORK
+    $NetworkMagicId = $env:CARDANO_NODE_NETWORK_MAGIC_ID
+    switch ($Network) {
+        'testnet' {
+            $Network = "$Network-magic"
+        }
+    }
+
     $walletPath = $(Get-CardanoWallet $Name).FullName
-    $walletAddressPath = "$walletPath\address"
-    $walletAddress = "$walletAddressPath\$Name.addr"
+    $walletAddresses = "$walletPath\addresses"
+    $walletConfig = Get-CardanoWalletConfig $Name
+    $walletAddress = "$walletAddresses\$Name-$($walletConfig.nextAddressIndex).addr"
+    $walletVerificationKey = Get-CardanoWalletKeyFile $Name -Type verification
+    Invoke-CardanoCLI address build `
+        --payment-verification-key-file $walletVerificationKey `
+        --out-file $walletAddress `
+        --$Network $NetworkMagicId
+
+    Set-CardanoWalletConfigKey `
+        -Name $Name `
+        -Key nextAddressIndex `
+        -Value $($walletConfig.nextAddressIndex)+1
 }
 
 function Add-CardanoWallet {
@@ -510,7 +546,7 @@ function Add-CardanoWallet {
 
         switch ($SigningKeyType) {
             'secret' {
-                Add-CardanoWalletConfigKey `
+                Set-CardanoWalletConfigKey `
                     -Name $Name `
                     -Key SigningKeyType `
                     -Value $_
@@ -519,7 +555,7 @@ function Add-CardanoWallet {
                     'RegisterVault' { 
                         Write-VerboseLog `
                             "Registering wallet vault $walletVault..."
-                        Add-CardanoWalletConfigKey `
+                        Set-CardanoWalletConfigKey `
                             -Name $Name `
                             -Key RegisteredVault `
                             -Value $true
@@ -529,7 +565,7 @@ function Add-CardanoWallet {
                             -DefaultVault:$false
                     }
                     'UseVault' {
-                        Add-CardanoWalletConfigKey `
+                        Set-CardanoWalletConfigKey `
                             -Name $Name `
                             -Key RegisteredVault `
                             -Value $false
@@ -537,7 +573,7 @@ function Add-CardanoWallet {
                     }
                 }
                 
-                Add-CardanoWalletConfigKey `
+                Set-CardanoWalletConfigKey `
                     -Name $Name `
                     -Key WalletVault `
                     -Value $walletVault
@@ -566,11 +602,13 @@ function Add-CardanoWallet {
                 )
             }
             'plaintext' {
-                Add-CardanoWalletConfigKey -Name $Name -Key SigningKeyType -Value $_
+                Set-CardanoWalletConfigKey -Name $Name -Key SigningKeyType -Value $_
                 Write-VerboseLog `
                     "Saved signing key as plain text in file $signingKey..."
             }
         }
+
+        Set-CardanoWalletConfigKey $Name -Key nextAddressIndex -Value 0
 
         Assert-CardanoWalletExists $Name
         Write-VerboseLog "Wallet $Name added"
