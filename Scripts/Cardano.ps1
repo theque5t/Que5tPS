@@ -186,7 +186,8 @@ function Set-CardanoNodeSocketPath {
         $pattern = '--socket-path\s(?<socket_path>.*?)\s-'
         $process.CommandLine -match $pattern | Out-Null
         $env:CARDANO_NODE_SOCKET_PATH = $Matches.socket_path
-        Write-VerboseLog "Set Cardano node socket path to $env:CARDANO_NODE_SOCKET_PATH"
+        Write-VerboseLog `
+            "Set Cardano node socket path to $env:CARDANO_NODE_SOCKET_PATH"
     }
 }
 
@@ -368,7 +369,8 @@ function Add-CardanoWalletConfigKey {
     )
     $walletPath = $(Get-CardanoWallet $Name).FullName
     $walletConfig = "$walletPath\.config"
-    Write-VerboseLog "Adding config key $Key value $Value to $Name wallet..."
+    Write-VerboseLog `
+        "Adding config key $Key value $Value to $Name wallet..."
     New-Item "$walletConfig\$Key" -ItemType File | Out-Null
     Add-Content "$walletConfig\$Key" -Value "$Value" | Out-Null
 }
@@ -520,11 +522,13 @@ function Add-CardanoWallet {
                 Remove-CardanoWalletSigningKeyFile $Name
                 Assert-CardanoWalletSigningKeyFileDoesNotExist $Name
                 Write-VerboseLog `
-                    "Saved signing key as secret $secretName to wallet vault $walletVault..."
+                    "Saved signing key as secret $secretName "+
+                    "to wallet vault $walletVault..."
             }
             'plaintext' {
                 Add-CardanoWalletConfigKey -Name $Name -Key SigningKeyType -Value $_
-                Write-VerboseLog "Saved signing key as plain text in file $signingKey..."
+                Write-VerboseLog `
+                    "Saved signing key as plain text in file $signingKey..."
             }
         }
 
@@ -556,8 +560,8 @@ function Remove-CardanoWallet {
                 $signingKeySecret | Remove-Secret
                 
                 Write-VerboseLog `
-                    "Removed signing key secret $($signingKeySecret.Name)`
-                     from wallet vault $($signingKeySecret.VaultName)..."
+                    "Removed signing key secret $($signingKeySecret.Name) "+
+                    "from wallet vault $($signingKeySecret.VaultName)..."
                 
                 if($walletConfig.RegisteredVault -eq $true){
                     $walletVault = $Name
