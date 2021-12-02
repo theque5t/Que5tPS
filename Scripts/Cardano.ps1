@@ -293,6 +293,31 @@ function Assert-CardanoHomeExists {
     }
 }
 
+function Add-CardanoWalletFileSet {
+    param(
+        $Name
+    )
+    Assert-CardanoHomeExists
+    $walletPath = "$env:CARDANO_HOME\$Name"
+    $walletConfig = "$walletPath\.config"
+    $walletKeys = "$walletPath\keys"
+    Write-VerboseLog "Creating wallet file set..."
+    @($walletPath, $walletConfig, $walletKeys).ForEach({
+        New-Item $_ -ItemType Directory | Out-Null
+    })
+    Assert-CardanoWalletExists $Name
+}
+
+function Remove-CardanoWalletFileSet {
+    param(
+        $Name
+    )
+    Assert-CardanoWalletExists $Name
+    Write-VerboseLog "Removing wallet file set..."
+    Get-CardanoWallet $Name | Remove-Item -Recurse
+    Assert-CardanoWalletDoesNotExist $Name
+}
+
 function Get-CardanoWallet {
     param(
         [Parameter(Mandatory, ParameterSetName = 'ByName', Position=0)]
@@ -417,6 +442,30 @@ function Remove-CardanoWalletSigningKeyFile {
     Assert-CardanoWalletSigningKeyFileDoesNotExist $Name
 }
 
+function New-CardanoWalletKeys {
+    param(
+        $Name
+    )
+    Write-VerboseLog "Generating wallet keys..."
+    $walletPath = $(Get-CardanoWallet $Name).FullName
+    $walletKeys = "$walletPath\keys"
+    $verificationKey = "$walletKeys\$Name.vkey"
+    $signingKey = "$walletKeys\$Name.skey"
+    Invoke-CardanoCLI address key-gen `
+        --verification-key-file $verificationKey `
+        --signing-key-file $signingKey
+}
+
+function New-CardanoWalletAddress {
+    param(
+        $Name
+    )
+    Write-VerboseLog "Generating wallet address..."
+    $walletPath = $(Get-CardanoWallet $Name).FullName
+    $walletAddressPath = "$walletPath\address"
+    $walletAddress = "$walletAddressPath\$Name.addr"
+}
+
 function Add-CardanoWallet {
     [CmdletBinding()]
     param(
@@ -452,25 +501,12 @@ function Add-CardanoWallet {
     }
     process {
         Assert-CardanoNodeInSync
-        Assert-CardanoHomeExists
         Assert-CardanoWalletDoesNotExist $Name
         
         Write-VerboseLog "Adding wallet $Name..."
-
-        $walletPath = "$env:CARDANO_HOME\$Name"
-        $walletConfig = "$walletPath\.config"
-        $walletKeys = "$walletPath\keys"
-        Write-VerboseLog "Creating wallet file set..."
-        @($walletPath, $walletConfig, $walletKeys).ForEach({
-            New-Item $_ -ItemType Directory | Out-Null
-        })
         
-        Write-VerboseLog "Generating wallet keys..."
-        $verificationKey = "$walletKeys\$Name.vkey"
-        $signingKey = "$walletKeys\$Name.skey"
-        Invoke-CardanoCLI address key-gen `
-            --verification-key-file $verificationKey `
-            --signing-key-file $signingKey
+        Add-CardanoWalletFileSet $Name
+        New-CardanoWalletKeys $Name
 
         switch ($SigningKeyType) {
             'secret' {
@@ -508,7 +544,7 @@ function Add-CardanoWallet {
                 
                 $secretName = New-Guid
                 $secretValue = $(
-                    Get-CardanoWalletKeyFile $Name -Type verification | 
+                    Get-CardanoWalletKeyFile $Name -Type signing | 
                     Get-Content | 
                     ConvertFrom-Json -AsHashtable
                 )
@@ -524,9 +560,10 @@ function Add-CardanoWallet {
                     -NoClobber
                 Remove-CardanoWalletSigningKeyFile $Name
                 Assert-CardanoWalletSigningKeyFileDoesNotExist $Name
-                Write-VerboseLog `
-                    "Saved signing key as secret $secretName "+
+                Write-VerboseLog (
+                    "Saved signing key as secret $secretName " +
                     "to wallet vault $walletVault..."
+                )
             }
             'plaintext' {
                 Add-CardanoWalletConfigKey -Name $Name -Key SigningKeyType -Value $_
@@ -562,9 +599,10 @@ function Remove-CardanoWallet {
                 }) 
                 $signingKeySecret | Remove-Secret
                 
-                Write-VerboseLog `
-                    "Removed signing key secret $($signingKeySecret.Name) "+
+                Write-VerboseLog (
+                    "Removed signing key secret $($signingKeySecret.Name) " +
                     "from wallet vault $($signingKeySecret.VaultName)..."
+                )
                 
                 if($walletConfig.RegisteredVault -eq $true){
                     $walletVault = $Name
@@ -574,8 +612,7 @@ function Remove-CardanoWallet {
             }
         }
 
-        Write-VerboseLog "Removing wallet file set..."
-        Get-CardanoWallet $Name | Remove-Item -Recurse
+        Remove-CardanoWalletFileSet $Name
 
         Assert-CardanoWalletDoesNotExist $Name
         Write-VerboseLog "Wallet $Name removed"
