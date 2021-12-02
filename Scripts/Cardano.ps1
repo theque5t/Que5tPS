@@ -464,8 +464,8 @@ function Add-CardanoWallet {
         })
         
         Write-VerboseLog "Generating wallet keys..."
-        $verificationKey = "$walletKeys/$Name.vkey"
-        $signingKey = "$walletKeys/$Name.skey"
+        $verificationKey = "$walletKeys\$Name.vkey"
+        $signingKey = "$walletKeys\$Name.skey"
         Invoke-CardanoCLI address key-gen `
             --verification-key-file $verificationKey `
             --signing-key-file $signingKey
@@ -517,7 +517,8 @@ function Add-CardanoWallet {
                         keyType = 'signing'
                     } `
                     -NoClobber
-                Assert-CardanoWalletSigningKeyFileDoesNotExist 
+                Remove-CardanoWalletSigningKeyFile $Name
+                Assert-CardanoWalletSigningKeyFileDoesNotExist $Name
                 Write-VerboseLog `
                     "Saved signing key as secret $secretName to wallet vault $walletVault..."
             }
@@ -527,6 +528,7 @@ function Add-CardanoWallet {
             }
         }
 
+        Assert-CardanoWalletExists $Name
         Write-VerboseLog "Wallet $Name added"
     }
 }
@@ -566,8 +568,9 @@ function Remove-CardanoWallet {
         }
 
         Write-VerboseLog "Removing wallet file set..."
-        Remove-Item "$env:CARDANO_HOME\$Name" -Recurse
+        Get-CardanoWallet $Name | Remove-Item -Recurse
 
+        Assert-CardanoWalletDoesNotExist $Name
         Write-VerboseLog "Wallet $Name removed"
     }
 }
