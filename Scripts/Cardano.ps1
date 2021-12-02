@@ -507,8 +507,11 @@ function Add-CardanoWallet {
                     -Value $walletVault
                 
                 $secretName = New-Guid
-                $secretValue = Get-CardanoWalletKeyFile $Name -Type verification | 
-                    Get-Content | ConvertFrom-Json -AsHashtable
+                $secretValue = $(
+                    Get-CardanoWalletKeyFile $Name -Type verification | 
+                    Get-Content | 
+                    ConvertFrom-Json -AsHashtable
+                )
                 Set-Secret `
                     -Name $secretName `
                     -Secret $secretValue `
