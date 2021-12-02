@@ -99,10 +99,10 @@ function Get-CardanoTransactionUtxos {
 
 function Invoke-CardanoCLI {
     try{
-    $output = &"$env:DEADALUS_HOME\cardano-cli.exe" @args 2>&1
+        $output = &"$env:DEADALUS_HOME\cardano-cli.exe" @args 2>&1
         Assert-CommandSuccessful
-    return $output
-}
+        return $output
+    }
     catch{
         $_
         Write-Output $output
@@ -123,11 +123,11 @@ function Get-CardanoNodeProcess {
 function Get-DeadalusProcess {
     $process = $(Get-Process -Verbose:$false).Where({
         $_.Path -like "$env:DEADALUS_HOME\Daedalus*"
-        })
-    
+    })
+
     return $process
 }
-    
+
 function Test-CardanoNodeIsRunning {
     $process = Get-CardanoNodeProcess
 
@@ -159,7 +159,7 @@ function Set-CardanoNodeProcessStopped{
         Write-VerboseLog 'Stopping Cardano node process...'
         Get-DeadalusProcess | Stop-Process
         Write-VerboseLog 'Cardano node process stopped'
-    }
+    }   
 }
 
 function Get-CardanoNodeTip {
@@ -173,8 +173,8 @@ function Get-CardanoNodeTip {
         }
 
         $query = Invoke-CardanoCLI query tip --$Network $NetworkMagicId
-    return $($query | ConvertFrom-Json)
-}
+        return $($query | ConvertFrom-Json)
+    }
     catch{}
 }
 
@@ -216,7 +216,7 @@ function Open-CardanoNodeSession {
     Assert-CardanoNodeSessionIsClosed
 
     Write-VerboseLog 'Opening Cardano node session...'
-
+    
     $env:DEADALUS_HOME = "C:\Program Files\Daedalus $Network"
     $env:CARDANO_NODE_NETWORK = $Network
     switch ($Network) {
@@ -267,7 +267,7 @@ function Sync-CardanoNode {
     [CmdletBinding()]
     param()
     Assert-CardanoNodeSessionIsOpen
-    
+
     do{
         Write-VerboseLog "Sync percentage: $($(Get-CardanoNodeTip).syncProgress)"
         Start-Sleep -Seconds 5
@@ -498,7 +498,7 @@ function Add-CardanoWallet {
                         $walletVault = $PSBoundParameters.UseVault
                     }
                 }
-
+                
                 Add-CardanoWalletConfigKey `
                     -Name $Name `
                     -Key WalletVault `
@@ -575,8 +575,6 @@ function Remove-CardanoWallet {
     }
 }
 
-
-
 function Open-CardanoWallet {}
 
 function Get-CardanoWalletTransactions {}
@@ -588,4 +586,3 @@ function New-CardanoTransaction {}
 function Set-CardanoTransaction {}
 
 function Submit-CardanoTransaction {}
-
