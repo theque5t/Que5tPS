@@ -239,6 +239,8 @@ function Open-CardanoNodeSession {
     while(-not $(Get-CardanoNodeTip))
 
     $env:CARDANO_NODE_SESSION = $true
+
+    Assert-CardanoNodeSessionIsOpen
     Write-VerboseLog 'Cardano node session opened'
 }
 
@@ -257,6 +259,7 @@ function Close-CardanoNodeSession {
       'CARDANO_NODE_SOCKET_PATH'
     ).ForEach({ Remove-Item "env:\$_" })
     
+    Assert-CardanoNodeSessionIsClosed
     Write-VerboseLog 'Cardano node session closed'
 }
 
@@ -471,10 +474,21 @@ function Get-CardanoWalletAddressFile {
     return $walletAddresses
 }
 
-function New-CardanoWalletAddress {
+function Get-CardanoWalletAddress {
+    Param(
+        $Name,
+        [ValidateScript({
+            Get-CardanoWalletAddressFile $Name
+        })]
+        $Address
+    )
+}
+
+function Add-CardanoWalletAddress {
     param(
         $Name
     )
+    Assert-CardanoNodeInSync
     Assert-CardanoWalletExists $Name
     Write-VerboseLog "Generating wallet address..."
 
@@ -499,7 +513,31 @@ function New-CardanoWalletAddress {
     Set-CardanoWalletConfigKey `
         -Name $Name `
         -Key nextAddressIndex `
-        -Value $($walletConfig.nextAddressIndex)+1
+        -Value $([int]$($walletConfig.nextAddressIndex)+1)
+}
+
+function Get-CardanoWalletAddressUtxo {
+    param(
+        $Name,
+        $Address
+    )
+    Assert-CardanoNodeInSync
+    Assert-CardanoWalletExists $Name
+    Write-VerboseLog "Getting wallet address utxo..."
+
+    $Network = $env:CARDANO_NODE_NETWORK
+    $NetworkMagicId = $env:CARDANO_NODE_NETWORK_MAGIC_ID
+    switch ($Network) {
+        'testnet' {
+            $Network = "$Network-magic"
+        }
+    }
+
+    $query = Invoke-CardanoCLI query utxo `
+        --$Network $NetworkMagicId `
+        --address $Address
+
+    return $query
 }
 
 function Add-CardanoWallet {
@@ -657,11 +695,56 @@ function Remove-CardanoWallet {
     }
 }
 
-function Open-CardanoWallet {}
+function Test-CardanoWalletSessionIsOpen {
+    return Test-Path env:CARDANO_WALLET_SESSION
+}
+
+function Assert-CardanoWalletSessionIsOpen {
+    if(-not $(Test-CardanoWalletSessionIsOpen)){
+        Write-FalseAssertionError
+    }
+}
+
+function Assert-CardanoWalletSessionIsClosed {
+    if($(Test-CardanoWalletSessionIsOpen)){
+        Write-FalseAssertionError
+    }
+}
+
+function Open-CardanoWalletSession {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        $Name
+    )
+    Assert-CardanoWalletSessionIsClosed
+    Assert-CardanoNodeSessionIsOpen
+
+    Write-VerboseLog 'Opening Cardano wallet session...'
+    $env:CARDANO_WALLET = $Name
+    $env:CARDANO_WALLET_SESSION = $true
+
+    Assert-CardanoWalletSessionIsOpen
+    Write-VerboseLog 'Cardano wallet session opened'
+}
+
+function Close-CardanoWalletSession {
+    [CmdletBinding()]
+    param()
+    Assert-CardanoWalletSessionIsOpen
+
+    Write-VerboseLog 'Closing Cardano wallet session...'
+
+    @('CARDANO_WALLET',
+      'CARDANO_WALLET_SESSION'
+    ).ForEach({ Remove-Item "env:\$_" })
+    
+    Assert-CardanoWalletSessionIsClosed
+    Write-VerboseLog 'Cardano wallet session closed'
+}
+
 
 function Get-CardanoWalletTransactions {}
-
-function Get-CardanoWalletAddress {}
 
 function New-CardanoTransaction {}
 
