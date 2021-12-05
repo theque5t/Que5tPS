@@ -456,30 +456,15 @@ function New-CardanoWalletKeys {
     $walletKeys = "$walletPath\keys"
     $verificationKey = "$walletKeys\$Name.vkey"
     $signingKey = "$walletKeys\$Name.skey"
-    Invoke-CardanoCLI address key-gen `
-        --verification-key-file $verificationKey `
-        --signing-key-file $signingKey
+    $_args = @(
+        'address', 'key-gen'
+        '--verification-key-file', $verificationKey
+        '--signing-key-file', $signingKey
+    )
+    Invoke-CardanoCLI @_args
 }
 
-function Get-CardanoWalletAddressFile {
-    param(
-        $Name
-    )
-    Assert-CardanoWalletExists $Name
-    $walletPath = $(Get-CardanoWallet $Name).FullName
-    $walletAddresses = Get-ChildItem $walletPath\addresses
-    return $walletAddresses
-}
 
-function Get-CardanoWalletAddress {
-    Param(
-        $Name,
-        [ValidateScript({
-            Get-CardanoWalletAddressFile $Name
-        })]
-        $Address
-    )
-}
 
 function Add-CardanoWalletAddress {
     param(
@@ -509,9 +494,64 @@ function Add-CardanoWalletAddress {
         -Value $([int]$($walletConfig.nextAddressIndex)+1)
 }
 
+function Get-CardanoWalletAddressFiles {
+    Assert-CardanoWalletSessionIsOpen
+    Write-VerboseLog "Getting wallet address file..."
+    $walletPath = $(Get-CardanoWallet $env:CARDANO_WALLET).FullName
+    $walletAddresses = Get-ChildItem $walletPath\addresses
+    return $walletAddresses
+}
+
+function Get-CardanoWalletAddressFile {
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name File `
+                -Attributes @{ Mandatory = $true } `
+                -ValidateSet $(Get-CardanoWalletAddressFiles).Name `
+                -Type string
+            )
+        )
+    }
+    process{
+        Assert-CardanoWalletSessionIsOpen
+        $walletAddresses = $(Get-CardanoWalletAddressFiles).Where({ 
+            $_.Name -eq $PSBoundParameters.File
+        })
+        return $walletAddresses
+    }
+}
+
+function Get-CardanoWalletAddress {
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name File `
+                -Attributes @{ Mandatory = $true } `
+                -ValidateSet $(Get-CardanoWalletAddressFile -All).Name `
+                -Type string
+            )
+        )
+    }
+    process{
+        Assert-CardanoWalletSessionIsOpen
+        Write-VerboseLog "Getting wallet address..."
+        $address = $(
+            Get-CardanoWalletAddressFile $PSBoundParameters.File |
+            Get-Content
+        )
+        return $address
+    }
+}
+
 function Get-CardanoWalletAddressUtxo {
     param(
-        $Name,
         $Address
     )
     Assert-CardanoWalletSessionIsOpen
@@ -730,7 +770,7 @@ function Open-CardanoWalletSession {
         Assert-CardanoNodeInSync
     
         Write-VerboseLog 'Opening Cardano wallet session...'
-        $env:CARDANO_WALLET = $Name
+        $env:CARDANO_WALLET = $PSBoundParameters.Name
         $env:CARDANO_WALLET_SESSION = $true
     
         Assert-CardanoWalletSessionIsOpen
