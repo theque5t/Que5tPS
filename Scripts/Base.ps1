@@ -26,6 +26,7 @@ function DynamicParameter {
         [parameter(Mandatory=$true)]
         [string]$Name,
         [hashtable]$Attributes,
+        $ValidateSet,
         [Type]$Type = [psobject]
     )
     $paramAttributes = New-Object `
@@ -38,6 +39,13 @@ function DynamicParameter {
     $paramAttributesCollect = New-Object `
         -Type System.Collections.ObjectModel.Collection[System.Attribute]
     $paramAttributesCollect.Add($paramAttributes)
+
+    if($ValidateSet)
+	{
+		$validateSetAttribute = New-Object `
+            System.Management.Automation.ValidateSetAttribute($ValidateSet)
+        $paramAttributesCollect.Add($validateSetAttribute)
+	}
 
     $dynParam = New-Object -Type `
         System.Management.Automation.RuntimeDefinedParameter(
