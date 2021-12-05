@@ -324,6 +324,7 @@ function Remove-CardanoWalletFileSet {
 }
 
 function Get-CardanoWallet {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory, ParameterSetName = 'ByName', Position=0)]
         $Name,
@@ -331,6 +332,7 @@ function Get-CardanoWallet {
         [switch]$All
     )
     Assert-CardanoHomeExists
+    Write-VerboseLog "Getting wallet..."
     $wallets = Get-ChildItem "$env:CARDANO_HOME"
     switch ($PsCmdlet.ParameterSetName) {
         'ByName' { $wallets = $wallets.Where({ $_.Name -eq $Name }) }
@@ -495,6 +497,8 @@ function Add-CardanoWalletAddress {
 }
 
 function Get-CardanoWalletAddressFiles {
+    [CmdletBinding()]
+    param()
     Assert-CardanoWalletSessionIsOpen
     Write-VerboseLog "Getting wallet address file..."
     $walletPath = $(Get-CardanoWallet $env:CARDANO_WALLET).FullName
@@ -536,7 +540,10 @@ function Get-CardanoWalletAddress {
             (
                 DynamicParameter `
                 -Name File `
-                -Attributes @{ Mandatory = $true } `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0
+                } `
                 -ValidateSet $(Get-CardanoWalletAddressFiles).Name `
                 -Type string
             )
@@ -554,21 +561,33 @@ function Get-CardanoWalletAddress {
 }
 
 function Get-CardanoWalletAddressUtxo {
-    param(
-        $Address
-    )
-    Assert-CardanoWalletSessionIsOpen
-    Write-VerboseLog "Getting wallet address utxo..."
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name File `
+                -Attributes @{ Mandatory = $true } `
+                -ValidateSet $(Get-CardanoWalletAddressFiles).Name `
+                -Type string
+            )
+        )
+    }
+    process{
+        Assert-CardanoWalletSessionIsOpen
+        Write-VerboseLog "Getting wallet address utxo..."
 
-    $_args = @(
-        'query','utxo'
-        '--address', $Address
-        $env:CARDANO_CLI_NETWORK_ARG
-        $env:CARDANO_CLI_NETWORK_ARG_VALUE
-    )
-    $query = Invoke-CardanoCLI @_args
+        $_args = @(
+            'query','utxo'
+            '--address', $(Get-CardanoWalletAddress $PSBoundParameters.File)
+            $env:CARDANO_CLI_NETWORK_ARG
+            $env:CARDANO_CLI_NETWORK_ARG_VALUE
+        )
+        $query = Invoke-CardanoCLI @_args
 
-    return $query
+        return $query
+    }
 }
 
 function Add-CardanoWallet {
