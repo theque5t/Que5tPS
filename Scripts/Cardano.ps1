@@ -510,7 +510,10 @@ function Get-CardanoWalletAddressFile {
             (
                 DynamicParameter `
                 -Name File `
-                -Attributes @{ Mandatory = $true } `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0
+                } `
                 -ValidateSet $(Get-CardanoWalletAddressFiles).Name `
                 -Type string
             )
@@ -534,7 +537,7 @@ function Get-CardanoWalletAddress {
                 DynamicParameter `
                 -Name File `
                 -Attributes @{ Mandatory = $true } `
-                -ValidateSet $(Get-CardanoWalletAddressFile -All).Name `
+                -ValidateSet $(Get-CardanoWalletAddressFiles).Name `
                 -Type string
             )
         )
