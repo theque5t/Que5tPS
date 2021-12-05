@@ -164,15 +164,12 @@ function Set-CardanoNodeProcessStopped{
 
 function Get-CardanoNodeTip {
     try{
-        $Network = $env:CARDANO_NODE_NETWORK
-        $NetworkMagicId = $env:CARDANO_NODE_NETWORK_MAGIC_ID
-        switch ($Network) {
-            'testnet' {
-                $Network = "$Network-magic"
-            }
-        }
-
-        $query = Invoke-CardanoCLI query tip --$Network $NetworkMagicId
+        $_args = @(
+            'query', 'tip'
+            $env:CARDANO_CLI_NETWORK_ARG
+            $env:CARDANO_CLI_NETWORK_ARG_VALUE
+        )
+        $query = Invoke-CardanoCLI @_args
         return $($query | ConvertFrom-Json)
     }
     catch{}
@@ -219,13 +216,13 @@ function Open-CardanoNodeSession {
     Write-VerboseLog 'Opening Cardano node session...'
     
     $env:DEADALUS_HOME = "C:\Program Files\Daedalus $Network"
-    $env:CARDANO_NODE_NETWORK = $Network
+    
+    $env:CARDANO_CLI_NETWORK_ARG = "--$Network"
+    $env:CARDANO_CLI_NETWORK_ARG_VALUE = ''
     switch ($Network) {
-        'mainnet' {
-            $env:CARDANO_NODE_NETWORK_MAGIC_ID = '' 
-        }
         'testnet' {
-            $env:CARDANO_NODE_NETWORK_MAGIC_ID = 1097911063 
+            $env:CARDANO_CLI_NETWORK_ARG = "--$Network-magic"
+            $env:CARDANO_CLI_NETWORK_ARG_VALUE = 1097911063
         }
     }
 
@@ -492,23 +489,19 @@ function Add-CardanoWalletAddress {
     Assert-CardanoWalletExists $Name
     Write-VerboseLog "Generating wallet address..."
 
-    $Network = $env:CARDANO_NODE_NETWORK
-    $NetworkMagicId = $env:CARDANO_NODE_NETWORK_MAGIC_ID
-    switch ($Network) {
-        'testnet' {
-            $Network = "$Network-magic"
-        }
-    }
-
     $walletPath = $(Get-CardanoWallet $Name).FullName
     $walletAddresses = "$walletPath\addresses"
     $walletConfig = Get-CardanoWalletConfig $Name
     $walletAddress = "$walletAddresses\$Name-$($walletConfig.nextAddressIndex).addr"
     $walletVerificationKey = Get-CardanoWalletKeyFile $Name -Type verification
-    Invoke-CardanoCLI address build `
-        --payment-verification-key-file $walletVerificationKey `
-        --out-file $walletAddress `
-        --$Network $NetworkMagicId
+    $_args = @(
+        'address','build'
+        '--payment-verification-key-file', $walletVerificationKey
+        '--out-file', $walletAddress
+        $env:CARDANO_CLI_NETWORK_ARG
+        $env:CARDANO_CLI_NETWORK_ARG_VALUE
+    )
+    Invoke-CardanoCLI @_args
 
     Set-CardanoWalletConfigKey `
         -Name $Name `
@@ -521,21 +514,16 @@ function Get-CardanoWalletAddressUtxo {
         $Name,
         $Address
     )
-    Assert-CardanoNodeInSync
-    Assert-CardanoWalletExists $Name
+    Assert-CardanoWalletSessionIsOpen
     Write-VerboseLog "Getting wallet address utxo..."
 
-    $Network = $env:CARDANO_NODE_NETWORK
-    $NetworkMagicId = $env:CARDANO_NODE_NETWORK_MAGIC_ID
-    switch ($Network) {
-        'testnet' {
-            $Network = "$Network-magic"
-        }
-    }
-
-    $query = Invoke-CardanoCLI query utxo `
-        --$Network $NetworkMagicId `
-        --address $Address
+    $_args = @(
+        'query','utxo'
+        '--address', $Address
+        $env:CARDANO_CLI_NETWORK_ARG
+        $env:CARDANO_CLI_NETWORK_ARG_VALUE
+    )
+    $query = Invoke-CardanoCLI @_args
 
     return $query
 }
@@ -655,43 +643,55 @@ function Add-CardanoWallet {
 
 function Remove-CardanoWallet {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
-    param(
-        $Name
-    )
-    if($PSCmdlet.ShouldProcess($Name)){
-        Assert-CardanoWalletExists $Name
-        
-        Write-VerboseLog "Removing wallet $Name..."
-        
-        $walletConfig = Get-CardanoWalletConfig $Name
-
-        switch ($walletConfig.SigningKeyType) {
-            'secret' { 
-                $signingKeySecret = $(
-                    Get-SecretInfo -Vault $walletConfig.WalletVault
-                ).Where({
-                    $_.Metadata.wallet -eq $Name -and
-                    $_.Metadata.keyType -eq 'signing'
-                }) 
-                $signingKeySecret | Remove-Secret
-                
-                Write-VerboseLog (
-                    "Removed signing key secret $($signingKeySecret.Name) " +
-                    "from wallet vault $($signingKeySecret.VaultName)..."
-                )
-                
-                if($walletConfig.RegisteredVault -eq $true){
-                    $walletVault = $Name
-                    Write-VerboseLog "Unregistering wallet vault $walletVault..."
-                    Unregister-SecretVault -Name $walletVault
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Mandatory = $true } `
+                -ValidateSet $(Get-CardanoWallet -All).Name `
+                -Type string
+            )
+        )
+    }
+    process{
+        if($PSCmdlet.ShouldProcess($Name)){
+            Assert-CardanoWalletSessionIsClosed
+            Assert-CardanoWalletExists $Name
+            
+            Write-VerboseLog "Removing wallet $Name..."
+            
+            $walletConfig = Get-CardanoWalletConfig $Name
+    
+            switch ($walletConfig.SigningKeyType) {
+                'secret' { 
+                    $signingKeySecret = $(
+                        Get-SecretInfo -Vault $walletConfig.WalletVault
+                    ).Where({
+                        $_.Metadata.wallet -eq $Name -and
+                        $_.Metadata.keyType -eq 'signing'
+                    }) 
+                    $signingKeySecret | Remove-Secret
+                    
+                    Write-VerboseLog (
+                        "Removed signing key secret $($signingKeySecret.Name) " +
+                        "from wallet vault $($signingKeySecret.VaultName)..."
+                    )
+                    
+                    if($walletConfig.RegisteredVault -eq $true){
+                        $walletVault = $Name
+                        Write-VerboseLog "Unregistering wallet vault $walletVault..."
+                        Unregister-SecretVault -Name $walletVault
+                    }
                 }
             }
+    
+            Remove-CardanoWalletFileSet $Name
+    
+            Assert-CardanoWalletDoesNotExist $Name
+            Write-VerboseLog "Wallet $Name removed"
         }
-
-        Remove-CardanoWalletFileSet $Name
-
-        Assert-CardanoWalletDoesNotExist $Name
-        Write-VerboseLog "Wallet $Name removed"
     }
 }
 
@@ -727,7 +727,7 @@ function Open-CardanoWalletSession {
     }
     process {
         Assert-CardanoWalletSessionIsClosed
-        Assert-CardanoNodeSessionIsOpen
+        Assert-CardanoNodeInSync
     
         Write-VerboseLog 'Opening Cardano wallet session...'
         $env:CARDANO_WALLET = $Name
