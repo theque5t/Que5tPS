@@ -713,19 +713,29 @@ function Assert-CardanoWalletSessionIsClosed {
 
 function Open-CardanoWalletSession {
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        $Name
-    )
-    Assert-CardanoWalletSessionIsClosed
-    Assert-CardanoNodeSessionIsOpen
-
-    Write-VerboseLog 'Opening Cardano wallet session...'
-    $env:CARDANO_WALLET = $Name
-    $env:CARDANO_WALLET_SESSION = $true
-
-    Assert-CardanoWalletSessionIsOpen
-    Write-VerboseLog 'Cardano wallet session opened'
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Mandatory = $true } `
+                -ValidateSet $(Get-CardanoWallet -All).Name `
+                -Type string
+            )
+        )
+    }
+    process {
+        Assert-CardanoWalletSessionIsClosed
+        Assert-CardanoNodeSessionIsOpen
+    
+        Write-VerboseLog 'Opening Cardano wallet session...'
+        $env:CARDANO_WALLET = $Name
+        $env:CARDANO_WALLET_SESSION = $true
+    
+        Assert-CardanoWalletSessionIsOpen
+        Write-VerboseLog 'Cardano wallet session opened'
+    }
 }
 
 function Close-CardanoWalletSession {
