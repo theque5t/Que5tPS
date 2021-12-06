@@ -217,6 +217,7 @@ function Open-CardanoNodeSession {
     
     $env:DEADALUS_HOME = "C:\Program Files\Daedalus $Network"
     
+    $env:CARDANO_NODE_NETWORK = $Network
     $env:CARDANO_CLI_NETWORK_ARG = "--$Network"
     $env:CARDANO_CLI_NETWORK_ARG_VALUE = ''
     switch ($Network) {
@@ -251,7 +252,8 @@ function Close-CardanoNodeSession {
     Set-CardanoNodeProcessStopped
     @('DEADALUS_HOME',
       'CARDANO_NODE_NETWORK',
-      'CARDANO_NODE_NETWORK_MAGIC_ID',
+      'CARDANO_CLI_NETWORK_ARG',
+      'CARDANO_CLI_NETWORK_ARG_VALUE'
       'CARDANO_NODE_SESSION'
       'CARDANO_NODE_SOCKET_PATH'
     ).ForEach({ Remove-Item "env:\$_" })
@@ -314,54 +316,134 @@ function Add-CardanoWalletFileSet {
 }
 
 function Remove-CardanoWalletFileSet {
-    param(
-        $Name
-    )
-    Assert-CardanoWalletExists $Name
-    Write-VerboseLog "Removing wallet file set..."
-    Get-CardanoWallet $Name | Remove-Item -Recurse
-    Assert-CardanoWalletDoesNotExist $Name
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Position = 0 } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
+    }
+    begin {
+        if (-not $PSBoundParameters.ContainsKey('Name')){
+            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
+        }
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        Assert-CardanoWalletExists $Name
+        Write-VerboseLog "Removing wallet file set..."
+        Get-CardanoWallet $Name | Remove-Item -Recurse
+        Assert-CardanoWalletDoesNotExist $Name
+    }
+}
+
+function Get-CardanoWallets {
+    [CmdletBinding()]
+    param()
+    Assert-CardanoHomeExists
+    Write-VerboseLog "Getting wallets..."
+    $wallets = Get-ChildItem "$env:CARDANO_HOME"
+    return $wallets
 }
 
 function Get-CardanoWallet {
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory, ParameterSetName = 'ByName', Position=0)]
-        $Name,
-        [Parameter(Mandatory, ParameterSetName = 'All')]
-        [switch]$All
-    )
-    Assert-CardanoHomeExists
-    Write-VerboseLog "Getting wallet..."
-    $wallets = Get-ChildItem "$env:CARDANO_HOME"
-    switch ($PsCmdlet.ParameterSetName) {
-        'ByName' { $wallets = $wallets.Where({ $_.Name -eq $Name }) }
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Position = 0 } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
     }
-    return $wallets
+    begin {
+        if (-not $PSBoundParameters.ContainsKey('Name')){
+            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
+        }
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        Write-VerboseLog "Getting wallet..."
+        $wallets = $(Get-CardanoWallets).Where({ 
+            $_.Name -eq $Name
+        })
+        return $wallets
+    }
+}
+
+function Get-CardanoWalletKeyFiles {
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Position = 0 } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
+    }
+    begin {
+        if (-not $PSBoundParameters.ContainsKey('Name')){
+            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
+        }
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        Assert-CardanoWalletExists $Name
+        $walletPath = $(Get-CardanoWallet $Name).FullName
+        $walletKeys = Get-ChildItem $walletPath\keys
+        return $walletKeys
+    }
 }
 
 function Get-CardanoWalletKeyFile {
+    [CmdletBinding()]
     param(
-        [Parameter(Mandatory, Position=0)]
-        $Name,
-        [Parameter(Mandatory, ParameterSetName = 'ByType')]
         [ValidateSet('signing','verification')]
-        $Type,
-        [Parameter(Mandatory, ParameterSetName = 'All')]
-        [switch]$All
+        $Type
     )
-    Assert-CardanoWalletExists $Name
-    $walletPath = $(Get-CardanoWallet $Name).FullName
-    $walletKeys = Get-ChildItem $walletPath\keys
-    switch ($PsCmdlet.ParameterSetName) {
-        'ByType' { 
-            $types = @{ signing = 'skey'; verification = 'vkey' }
-            $walletKeys = $walletKeys.Where({ 
-                $_.Name -eq "$Name.$($types[$type])"
-            })
-        }
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Position = 0 } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
     }
-    return $walletKeys
+    begin {
+        if (-not $PSBoundParameters.ContainsKey('Name')){
+            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
+        }
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        Assert-CardanoWalletExists $Name
+        $walletKeys = Get-CardanoWalletKeyFiles $Name
+        switch ($Type) {
+            'signing'      { $extension = 'skey' }
+            'verification' { $extension = 'vkey' }
+        }
+        $walletKeys = $walletKeys.Where({ 
+            $_.Name -eq "$Name.$extension"
+        })
+        return $walletKeys
+    }
 }
 
 function Test-CardanoWalletExists {
@@ -394,31 +476,68 @@ function Assert-CardanoWalletDoesNotExist {
 
 
 function Set-CardanoWalletConfigKey {
+    [CmdletBinding()]
     param(
-        $Name,
         $Key,
         $Value
     )
-    $walletPath = $(Get-CardanoWallet $Name).FullName
-    $walletConfig = "$walletPath\.config"
-    Write-VerboseLog `
-        "Setting config key $Key value $Value to $Name wallet..."
-    Set-Content "$walletConfig\$Key" -Value "$Value" | Out-Null
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Position = 0 } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
+    }
+    begin {
+        if (-not $PSBoundParameters.ContainsKey('Name')){
+            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
+        }
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        $walletPath = $(Get-CardanoWallet $Name).FullName
+        $walletConfig = "$walletPath\.config"
+        Write-VerboseLog `
+            "Setting config key $Key value $Value to $Name wallet..."
+        Set-Content "$walletConfig\$Key" -Value "$Value" | Out-Null
+    }
 }
 
 function Get-CardanoWalletConfig {
-    param(
-        $Name
-    )
-    $walletConfigHashtable = @{}
-    $walletPath = $(Get-CardanoWallet $Name).FullName
-    $walletConfig = "$walletPath\.config"
-    $(Get-ChildItem $walletConfig).ForEach({
-        $key = $_
-        $value = Get-Content $key
-        $walletConfigHashtable[$key.Name] = $value
-    })
-    return $walletConfigHashtable
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Position = 0 } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
+    }
+    begin {
+        if (-not $PSBoundParameters.ContainsKey('Name')){
+            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
+        }
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        $walletConfigHashtable = @{}
+        $walletPath = $(Get-CardanoWallet $Name).FullName
+        $walletConfig = "$walletPath\.config"
+        $(Get-ChildItem $walletConfig).ForEach({
+            $key = $_
+            $value = Get-Content $key
+            $walletConfigHashtable[$key.Name] = $value
+        })
+        return $walletConfigHashtable
+    }
 }
 
 function Test-CardanoWalletSigningKeyFileExists {
@@ -449,38 +568,53 @@ function Remove-CardanoWalletSigningKeyFile {
 }
 
 function New-CardanoWalletKeys {
-    param(
-        $Name
-    )
-    Assert-CardanoWalletExists $Name
-    Write-VerboseLog "Generating wallet keys..."
-    $walletPath = $(Get-CardanoWallet $Name).FullName
-    $walletKeys = "$walletPath\keys"
-    $verificationKey = "$walletKeys\$Name.vkey"
-    $signingKey = "$walletKeys\$Name.skey"
-    $_args = @(
-        'address', 'key-gen'
-        '--verification-key-file', $verificationKey
-        '--signing-key-file', $signingKey
-    )
-    Invoke-CardanoCLI @_args
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ Position = 0 } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
+    }
+    begin {
+        if (-not $PSBoundParameters.ContainsKey('Name')){
+            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
+        }
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        Assert-CardanoWalletExists $Name
+        Write-VerboseLog "Generating wallet keys..."
+        $walletPath = $(Get-CardanoWallet $Name).FullName
+        $walletKeys = "$walletPath\keys"
+        $verificationKey = "$walletKeys\$Name.vkey"
+        $signingKey = "$walletKeys\$Name.skey"
+        $_args = @(
+            'address', 'key-gen'
+            '--verification-key-file', $verificationKey
+            '--signing-key-file', $signingKey
+        )
+        Invoke-CardanoCLI @_args
+    }
 }
 
-
-
 function Add-CardanoWalletAddress {
-    param(
-        $Name
-    )
-    Assert-CardanoNodeInSync
-    Assert-CardanoWalletExists $Name
+    Assert-CardanoWalletSessionIsOpen
     Write-VerboseLog "Generating wallet address..."
 
-    $walletPath = $(Get-CardanoWallet $Name).FullName
+    $walletPath = $(Get-CardanoWallet).FullName
     $walletAddresses = "$walletPath\addresses"
-    $walletConfig = Get-CardanoWalletConfig $Name
-    $walletAddress = "$walletAddresses\$Name-$($walletConfig.nextAddressIndex).addr"
-    $walletVerificationKey = Get-CardanoWalletKeyFile $Name -Type verification
+    $walletConfig = Get-CardanoWalletConfig
+    $walletAddress = (
+        "$walletAddresses\" +
+        "$env:CARDANO_NODE_NETWORK$($walletConfig.nextAddressIndex).addr"
+    )
+    $walletVerificationKey = Get-CardanoWalletKeyFile -Type verification
     $_args = @(
         'address','build'
         '--payment-verification-key-file', $walletVerificationKey
@@ -491,7 +625,6 @@ function Add-CardanoWalletAddress {
     Invoke-CardanoCLI @_args
 
     Set-CardanoWalletConfigKey `
-        -Name $Name `
         -Key nextAddressIndex `
         -Value $([int]$($walletConfig.nextAddressIndex)+1)
 }
@@ -501,7 +634,7 @@ function Get-CardanoWalletAddressFiles {
     param()
     Assert-CardanoWalletSessionIsOpen
     Write-VerboseLog "Getting wallet address file..."
-    $walletPath = $(Get-CardanoWallet $env:CARDANO_WALLET).FullName
+    $walletPath = $(Get-CardanoWallet).FullName
     $walletAddresses = Get-ChildItem $walletPath\addresses
     return $walletAddresses
 }
@@ -523,10 +656,13 @@ function Get-CardanoWalletAddressFile {
             )
         )
     }
+    begin{
+        $File = $PSBoundParameters.File
+    }
     process{
         Assert-CardanoWalletSessionIsOpen
         $walletAddresses = $(Get-CardanoWalletAddressFiles).Where({ 
-            $_.Name -eq $PSBoundParameters.File
+            $_.Name -eq $File
         })
         return $walletAddresses
     }
@@ -549,11 +685,14 @@ function Get-CardanoWalletAddress {
             )
         )
     }
+    begin{
+        $File = $PSBoundParameters.File
+    }
     process{
         Assert-CardanoWalletSessionIsOpen
         Write-VerboseLog "Getting wallet address..."
         $address = $(
-            Get-CardanoWalletAddressFile $PSBoundParameters.File |
+            Get-CardanoWalletAddressFile $File |
             Get-Content
         )
         return $address
@@ -568,11 +707,17 @@ function Get-CardanoWalletAddressUtxo {
             (
                 DynamicParameter `
                 -Name File `
-                -Attributes @{ Mandatory = $true } `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0
+                } `
                 -ValidateSet $(Get-CardanoWalletAddressFiles).Name `
                 -Type string
             )
         )
+    }
+    begin{
+        $File = $PSBoundParameters.File
     }
     process{
         Assert-CardanoWalletSessionIsOpen
@@ -580,7 +725,7 @@ function Get-CardanoWalletAddressUtxo {
 
         $_args = @(
             'query','utxo'
-            '--address', $(Get-CardanoWalletAddress $PSBoundParameters.File)
+            '--address', $(Get-CardanoWalletAddress $File)
             $env:CARDANO_CLI_NETWORK_ARG
             $env:CARDANO_CLI_NETWORK_ARG_VALUE
         )
@@ -712,10 +857,13 @@ function Remove-CardanoWallet {
                 DynamicParameter `
                 -Name Name `
                 -Attributes @{ Mandatory = $true } `
-                -ValidateSet $(Get-CardanoWallet -All).Name `
+                -ValidateSet $(Get-CardanoWallets).Name `
                 -Type string
             )
         )
+    }
+    begin{
+        $Name = $PSBoundParameters.Name
     }
     process{
         if($PSCmdlet.ShouldProcess($Name)){
@@ -782,7 +930,7 @@ function Open-CardanoWalletSession {
                 DynamicParameter `
                 -Name Name `
                 -Attributes @{ Mandatory = $true } `
-                -ValidateSet $(Get-CardanoWallet -All).Name `
+                -ValidateSet $(Get-CardanoWallets).Name `
                 -Type string
             )
         )
