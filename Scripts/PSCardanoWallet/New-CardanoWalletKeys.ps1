@@ -6,16 +6,16 @@ function New-CardanoWalletKeys {
             (
                 DynamicParameter `
                 -Name Name `
-                -Attributes @{ Position = 0 } `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0 
+                } `
                 -ValidateSet $(Get-CardanoWallets).Name `
                 -Type string
             )
         )
     }
     begin {
-        if (-not $PSBoundParameters.ContainsKey('Name')){
-            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
-        }
         $Name = $PSBoundParameters.Name
     }
     process{

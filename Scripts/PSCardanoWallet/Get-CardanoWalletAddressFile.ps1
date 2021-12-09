@@ -5,24 +5,37 @@ function Get-CardanoWalletAddressFile {
         DynamicParameterDictionary (
             (
                 DynamicParameter `
+                -Name Name `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0 
+                } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            ),
+            (
+                DynamicParameter `
                 -Name File `
                 -Attributes @{ 
                     Mandatory = $true
-                    Position = 0
+                    Position = 1
                 } `
-                -ValidateSet $(Get-CardanoWalletAddressFiles).Name `
+                -ValidateSet $(
+                    Get-CardanoWalletAddressFiles $PSBoundParameters.Name
+                ).Name `
                 -Type string
             )
         )
     }
-    begin{
+    begin {
+        $Name = $PSBoundParameters.Name
         $File = $PSBoundParameters.File
     }
     process{
-        Assert-CardanoWalletSessionIsOpen
-        $walletAddresses = $(Get-CardanoWalletAddressFiles).Where({ 
+        Assert-CardanoWalletExists $Name
+        $walletAddress = $(Get-CardanoWalletAddressFiles $Name).Where({ 
             $_.Name -eq $File
         })
-        return $walletAddresses
+        return $walletAddress
     }
 }

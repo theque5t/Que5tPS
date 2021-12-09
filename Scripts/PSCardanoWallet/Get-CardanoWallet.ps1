@@ -6,23 +6,23 @@ function Get-CardanoWallet {
             (
                 DynamicParameter `
                 -Name Name `
-                -Attributes @{ Position = 0 } `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0 
+                } `
                 -ValidateSet $(Get-CardanoWallets).Name `
                 -Type string
             )
         )
     }
     begin {
-        if (-not $PSBoundParameters.ContainsKey('Name')){
-            $PSBoundParameters.Add('Name', $env:CARDANO_WALLET)
-        }
         $Name = $PSBoundParameters.Name
     }
     process{
         Write-VerboseLog "Getting wallet..."
-        $wallets = $(Get-CardanoWallets).Where({ 
+        $wallet = $(Get-CardanoWallets).Where({ 
             $_.Name -eq $Name
         })
-        return $wallets
+        return $wallet
     }
 }

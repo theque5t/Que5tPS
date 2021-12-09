@@ -1,10 +1,29 @@
 function Remove-CardanoWalletSigningKeyFile {
-    param(
-        $Name
-    )
-    if($(Test-CardanoWalletSigningKeyFileExists $Name)){
-        $signingKey = Get-CardanoWalletKeyFile $Name -Type signing
-        Remove-Item $signingKey
+    [CmdletBinding()]
+    param()
+    DynamicParam {
+        DynamicParameterDictionary (
+            (
+                DynamicParameter `
+                -Name Name `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0 
+                } `
+                -ValidateSet $(Get-CardanoWallets).Name `
+                -Type string
+            )
+        )
     }
-    Assert-CardanoWalletSigningKeyFileDoesNotExist $Name
+    begin {
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        Assert-CardanoWalletExists $Name
+        if($(Test-CardanoWalletSigningKeyFileExists $Name)){
+            Get-CardanoWalletKeyFile $Name -Type signing |
+            Remove-Item
+        }
+        Assert-CardanoWalletSigningKeyFileDoesNotExist $Name
+    }
 }

@@ -1,5 +1,6 @@
 function Add-CardanoWalletFileSet {
     param(
+        [Parameter(Mandatory=$true)]
         $Name
     )
     Assert-CardanoHomeExists

@@ -6,13 +6,16 @@ function Remove-CardanoWallet {
             (
                 DynamicParameter `
                 -Name Name `
-                -Attributes @{ Mandatory = $true } `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0 
+                } `
                 -ValidateSet $(Get-CardanoWallets).Name `
                 -Type string
             )
         )
     }
-    begin{
+    begin {
         $Name = $PSBoundParameters.Name
     }
     process{

@@ -6,13 +6,20 @@ function Open-CardanoWalletSession {
             (
                 DynamicParameter `
                 -Name Name `
-                -Attributes @{ Mandatory = $true } `
+                -Attributes @{ 
+                    Mandatory = $true
+                    Position = 0 
+                } `
                 -ValidateSet $(Get-CardanoWallets).Name `
                 -Type string
             )
         )
     }
-    process {
+    begin {
+        $Name = $PSBoundParameters.Name
+    }
+    process{
+        Assert-CardanoWalletExists $Name
         Assert-CardanoWalletSessionIsClosed
         Assert-CardanoNodeInSync
     
