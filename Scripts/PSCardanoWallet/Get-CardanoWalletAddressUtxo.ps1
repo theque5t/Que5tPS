@@ -1,36 +1,27 @@
 function Get-CardanoWalletAddressUtxo {
     [CmdletBinding()]
-    param()
-    DynamicParam {
-        DynamicParameterDictionary (
-            (
-                DynamicParameter `
-                -Name Name `
-                -Attributes @{ 
-                    Mandatory = $true
-                    Position = 0 
-                } `
-                -ValidateSet $(Get-CardanoWallets).Name `
-                -Type string
-            ),
-            (
-                DynamicParameter `
-                -Name File `
-                -Attributes @{ 
-                    Mandatory = $true
-                    Position = 1
-                } `
-                -ValidateSet $(
-                    Get-CardanoWalletAddressFiles $PSBoundParameters.Name
-                ).Name `
-                -Type string
-            )
-        )
-    }
-    begin {
-        $Name = $PSBoundParameters.Name
-        $File = $PSBoundParameters.File
-    }
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [ArgumentCompleter({ $(Get-CardanoWallets).Name })]
+        [ValidateScript({ $_ -in $(Get-CardanoWallets).Name },
+         ErrorMessage = (
+         "The wallet, {0}, " + 
+         "is not valid per the following script: {1}"))]
+        $Name,
+
+        [Parameter(Mandatory = $true, Position = 1)]
+        [ArgumentCompleter({ 
+            param($Command, $Param, $Input, $AST, $ParamState)
+            $(Get-CardanoWalletAddressFiles $ParamState.Name).Name 
+        })]
+        [ValidateScript({ 
+            $_ -in $(Get-CardanoWalletAddressFiles $PSBoundParameters.Name).Name 
+        },
+         ErrorMessage = (
+         "The wallet address file, {0}, " +
+         "is not valid per the following script: {1}"))]
+        $File
+    )
     process{
         Assert-CardanoWalletSessionIsOpen
         Write-VerboseLog "Getting wallet address utxo..."
