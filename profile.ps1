@@ -4,6 +4,8 @@ function prompt {
          $(if ($NestedPromptLevel -ge 1) { '>>' }) + '> '
 }
 
-$(Get-ChildItem -Path "$PSScriptRoot\Scripts" -Recurse -Filter *.ps1).ForEach({. $_.FullName})
+$(Get-ChildItem -Path "$PSScriptRoot\Que5tPS" -Recurse -Filter *.ps1).ForEach({
+  . $_.FullName
+})
 
 Set-Location -Path 'C:\'
