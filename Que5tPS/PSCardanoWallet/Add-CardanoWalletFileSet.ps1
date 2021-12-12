@@ -6,11 +6,13 @@ function Add-CardanoWalletFileSet {
     Assert-CardanoHomeExists
     $walletPath = "$env:CARDANO_HOME\$Name"
     $walletConfig = "$walletPath\.config"
+    $walletTemp = "$walletPath\.temp"
     $walletKeys = "$walletPath\keys"
     $walletAddresses = "$walletPath\addresses"
     Write-VerboseLog "Creating wallet file set..."
     @($walletPath,
       $walletConfig,
+      $walletTemp,
       $walletKeys,
       $walletAddresses
     ).ForEach({
