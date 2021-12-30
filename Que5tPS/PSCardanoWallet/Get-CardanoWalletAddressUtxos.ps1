@@ -24,21 +24,20 @@ function Get-CardanoWalletAddressUtxos {
     )
     process{
         try{
-            # Assert-CardanoWalletSessionIsOpen
-            # Write-VerboseLog "Getting wallet address utxo..."
+            Assert-CardanoWalletSessionIsOpen
+            Write-VerboseLog "Getting wallet address utxo..."
 
-            # $walletPath = $(Get-CardanoWallet $Name).FullName
-            # $walletTemp = "$walletPath\.temp"
-            # $outputFile = "$walletTemp\queryUtxoOutput-$($(New-Guid).Guid).json"
-            # $_args = @(
-            #     'query','utxo'
-            #     '--address', $(Get-CardanoWalletAddress $Name $File)
-            #     '--out-file', $outputFile
-            #     $env:CARDANO_CLI_NETWORK_ARG
-            #     $env:CARDANO_CLI_NETWORK_ARG_VALUE
-            # )
-            # Invoke-CardanoCLI @_args
-            $outputFile = 'C:\Users\ananonone\OneDrive\Documents\Dev\Que5tPS\utxotest' # TESTING TEMP
+            $walletPath = $(Get-CardanoWallet $Name).FullName
+            $walletTemp = "$walletPath\.temp"
+            $outputFile = "$walletTemp\queryUtxoOutput-$($(New-Guid).Guid).json"
+            $_args = @(
+                'query','utxo'
+                '--address', $(Get-CardanoWalletAddress $Name $File)
+                '--out-file', $outputFile
+                $env:CARDANO_CLI_NETWORK_ARG
+                $env:CARDANO_CLI_NETWORK_ARG_VALUE
+            )
+            Invoke-CardanoCLI @_args
             $queryOutput = Get-Content $outputFile | ConvertFrom-Json -AsHashtable
             $utxos = [CardanoUtxoList]::new()
             $queryOutput.GetEnumerator().ForEach({
@@ -72,7 +71,7 @@ function Get-CardanoWalletAddressUtxos {
         }
         finally{
             if($outputFile -and $(Test-Path $outputFile)){
-                # Remove-Item $outputFile
+                Remove-Item $outputFile
             }
         }
     }
