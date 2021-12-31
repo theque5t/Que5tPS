@@ -101,3 +101,35 @@ function Assert-CommandSuccessful{
         Write-FalseAssertionError
     }
 }
+
+function Get-DefaultParameterValue([string] $Command, [string] $Parameter) {
+    foreach ($entry in $PSDefaultParameterValues.GetEnumerator()) {
+        $commandPattern, $parameterName = $entry.Key.Split(':')
+        if ($Command -like $commandPattern -and $Parameter -eq $parameterName) {
+            $value = $entry.Value
+            if($value.GetType().Name -eq 'ScriptBlock'){
+                $value = $value.Invoke()
+            }
+            return $value
+        }
+    }
+}
+
+function Get-BoundValueElseDefaultValue{
+    [CmdletBinding()]
+    param(
+        [parameter(Mandatory=$true,Position=0)]
+        [string] $Parameter,
+        [parameter(Mandatory=$true,Position=1)]
+        [hashtable] $Parameters,
+        [parameter(Position=2)]
+        [string] $Command = [string]$(Get-PSCallStack)[1].FunctionName
+    )
+    if($Parameters.$Parameter){
+        $value = $Parameters.$Parameter
+    }
+    else{
+        $value = Get-DefaultParameterValue -Command $Command -Parameter $Parameter
+    }
+    return $value
+}
