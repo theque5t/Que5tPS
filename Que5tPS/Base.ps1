@@ -60,7 +60,7 @@ function DynamicParameter {
 function DynamicParameterDictionary {
     param
     (
-        [parameter(Mandatory=$true,Position=0)]
+        [parameter(Position=0)]
         [System.Management.Automation.RuntimeDefinedParameter[]]$Parameters
     )
     $parameterDictionary = New-Object `
