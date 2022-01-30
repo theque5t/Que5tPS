@@ -6,6 +6,64 @@ function New-CardanoTransaction {
         [CardanoUtxoList]$Utxos
     )
     try{
+        function Get-AvailableTokens($Utxos) {
+            $availableTokens = @{}
+            $Utxos.Utxos.ForEach({ 
+                $_.Value.ForEach({ 
+                    $availableTokens["$($_.PolicyId).$($_.Name)"] = [CardanoToken]::new($_.PolicyId, $_.Name, 0) 
+                }) 
+            })
+            $availableTokens.GetEnumerator().ForEach({ 
+                $token = $_.Value
+                $token.Quantity = $(
+                    $Utxos.Utxos.Value.Where({ 
+                        $_.PolicyId -eq $token.PolicyId -and 
+                        $_.Name -eq $token.Name 
+                    }).Quantity | Measure-Object -Sum
+                ).Sum
+            })
+            $availableTokens = $availableTokens.GetEnumerator().ForEach({ $_.Value })
+            return $availableTokens
+        }
+
+        function Get-UnallocatedTokens ($Utxos, $Allocations) {
+            $allAvailableTokens = Get-AvailableTokens $Utxos
+            $allocatedTokens = $Allocations.GetEnumerator().ForEach({ $_.Value })
+            $unallocatedTokens = $allAvailableTokens.ForEach({
+                $availableToken = $_
+                $allocatedQuantity = $(
+                    $allocatedTokens.Where({ 
+                        $_.PolicyId -eq $availableToken.PolicyId -and
+                        $_.Name -eq $availableToken.Name
+                    }).Quantity | Measure-Object -Sum
+                ).Sum
+                $availableToken.Quantity = $availableToken.Quantity - $allocatedQuantity
+                if($availableToken.Quantity){
+                    $availableToken
+                }
+            })
+            return $unallocatedTokens
+        }
+        
+        function Write-AllocatedTokens ($Allocations) {
+            $Allocations.GetEnumerator() | 
+            Select-Object Key, Value -ExpandProperty Value | 
+            Format-Table PolicyId, Name, Quantity, @{Label='Recipient';Expression={$_.Key}} | 
+            Out-String |
+            Write-Host -ForegroundColor Cyan
+        }
+        
+        function Write-UnallocatedTokens($Utxos, $Allocations) {
+            $unallocatedTokens = Get-UnallocatedTokens $Utxos $Allocations
+            $unallocatedTokens | Format-Table PolicyId, Name, Quantity | 
+            Out-String | 
+            Write-Host -ForegroundColor Green
+        }
+
+        function Write-TransactionFee {
+            Write-Host $(Get-Random -Maximum 10)
+        }
+
         if([string]::IsNullOrWhiteSpace($Utxos)){
             if([string]::IsNullOrWhiteSpace($Addresses)){
                 Write-Host "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." `
@@ -38,15 +96,15 @@ function New-CardanoTransaction {
                 Write-Host "$($_.Key)" -ForegroundColor Cyan -NoNewline; Write-Host ')'
                 Write-Host
                 Write-Host " | UTXO Id: " -NoNewline; Write-Host $($_.Value.Id) -ForegroundColor Green
-                Write-Host " | From Address: " -NoNewline; Write-Host $($_.Value.Address) -ForegroundColor Green
-                Write-Host " | Tokens:"
+                Write-Host " | UTXO Data: " -NoNewline; Write-Host $($_.Value.Data) -ForegroundColor Green
+                Write-Host " | UTXO Holding Address: " -NoNewline; Write-Host $($_.Value.Address) -ForegroundColor Green
+                Write-Host " | UTXO Tokens:"
                 $($_.Value | 
                   Select-Object * -ExpandProperty Value | 
                   Format-List $(
                     'PolicyId'
                     'Name'
                     'Quantity'
-                    'Data'
                   ) | Out-String -Stream
                 ).ForEach({
                     Write-Host " |   " -NoNewline; Write-Host $_ -ForegroundColor Green
@@ -67,28 +125,32 @@ function New-CardanoTransaction {
             })
         }
 
-        if([string]::IsNullOrWhiteSpace($Recipients)){
-            Write-Host "Specify 1 or more recipient addresses (e.g. <address1>,<address2>, ...)." `
-                       "`nSeperate addresses using a comma." `
-                       -ForegroundColor Yellow
-            Write-Host "Input: " -ForegroundColor Yellow -NoNewline
-            $Recipients = Read-Host
-            Write-Host
-            $Recipients = $Recipients.split(",").Trim()
-        }
-
-
         if([string]::IsNullOrWhiteSpace($Allocations)){
-            # $unallocatedTokens = 
-            # $Utxos
+            if([string]::IsNullOrWhiteSpace($Recipients)){
+                Write-Host "Specify 1 or more recipient addresses (e.g. <address1>,<address2>, ...)." `
+                           "`nSeperate addresses using a comma." `
+                           -ForegroundColor Yellow
+                Write-Host "Input: " -ForegroundColor Yellow -NoNewline
+                $Recipients = Read-Host
+                Write-Host
+                $Recipients = $Recipients.split(",").Trim()
+            }
+
+            $Allocations = [ordered]@{}
+            $($Recipients).ForEach({
+                $recipient = $_
+                $Allocations.$recipient = [System.Collections.ArrayList]@()
+                $(Get-AvailableTokens($Utxos)).ForEach({
+                    $token = $_
+                    $Allocations.$recipient.Add([CardanoToken]::new($token.PolicyId,$token.Name,0)) | Out-Null
+                })
+            })
 
             do{
-                $allocationsComplete = $false
-                Write-Host "Current allocated tokens:"
-                Write-Host "<allocated tokens table with recipient column>"
-                Write-Host "Current transaction fee: <fee>"
-                Write-Host "Current unallocated tokens:"
-                Write-Host "<unallocated tokens table>"
+                $allocationActionsComplete = $false
+                Write-Host "Current allocated tokens:"; Write-AllocatedTokens $Allocations                
+                Write-Host "Current transaction fee: " -NoNewline; Write-TransactionFee
+                Write-Host "Current unallocated tokens:"; Write-UnallocatedTokens $Utxos $Allocations
                 Write-Host "NOTE: Any unallocated tokens will be automatically allocated as change for a recipient that will need to be specified"
                 Write-Host "Select an allocation action, or specify finished allocating"
                 Write-Host "1 - Allocate token"
@@ -97,36 +159,92 @@ function New-CardanoTransaction {
                 Write-Host "Input: " -NoNewline
                 $selection = Read-Host 
                 switch($selection){
-                    1 { Write-Host "Select a recipient:"
-                        $Recipients.GetEnumerator().ForEach({
+                    1 { 
+
+                        # $Allocations = @{
+                        #     "addr_test3" = [CardanoToken]::new('','lovelace',5), [CardanoToken]::new('4fc16c9','factory',1)
+                        #     "addr_test4" = [CardanoToken]::new('','lovelace',5)
+                        # }
+                        # $Recipients = [ordered]@{"1" = "addr1"; "2" = "addr2"; "3" = "addr3"}
+                        # $Tokens = [ordered]@{ "1" = @{ Token = "lovelace"; Quantity = 10000000 }; "2" = @{ Token = "factory"; Quantity = 1 } }
+
+                        # RECIPIENT OPTIONS
+                        $recipientOptions = [ordered]@{}
+                        $Recipients.ForEach({
+                            $key = "$($recipientOptions.Count + 1)"
+                            $recipientOptions.Add($key, $_)
+                        })
+                        Write-Host "Select a recipient:"
+                        $recipientOptions.GetEnumerator().ForEach({
                             Write-Host "$($_.Key)) $($_.Value)"
                         })
                         Write-Host "Input: " -NoNewline
-                        $recipient = Read-Host
+                        $recipientOptionsSelection = Read-Host
+                        $recipientOptionsSelection = $recipientOptions[$recipientOptionsSelection.Trim()]
                         
+                        # TOKEN OPTIONS
+                        $tokenOptions = [ordered]@{}
+                        $(Get-UnallocatedTokens $Utxos $Allocations).ForEach({
+                            $key = "$($tokenOptions.Count + 1)"
+                            $tokenOptions.Add($key, $_)
+                        })
                         Write-Host "Select a token:"
-                        $Tokens.GetEnumerator().ForEach({
+                        $tokenOptions.GetEnumerator().ForEach({
                             Write-Host "$($_.Key))"
                             $_.Value | Select-Object * | Format-Table | Out-String | Write-Host
                         })
                         Write-Host "Input: " -NoNewline
-                        $token = Read-Host
-        
+                        $tokenOptionsSelection = Read-Host
+                        $tokenOptionsSelection = $tokenOptions[$tokenOptionsSelection.Trim()]
+                        
+                        # QUANTITY OPTION
                         Write-Host "Select a quantity to allocate:"
                         Write-Host "Input: " -NoNewline
                         $quantity = Read-Host
-        
-                        Write-Output "Allocated $quantity of $($Tokens[$token].Token) to $($Recipients[$recipient])"
-                        Write-Output "$($Tokens[$token].Quantity - $quantity) $($Tokens[$token].Token) left..."
+                        
+                        # UPDATE ALLOCATION
+                        $($Allocations[$recipientOptionsSelection].Where({ 
+                            $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and 
+                            $_.Name -eq $tokenOptionsSelection.Name
+                        })).Quantity += $quantity                        
                     }
-                    2 { Write-Output "deallocating token..." }
-                    3 { Write-Output "Finish..."; $allocationsComplete = $true }
+                    2 { 
+                        # Write-Host "Select a recipient:"
+                        # $Recipients.GetEnumerator().ForEach({
+                        #     Write-Host "$($_.Key)) $($_.Value)"
+                        # })
+                        # Write-Host "Input: " -NoNewline
+                        # $recipient = Read-Host
+                        # $recipient = 
+                        
+                        # $tokenOptions = [ordered]@{}
+                        # $(Get-UnallocatedTokens $Utxos $Allocations).ForEach({
+                        #     $key = "$($tokenOptions.Count + 1)"
+                        #     $tokenOptions.Add($key, $_)
+                        # })
+                        # Write-Host "Select a token:"
+                        # $tokenOptions.GetEnumerator().ForEach({
+                        #     Write-Host "$($_.Key))"
+                        #     $_.Value | Select-Object * | Format-Table | Out-String | Write-Host
+                        # })
+                        # Write-Host "Input: " -NoNewline
+                        # $token = Read-Host
+                        
+                        # Write-Host "Select a quantity to allocate:"
+                        # Write-Host "Input: " -NoNewline
+                        # $quantity = Read-Host
+                        # $($Tokens[$token].Quantity + $quantity)
+                        
+                        # Write-Output "Allocated $quantity of $($Tokens[$token].Token) to $($Recipients[$recipient])"
+                        # Write-Output "$($Tokens[$token].Quantity - $quantity) $($Tokens[$token].Token) left..."
+                        # $allocationAction = 'allocate'
+                    }
+                    3 { $allocationActionsComplete = $true }
                     default { Write-Host "Invalid Selection: $_" -ForegroundColor Red }
                 }
             }
-            until($allocationsComplete)
+            until($allocationActionsComplete)
         }
-        
     }
     catch{
         throw $_
