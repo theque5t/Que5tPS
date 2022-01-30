@@ -152,35 +152,15 @@ function New-CardanoTransaction {
                 Write-Host "Current transaction fee: " -NoNewline; Write-TransactionFee
                 Write-Host "Current unallocated tokens:"; Write-UnallocatedTokens $Utxos $Allocations
                 Write-Host "NOTE: Any unallocated tokens will be automatically allocated as change for a recipient that will need to be specified"
-                Write-Host "Select an allocation action, or specify finished allocating"
-                Write-Host "1 - Allocate token"
-                Write-Host "2 - Deallocate token"
-                Write-Host "3 - Finished allocating"
-                Write-Host "Input: " -NoNewline
-                $selection = Read-Host 
-                switch($selection){
-                    1 { 
-
-                        # $Allocations = @{
-                        #     "addr_test3" = [CardanoToken]::new('','lovelace',5), [CardanoToken]::new('4fc16c9','factory',1)
-                        #     "addr_test4" = [CardanoToken]::new('','lovelace',5)
-                        # }
-                        # $Recipients = [ordered]@{"1" = "addr1"; "2" = "addr2"; "3" = "addr3"}
-                        # $Tokens = [ordered]@{ "1" = @{ Token = "lovelace"; Quantity = 10000000 }; "2" = @{ Token = "factory"; Quantity = 1 } }
-
+                $allocationActionSelection = Get-OptionSelection `
+                    -Options @('Allocate token', 'Deallocate token', 'Finished allocating') `
+                    -Instruction 'Select an allocation action, or specify finished allocating'
+                switch($allocationActionSelection){
+                    'Allocate token' { 
                         # RECIPIENT OPTIONS
-                        $recipientOptions = [ordered]@{}
-                        $Recipients.ForEach({
-                            $key = "$($recipientOptions.Count + 1)"
-                            $recipientOptions.Add($key, $_)
-                        })
-                        Write-Host "Select a recipient:"
-                        $recipientOptions.GetEnumerator().ForEach({
-                            Write-Host "$($_.Key)) $($_.Value)"
-                        })
-                        Write-Host "Input: " -NoNewline
-                        $recipientOptionsSelection = Read-Host
-                        $recipientOptionsSelection = $recipientOptions[$recipientOptionsSelection.Trim()]
+                        $recipientOptionsSelection = Get-OptionSelection `
+                            -Options $Recipients `
+                            -Instruction 'Select a recipient'
                         
                         # TOKEN OPTIONS
                         $tokenOptions = [ordered]@{}
@@ -208,7 +188,7 @@ function New-CardanoTransaction {
                             $_.Name -eq $tokenOptionsSelection.Name
                         })).Quantity += $quantity                        
                     }
-                    2 { 
+                    'Deallocate token' { 
                         # Write-Host "Select a recipient:"
                         # $Recipients.GetEnumerator().ForEach({
                         #     Write-Host "$($_.Key)) $($_.Value)"
@@ -239,7 +219,7 @@ function New-CardanoTransaction {
                         # Write-Output "$($Tokens[$token].Quantity - $quantity) $($Tokens[$token].Token) left..."
                         # $allocationAction = 'allocate'
                     }
-                    3 { $allocationActionsComplete = $true }
+                    'Finished allocating' { $allocationActionsComplete = $true }
                     default { Write-Host "Invalid Selection: $_" -ForegroundColor Red }
                 }
             }
