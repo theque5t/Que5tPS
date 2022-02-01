@@ -133,3 +133,95 @@ function Get-BoundValueElseDefaultValue{
     }
     return $value
 }
+
+function Write-HostBatch {
+    [CmdletBinding()]
+    param(
+        $Batch
+    )
+    $Batch.ForEach({ 
+        Write-Verbose "Processing: $($_.Object)"
+        Write-Host @_
+    })
+}
+
+function Get-OptionSelection {
+    [CmdletBinding()]
+    param(
+        [array]$Options,
+        $Instruction,
+        $OptionDisplayTemplate = @(
+            @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+            @{ Expression = ') $($option.Value)' }
+        )
+    )
+    
+    $optionsAvailable = [ordered]@{}
+    $Options.ForEach({
+        $key = "$($optionsAvailable.Count + 1)"
+        Write-Verbose "`$optionsAvailable.Add($key, $_)"
+        $optionsAvailable.Add($key, $_)
+    })
+
+    $selectionOutput = New-Object System.Collections.ArrayList
+    $selectionOutput.Add(@{ Object = $Instruction; ForegroundColor = 'Yellow' }) | Out-Null
+    Write-Verbose "`$selectionOutput.Count: $($selectionOutput.Count)"
+    $optionsAvailable.GetEnumerator().ForEach({
+        $option = $_
+        Write-Verbose "`$option.Key: $($option.Key)"
+        Write-Verbose "`$option.Value: $($option.Value)"
+        Write-Verbose "`$OptionDisplayTemplate.Count: $($OptionDisplayTemplate.Count)"
+        $OptionDisplayTemplate.ForEach({
+            $template = $_
+            Write-Verbose "`$template.Keys: $($template.Keys)"
+            Write-Verbose "`$template.Values: $($template.Values)"
+            $renderedTemplate = $template.Clone()
+            Write-Verbose "`$renderedTemplate.Keys: $($renderedTemplate.Keys)"
+            Write-Verbose "`$renderedTemplate.Values: $($renderedTemplate.Values)"
+            if($renderedTemplate.ContainsKey('Expression')){
+                Write-Verbose "`$renderedTemplate.ContainsKey('Expression'): true"
+                $expandedExpression = $ExecutionContext.InvokeCommand.ExpandString($renderedTemplate.Expression)
+                Write-Verbose "`$expandedExpression: $expandedExpression"
+                $renderedTemplate.Add('Object', $expandedExpression)
+                $renderedTemplate.Remove('Expression')
+            }
+            Write-Verbose "`$renderedTemplate.Keys: $($renderedTemplate.Keys)"
+            Write-Verbose "`$renderedTemplate.Values: $($renderedTemplate.Values)"
+            $selectionOutput.Add($renderedTemplate) | Out-Null
+        })
+    })
+    Write-Verbose "`$selectionOutput.Count: $($selectionOutput.Count)"
+    Write-HostBatch $selectionOutput
+
+    $validOptionSelection = $false
+    do{
+        Write-Host "Input: " -NoNewline
+        $optionSelection = Read-Host
+        $optionSelection = $optionSelection.Trim()
+        switch($optionSelection) {
+            {$optionsAvailable.Contains($optionSelection)} {
+                $validOptionSelection = $true
+                $optionSelection = $optionsAvailable[$optionSelection]
+            }
+            default { Write-Host "Invalid Selection: $_" -ForegroundColor Red }
+        }
+    }
+    while(-not $validOptionSelection)
+    return $optionSelection
+}
+
+function Get-FreeformInput {
+    [CmdletBinding()]
+    param(
+        $Instruction,
+        [switch]$Csv
+    )
+    Write-HostBatch @(
+        @{ Object = $Instruction; ForegroundColor = 'Yellow' }
+        @{ Object = 'Input: '; ForegroundColor = 'Yellow'; NoNewline = $true }
+    )
+    $input = Read-Host
+    Write-Host
+    if($Csv){ $input = $input.split(",").Trim()}
+    return $input
+}
