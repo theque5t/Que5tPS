@@ -167,6 +167,7 @@ function Get-OptionSelection {
         $OptionDisplayTemplate = @(
             @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
             @{ Expression = ') $($option.Value)' }
+            @{ NoNewline = $false }
         ),
         [Parameter(ParameterSetName = 'MultipleChoice')]
         [switch]$MultipleChoice,
@@ -217,10 +218,13 @@ function Get-OptionSelection {
         $optionSelection = Read-Host
         Write-Host
         $optionSelection = $MultipleChoice ? $optionSelection.split($Delimiter).Trim() : $optionSelection.Trim()
+        Write-Verbose "`$optionSelection: $optionSelection"
+        Write-Verbose "`$optionSelection.Count: $($optionSelection.Count)"
+        $optionValue = New-Object System.Collections.ArrayList
         switch($optionSelection) {
-            {$optionsAvailable.Contains($optionSelection)} {
+            {$optionsAvailable.Contains($_)} {
                 $validOptionSelection = $true
-                $optionSelection = $optionsAvailable[$optionSelection]
+                $optionValue.Add($optionsAvailable[$_]) | Out-Null
             }
             default { 
                 $validOptionSelection = $false
@@ -229,7 +233,7 @@ function Get-OptionSelection {
         }
     }
     while(-not $validOptionSelection)
-    return $optionSelection
+    return $optionValue
 }
 
 function Get-FreeformInput {

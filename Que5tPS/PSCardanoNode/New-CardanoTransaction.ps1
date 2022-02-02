@@ -137,12 +137,7 @@ function New-CardanoTransaction {
                 )
 
             $Utxos = New-Object CardanoUtxoList
-            $utxoOptionsSelection.ForEach({
-                if($utxoOptions.Contains($_)){
-                    $utxo = $utxoOptions.$_
-                    $Utxos.AddUtxo($utxo)
-                }
-            })
+            $utxoOptionsSelection.ForEach({ $Utxos.AddUtxo($_) })
         }
 
         if([string]::IsNullOrWhiteSpace($Allocations)){
