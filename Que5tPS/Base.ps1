@@ -141,7 +141,21 @@ function Write-HostBatch {
     )
     $Batch.ForEach({ 
         Write-Verbose "Processing: $($_.Object)"
-        Write-Host @_
+        $_args = $_
+        $prefix = $false
+        if($_args.Contains('Prefix')){
+            $prefix = $true
+            $prefixArgs = $_args.Prefix
+            $_args.Remove('Prefix')
+        }
+        Write-Verbose "`$_args.Object: $($_args.Object)"
+        $lines = $_args.Object -split "`r`n"
+        Write-Verbose "`$lines.Count: $($lines.Count)"
+        $lines.ForEach({
+            if($prefix){ Write-Host @prefixArgs }
+            $_args.Object = $_
+            Write-Host @_args
+        })
     })
 }
 
@@ -153,7 +167,11 @@ function Get-OptionSelection {
         $OptionDisplayTemplate = @(
             @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
             @{ Expression = ') $($option.Value)' }
-        )
+        ),
+        [Parameter(ParameterSetName = 'MultipleChoice')]
+        [switch]$MultipleChoice,
+        [Parameter(ParameterSetName = 'MultipleChoice')]
+        $Delimiter = ','
     )
     
     $optionsAvailable = [ordered]@{}
@@ -164,6 +182,7 @@ function Get-OptionSelection {
     })
 
     $selectionOutput = New-Object System.Collections.ArrayList
+    $selectionOutput.Add(@{ NoNewline = $false }) | Out-Null
     $selectionOutput.Add(@{ Object = $Instruction; ForegroundColor = 'Yellow' }) | Out-Null
     Write-Verbose "`$selectionOutput.Count: $($selectionOutput.Count)"
     $optionsAvailable.GetEnumerator().ForEach({
@@ -193,17 +212,20 @@ function Get-OptionSelection {
     Write-Verbose "`$selectionOutput.Count: $($selectionOutput.Count)"
     Write-HostBatch $selectionOutput
 
-    $validOptionSelection = $false
     do{
-        Write-Host "Input: " -NoNewline
+        Write-Host "Input: " -ForegroundColor Yellow -NoNewline
         $optionSelection = Read-Host
-        $optionSelection = $optionSelection.Trim()
+        Write-Host
+        $optionSelection = $MultipleChoice ? $optionSelection.split($Delimiter).Trim() : $optionSelection.Trim()
         switch($optionSelection) {
             {$optionsAvailable.Contains($optionSelection)} {
                 $validOptionSelection = $true
                 $optionSelection = $optionsAvailable[$optionSelection]
             }
-            default { Write-Host "Invalid Selection: $_" -ForegroundColor Red }
+            default { 
+                $validOptionSelection = $false
+                Write-Host "Invalid Selection: $_" -ForegroundColor Red
+            }
         }
     }
     while(-not $validOptionSelection)

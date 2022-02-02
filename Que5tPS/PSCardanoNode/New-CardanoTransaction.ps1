@@ -66,13 +66,10 @@ function New-CardanoTransaction {
 
         if([string]::IsNullOrWhiteSpace($Utxos)){
             if([string]::IsNullOrWhiteSpace($Addresses)){
-                Write-Host "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." `
-                           "`nSeperate addresses using a comma." `
-                           -ForegroundColor Yellow
-                Write-Host "Input: " -ForegroundColor Yellow -NoNewline
-                $Addresses = Read-Host
-                Write-Host
-                $Addresses = $Addresses.split(",").Trim()
+                $Addresses = Get-FreeformInput -Csv -Instruction $(
+                    "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." +
+                    "`nSeperate addresses using a comma."
+                )
             }
 
             $addressesUtxos = New-Object CardanoUtxoList
@@ -83,39 +80,62 @@ function New-CardanoTransaction {
                 })
             })
 
-            $utxoOptions = [ordered]@{}
-            $addressesUtxos.Utxos.ForEach({
-                $key = "$($utxoOptions.Count + 1)"
-                $utxoOptions.Add($key, $_)
-            })
+            # $utxoOptions = [ordered]@{}
+            # $addressesUtxos.Utxos.ForEach({
+            #     $key = "$($utxoOptions.Count + 1)"
+            #     $utxoOptions.Add($key, $_)
+            # })
 
-            Write-Host "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." `
-                       "`nSeperate numbers using a comma.`n" `
-                       -ForegroundColor Yellow
-            $utxoOptions.GetEnumerator().ForEach({
-                Write-Host "$($_.Key)" -ForegroundColor Cyan -NoNewline; Write-Host ')'
-                Write-Host
-                Write-Host " | UTXO Id: " -NoNewline; Write-Host $($_.Value.Id) -ForegroundColor Green
-                Write-Host " | UTXO Data: " -NoNewline; Write-Host $($_.Value.Data) -ForegroundColor Green
-                Write-Host " | UTXO Holding Address: " -NoNewline; Write-Host $($_.Value.Address) -ForegroundColor Green
-                Write-Host " | UTXO Tokens:"
-                $($_.Value | 
-                  Select-Object * -ExpandProperty Value | 
-                  Format-List $(
-                    'PolicyId'
-                    'Name'
-                    'Quantity'
-                  ) | Out-String -Stream
-                ).ForEach({
-                    Write-Host " |   " -NoNewline; Write-Host $_ -ForegroundColor Green
-                })
-                Write-Host
-            })
-            Write-Host "Input: " -ForegroundColor Yellow -NoNewline
-            $utxoOptionsSelection = Read-Host
-            Write-Host
+            # Write-Host "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." `
+            #            "`nSeperate numbers using a comma.`n" `
+            #            -ForegroundColor Yellow
+            # $utxoOptions.GetEnumerator().ForEach({
+            #     Write-Host "$($_.Key)" -ForegroundColor Cyan -NoNewline; Write-Host ')'
+            #     Write-Host
+            #     Write-Host " | UTXO Id: " -NoNewline; Write-Host $($_.Value.Id) -ForegroundColor Green
+            #     Write-Host " | UTXO Data: " -NoNewline; Write-Host $($_.Value.Data) -ForegroundColor Green
+            #     Write-Host " | UTXO Holding Address: " -NoNewline; Write-Host $($_.Value.Address) -ForegroundColor Green
+            #     Write-Host " | UTXO Tokens:"
+            #     $($_.Value | 
+            #       Select-Object * -ExpandProperty Value | 
+            #       Format-List $(
+            #         'PolicyId'
+            #         'Name'
+            #         'Quantity'
+            #       ) | Out-String -Stream
+            #     ).ForEach({
+            #         Write-Host " |   " -NoNewline; Write-Host $_ -ForegroundColor Green
+            #     })
+            #     Write-Host
+            # })
+            # Write-Host "Input: " -ForegroundColor Yellow -NoNewline
+            # $utxoOptionsSelection = Read-Host
+            # Write-Host
 
-            $utxoOptionsSelection = $utxoOptionsSelection.split(",").Trim()
+            $utxoOptionsSelection = Get-OptionSelection `
+                -MultipleChoice `
+                -Instruction $(
+                    "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." +
+                    "`nSeperate numbers using a comma.`n"
+                ) `
+                -Options $addressesUtxos.Utxos `
+                -OptionDisplayTemplate @(
+                    @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+                    @{ Object = ')' },
+                    @{ Object = ' | UTXO Id: ' ; NoNewline = $true },
+                    @{ Expression = '$($option.Value.Id)'; ForegroundColor = 'Green' },
+                    @{ Object = ' | UTXO Data: ' ; NoNewline = $true },
+                    @{ Expression = '$($option.Value.Data)'; ForegroundColor = 'Green' },
+                    @{ Object = ' | UTXO Holding Address: ' ; NoNewline = $true },
+                    @{ Expression = '$($option.Value.Address)'; ForegroundColor = 'Green' }
+                    @{ Object = ' | UTXO Tokens:' },
+                    @{ Prefix = @{ Object = ' |   '; NoNewline = $true }
+                       Expression = '$($option.Value | Select-Object * -ExpandProperty Value | Format-List "PolicyId", "Name", "Quantity" | Out-String)'
+                       ForegroundColor = 'Green'
+                    },
+                    @{ NoNewline = $false }
+                )
+
             $Utxos = New-Object CardanoUtxoList
             $utxoOptionsSelection.ForEach({
                 if($utxoOptions.Contains($_)){
@@ -153,40 +173,39 @@ function New-CardanoTransaction {
                 Write-Host "Current unallocated tokens:"; Write-UnallocatedTokens $Utxos $Allocations
                 Write-Host "NOTE: Any unallocated tokens will be automatically allocated as change for a recipient that will need to be specified"
                 $allocationActionSelection = Get-OptionSelection `
-                    -Options @('Allocate token', 'Deallocate token', 'Finished allocating') `
-                    -Instruction 'Select an allocation action, or specify finished allocating'
+                    -Instruction 'Select an allocation action, or specify finished allocating:' `
+                    -Options @('Allocate token', 'Deallocate token', 'Finished allocating')
+
                 switch($allocationActionSelection){
                     'Allocate token' { 
-                        # RECIPIENT OPTIONS
                         $recipientOptionsSelection = Get-OptionSelection `
-                            -Options $Recipients `
-                            -Instruction 'Select a recipient'
-                        
-                        # TOKEN OPTIONS
-                        $tokenOptions = [ordered]@{}
-                        $(Get-UnallocatedTokens $Utxos $Allocations).ForEach({
-                            $key = "$($tokenOptions.Count + 1)"
-                            $tokenOptions.Add($key, $_)
-                        })
-                        Write-Host "Select a token:"
-                        $tokenOptions.GetEnumerator().ForEach({
-                            Write-Host "$($_.Key))"
-                            $_.Value | Select-Object * | Format-Table | Out-String | Write-Host
-                        })
-                        Write-Host "Input: " -NoNewline
-                        $tokenOptionsSelection = Read-Host
-                        $tokenOptionsSelection = $tokenOptions[$tokenOptionsSelection.Trim()]
-                        
-                        # QUANTITY OPTION
-                        Write-Host "Select a quantity to allocate:"
+                            -Instruction 'Select a recipient:' `
+                            -Options $Recipients
+
+                        $tokenOptionsSelection = Get-OptionSelection `
+                            -Instruction 'Select a token:' `
+                            -Options $(Get-UnallocatedTokens $Utxos $Allocations) `
+                            -OptionDisplayTemplate @(
+                                @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+                                @{ Object = ')' },
+                                @{ Object = ' | PolicyId: ' ; NoNewline = $true },
+                                @{ Expression = '$($option.Value.PolicyId)'; ForegroundColor = 'Green' },
+                                @{ Object = ' | Name: ' ; NoNewline = $true },
+                                @{ Expression = '$($option.Value.Name)'; ForegroundColor = 'Green' },
+                                @{ Object = ' | Quantity: ' ; NoNewline = $true },
+                                @{ Expression = '$($option.Value.Quantity)'; ForegroundColor = 'Green' }
+                                @{ NoNewline = $false }
+                            )
+
+                        Write-Host "Select a quantity to allocate."
                         Write-Host "Input: " -NoNewline
                         $quantity = Read-Host
                         
-                        # UPDATE ALLOCATION
-                        $($Allocations[$recipientOptionsSelection].Where({ 
-                            $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and 
-                            $_.Name -eq $tokenOptionsSelection.Name
-                        })).Quantity += $quantity                        
+                        # # UPDATE ALLOCATION
+                        # $($Allocations[$recipientOptionsSelection].Where({ 
+                        #     $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and 
+                        #     $_.Name -eq $tokenOptionsSelection.Name
+                        # })).Quantity += $quantity                        
                     }
                     'Deallocate token' { 
                         # Write-Host "Select a recipient:"
