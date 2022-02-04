@@ -149,11 +149,13 @@ function New-CardanoTransaction {
 
                 $allocationActions = @{ 
                     'Allocate token' = @{ 
+                        Label = 'allocate'
                         RecipientOptions = $Recipients
                         TokenOptions = {$(Get-UnallocatedTokens $Utxos $Allocations)}
                         Action = {$args[0]+$args[1]} 
                     } 
                     'Deallocate token' = @{ 
+                        Label = 'deallocate'
                         RecipientOptions = $Allocations.Keys
                         TokenOptions = {$Allocations[$recipientOptionsSelection]}
                         Action = {$args[0]-$args[1]} 
@@ -181,15 +183,16 @@ function New-CardanoTransaction {
                             )
 
                         $quantitySelection = Get-FreeformInput `
-                            -Instruction 'Select a quantity to allocate:' `
+                            -Instruction "Select a quantity to $($allocationActions[$_].Label):" `
                             -InputType 'int' `
                             -ValidationType InRange `
                             -ValidationParameters @{ Minimum = 0; Maximum = $tokenOptionsSelection.Quantity }
                         
-                        $allocation = $Allocations[$recipientOptionsSelection].Where({ 
+                        $allocation = $(
+                            $Allocations[$recipientOptionsSelection].Where({ 
                             $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and 
-                            $_.Name -eq $tokenOptionsSelection.Name
-                        })
+                            $_.Name -eq $tokenOptionsSelection.Name})
+                        )
 
                         $allocation.Quantity = & $allocationActions[$_].Action $allocation.Quantity $quantitySelection
                     }

@@ -260,6 +260,7 @@ function Get-FreeformInput {
         $validInput = $true
         $input.ForEach({
             $value = $_
+            $value = $value -as ($InputType -as [type])
             switch ($ValidationType) {
                 'InRange' { 
                     $validated = (
@@ -271,10 +272,7 @@ function Get-FreeformInput {
                     $validated = $value -match $ValidationParameters.Pattern
                 }
             }
-            if($validated){ 
-                $value = $value -as ($InputType -as [type])
-                $inputValue.Add($value) | Out-Null
-            }
+            if($validated){ $inputValue.Add($value) | Out-Null }
             else{ 
                 $validInput = $false
                 Write-Host "Invalid Selection: $value" -ForegroundColor Red 
