@@ -169,9 +169,7 @@ function Get-OptionSelection {
             @{ Expression = ') $($option.Value)' }
             @{ NoNewline = $false }
         ),
-        [Parameter(ParameterSetName = 'MultipleChoice')]
         [switch]$MultipleChoice,
-        [Parameter(ParameterSetName = 'MultipleChoice')]
         $Delimiter = ','
     )
     
@@ -221,9 +219,9 @@ function Get-OptionSelection {
         Write-Verbose "`$optionSelection: $optionSelection"
         Write-Verbose "`$optionSelection.Count: $($optionSelection.Count)"
         $optionValue = New-Object System.Collections.ArrayList
+        $validOptionSelection = $true
         switch($optionSelection) {
             {$optionsAvailable.Contains($_)} {
-                $validOptionSelection = $true
                 $optionValue.Add($optionsAvailable[$_]) | Out-Null
             }
             default { 
@@ -242,13 +240,9 @@ function Get-FreeformInput {
         $Instruction,
         $InputType,
         [ValidateSet('InRange','MatchPattern')]
-        [Parameter(ParameterSetName = 'Validation')]
         $ValidationType,
-        [Parameter(ParameterSetName = 'Validation')]
         $ValidationParameters,
-        [Parameter(ParameterSetName = 'Delimited')]
         [switch]$Delimited,
-        [Parameter(ParameterSetName = 'Delimited')]
         $Delimiter = ','
     )
 
@@ -263,23 +257,27 @@ function Get-FreeformInput {
         Write-Verbose "`$input.Count: $($input.Count)"
         $inputValue = New-Object System.Collections.ArrayList
         
+        $validInput = $true
         $input.ForEach({
             $value = $_
-            $validInput = $false
             switch ($ValidationType) {
                 'InRange' { 
-                    if(( $value -ge $ValidationParameters.Minimum ) -and 
-                       ( $value -le $ValidationParameters.Maximum )) 
-                      { $validInput = $true }
+                    $validated = (
+                        ( $value -ge $ValidationParameters.Minimum ) -and 
+                        ( $value -le $ValidationParameters.Maximum )
+                    )
                  }
                 'MatchPattern' {
-                    if( $value -match $ValidationParameters.Pattern )
-                      { $validInput = $true }
+                    $validated = $value -match $ValidationParameters.Pattern
                 }
             }
-            if($validInput){ 
+            if($validated){ 
                 $value = $value -as ($InputType -as [type])
                 $inputValue.Add($value) | Out-Null
+            }
+            else{ 
+                $validInput = $false
+                Write-Host "Invalid Selection: $value" -ForegroundColor Red 
             }
         })
     }

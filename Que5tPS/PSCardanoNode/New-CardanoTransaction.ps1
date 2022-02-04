@@ -1,6 +1,5 @@
 function New-CardanoTransaction {
     [CmdletBinding()]
-    $addressPattern = '^(addr1|stake1|addr_test1|stake_test1)[a-z0-9]+$|^(Ae2|DdzFF|37bt)[a-zA-Z0-9]+$'
     param(
         $WorkingDir,
         $Addresses,
@@ -65,6 +64,7 @@ function New-CardanoTransaction {
             Write-Host $(Get-Random -Maximum 10)
         }
 
+        $addressPattern = '^(addr1|stake1|addr_test1|stake_test1)[a-z0-9]+$|^(Ae2|DdzFF|37bt)[a-zA-Z0-9]+$'
         if([string]::IsNullOrWhiteSpace($Utxos)){
             if([string]::IsNullOrWhiteSpace($Addresses)){
                 $Addresses = Get-FreeformInput `
