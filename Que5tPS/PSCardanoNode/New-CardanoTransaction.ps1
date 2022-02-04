@@ -1,5 +1,6 @@
 function New-CardanoTransaction {
     [CmdletBinding()]
+    $addressPattern = '^(addr1|stake1|addr_test1|stake_test1)[a-z0-9]+$|^(Ae2|DdzFF|37bt)[a-zA-Z0-9]+$'
     param(
         $WorkingDir,
         $Addresses,
@@ -66,10 +67,15 @@ function New-CardanoTransaction {
 
         if([string]::IsNullOrWhiteSpace($Utxos)){
             if([string]::IsNullOrWhiteSpace($Addresses)){
-                $Addresses = Get-FreeformInput -Csv -Instruction $(
-                    "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." +
-                    "`nSeperate addresses using a comma."
-                )
+                $Addresses = Get-FreeformInput `
+                    -Instruction $(
+                        "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." +
+                        "`nSeperate addresses using a comma."
+                    ) `
+                    -InputType 'string' `
+                    -ValidationType MatchPattern `
+                    -ValidationParameters @{ Pattern = $addressPattern } `
+                    -Delimited
             }
 
             $addressesUtxos = New-Object CardanoUtxoList
@@ -79,38 +85,6 @@ function New-CardanoTransaction {
                     $addressesUtxos.AddUtxo($_)
                 })
             })
-
-            # $utxoOptions = [ordered]@{}
-            # $addressesUtxos.Utxos.ForEach({
-            #     $key = "$($utxoOptions.Count + 1)"
-            #     $utxoOptions.Add($key, $_)
-            # })
-
-            # Write-Host "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." `
-            #            "`nSeperate numbers using a comma.`n" `
-            #            -ForegroundColor Yellow
-            # $utxoOptions.GetEnumerator().ForEach({
-            #     Write-Host "$($_.Key)" -ForegroundColor Cyan -NoNewline; Write-Host ')'
-            #     Write-Host
-            #     Write-Host " | UTXO Id: " -NoNewline; Write-Host $($_.Value.Id) -ForegroundColor Green
-            #     Write-Host " | UTXO Data: " -NoNewline; Write-Host $($_.Value.Data) -ForegroundColor Green
-            #     Write-Host " | UTXO Holding Address: " -NoNewline; Write-Host $($_.Value.Address) -ForegroundColor Green
-            #     Write-Host " | UTXO Tokens:"
-            #     $($_.Value | 
-            #       Select-Object * -ExpandProperty Value | 
-            #       Format-List $(
-            #         'PolicyId'
-            #         'Name'
-            #         'Quantity'
-            #       ) | Out-String -Stream
-            #     ).ForEach({
-            #         Write-Host " |   " -NoNewline; Write-Host $_ -ForegroundColor Green
-            #     })
-            #     Write-Host
-            # })
-            # Write-Host "Input: " -ForegroundColor Yellow -NoNewline
-            # $utxoOptionsSelection = Read-Host
-            # Write-Host
 
             $utxoOptionsSelection = Get-OptionSelection `
                 -MultipleChoice `
@@ -142,13 +116,15 @@ function New-CardanoTransaction {
 
         if([string]::IsNullOrWhiteSpace($Allocations)){
             if([string]::IsNullOrWhiteSpace($Recipients)){
-                Write-Host "Specify 1 or more recipient addresses (e.g. <address1>,<address2>, ...)." `
-                           "`nSeperate addresses using a comma." `
-                           -ForegroundColor Yellow
-                Write-Host "Input: " -ForegroundColor Yellow -NoNewline
-                $Recipients = Read-Host
-                Write-Host
-                $Recipients = $Recipients.split(",").Trim()
+                $Recipients = Get-FreeformInput `
+                    -Instruction $(
+                        "Specify 1 or more recipient addresses (e.g. <address1>,<address2>, ...)." +
+                        "`nSeperate addresses using a comma."
+                    ) `
+                    -InputType 'string' `
+                    -ValidationType MatchPattern `
+                    -ValidationParameters @{ Pattern = $addressPattern } `
+                    -Delimited
             }
 
             $Allocations = [ordered]@{}
@@ -171,15 +147,27 @@ function New-CardanoTransaction {
                     -Instruction 'Select an allocation action, or specify finished allocating:' `
                     -Options @('Allocate token', 'Deallocate token', 'Finished allocating')
 
+                $allocationActions = @{ 
+                    'Allocate token' = @{ 
+                        RecipientOptions = $Recipients
+                        TokenOptions = {$(Get-UnallocatedTokens $Utxos $Allocations)}
+                        Action = {$args[0]+$args[1]} 
+                    } 
+                    'Deallocate token' = @{ 
+                        RecipientOptions = $Allocations.Keys
+                        TokenOptions = {$Allocations[$recipientOptionsSelection]}
+                        Action = {$args[0]-$args[1]} 
+                    } 
+                }
                 switch($allocationActionSelection){
-                    'Allocate token' { 
+                    {$_ -in 'Allocate token','Deallocate token'} { 
                         $recipientOptionsSelection = Get-OptionSelection `
                             -Instruction 'Select a recipient:' `
-                            -Options $Recipients
+                            -Options $allocationActions[$_].RecipientOptions
 
                         $tokenOptionsSelection = Get-OptionSelection `
                             -Instruction 'Select a token:' `
-                            -Options $(Get-UnallocatedTokens $Utxos $Allocations) `
+                            -Options $(& $allocationActions[$_].TokenOptions) `
                             -OptionDisplayTemplate @(
                                 @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
                                 @{ Object = ')' },
@@ -192,46 +180,18 @@ function New-CardanoTransaction {
                                 @{ NoNewline = $false }
                             )
 
-                        Write-Host "Select a quantity to allocate."
-                        Write-Host "Input: " -NoNewline
-                        $quantity = Read-Host
+                        $quantitySelection = Get-FreeformInput `
+                            -Instruction 'Select a quantity to allocate:' `
+                            -InputType 'int' `
+                            -ValidationType InRange `
+                            -ValidationParameters @{ Minimum = 0; Maximum = $tokenOptionsSelection.Quantity }
                         
-                        # # UPDATE ALLOCATION
-                        # $($Allocations[$recipientOptionsSelection].Where({ 
-                        #     $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and 
-                        #     $_.Name -eq $tokenOptionsSelection.Name
-                        # })).Quantity += $quantity                        
-                    }
-                    'Deallocate token' { 
-                        # Write-Host "Select a recipient:"
-                        # $Recipients.GetEnumerator().ForEach({
-                        #     Write-Host "$($_.Key)) $($_.Value)"
-                        # })
-                        # Write-Host "Input: " -NoNewline
-                        # $recipient = Read-Host
-                        # $recipient = 
-                        
-                        # $tokenOptions = [ordered]@{}
-                        # $(Get-UnallocatedTokens $Utxos $Allocations).ForEach({
-                        #     $key = "$($tokenOptions.Count + 1)"
-                        #     $tokenOptions.Add($key, $_)
-                        # })
-                        # Write-Host "Select a token:"
-                        # $tokenOptions.GetEnumerator().ForEach({
-                        #     Write-Host "$($_.Key))"
-                        #     $_.Value | Select-Object * | Format-Table | Out-String | Write-Host
-                        # })
-                        # Write-Host "Input: " -NoNewline
-                        # $token = Read-Host
-                        
-                        # Write-Host "Select a quantity to allocate:"
-                        # Write-Host "Input: " -NoNewline
-                        # $quantity = Read-Host
-                        # $($Tokens[$token].Quantity + $quantity)
-                        
-                        # Write-Output "Allocated $quantity of $($Tokens[$token].Token) to $($Recipients[$recipient])"
-                        # Write-Output "$($Tokens[$token].Quantity - $quantity) $($Tokens[$token].Token) left..."
-                        # $allocationAction = 'allocate'
+                        $allocation = $Allocations[$recipientOptionsSelection].Where({ 
+                            $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and 
+                            $_.Name -eq $tokenOptionsSelection.Name
+                        })
+
+                        $allocation.Quantity = & $allocationActions[$_].Action $allocation.Quantity $quantitySelection
                     }
                     'Finished allocating' { $allocationActionsComplete = $true }
                     default { Write-Host "Invalid Selection: $_" -ForegroundColor Red }

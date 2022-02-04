@@ -240,14 +240,50 @@ function Get-FreeformInput {
     [CmdletBinding()]
     param(
         $Instruction,
-        [switch]$Csv
+        $InputType,
+        [ValidateSet('InRange','MatchPattern')]
+        [Parameter(ParameterSetName = 'Validation')]
+        $ValidationType,
+        [Parameter(ParameterSetName = 'Validation')]
+        $ValidationParameters,
+        [Parameter(ParameterSetName = 'Delimited')]
+        [switch]$Delimited,
+        [Parameter(ParameterSetName = 'Delimited')]
+        $Delimiter = ','
     )
-    Write-HostBatch @(
-        @{ Object = $Instruction; ForegroundColor = 'Yellow' }
-        @{ Object = 'Input: '; ForegroundColor = 'Yellow'; NoNewline = $true }
-    )
-    $input = Read-Host
-    Write-Host
-    if($Csv){ $input = $input.split(",").Trim()}
-    return $input
+
+    Write-Host $Instruction -ForegroundColor Yellow
+
+    do{
+        Write-Host "Input: " -ForegroundColor Yellow -NoNewline
+        $input = Read-Host
+        Write-Host
+        $input = $Delimited ? $input.split($Delimiter).Trim() : $input.Trim()
+        Write-Verbose "`$input: $input"
+        Write-Verbose "`$input.Count: $($input.Count)"
+        $inputValue = New-Object System.Collections.ArrayList
+        
+        $input.ForEach({
+            $value = $_
+            $validInput = $false
+            switch ($ValidationType) {
+                'InRange' { 
+                    if(( $value -ge $ValidationParameters.Minimum ) -and 
+                       ( $value -le $ValidationParameters.Maximum )) 
+                      { $validInput = $true }
+                 }
+                'MatchPattern' {
+                    if( $value -match $ValidationParameters.Pattern )
+                      { $validInput = $true }
+                }
+            }
+            if($validInput){ 
+                $value = $value -as ($InputType -as [type])
+                $inputValue.Add($value) | Out-Null
+            }
+        })
+    }
+    while(-not $validInput)
+
+    return $inputValue
 }
