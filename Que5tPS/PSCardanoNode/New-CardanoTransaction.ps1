@@ -53,8 +53,15 @@ function New-CardanoTransaction {
             Write-Host -ForegroundColor Cyan
         }
         
-        function Write-UnallocatedTokens($Utxos, $Allocations) {
-            $unallocatedTokens = Get-UnallocatedTokens $Utxos $Allocations
+        function Write-ChangeTokens($ChangeAllocations){
+            $ChangeAllocations.GetEnumerator() | 
+            Select-Object Key, Value -ExpandProperty Value | 
+            Format-Table PolicyId, Name, Quantity, @{Label='Change Recipient';Expression={$_.Key}} | 
+            Out-String |
+            Write-Host -ForegroundColor Cyan
+        }
+
+        function Write-UnallocatedTokens($UnallocatedTokens) {
             $unallocatedTokens | Format-Table PolicyId, Name, Quantity | 
             Out-String | 
             Write-Host -ForegroundColor Green
@@ -127,6 +134,14 @@ function New-CardanoTransaction {
                     -Delimited
             }
 
+            if([string]::IsNullOrWhiteSpace($ChangeRecipient)){
+                $ChangeRecipient = Get-FreeformInput `
+                    -Instruction "Specify 1 address to be the recipient of any change (unallocated tokens):" `
+                    -InputType 'string' `
+                    -ValidationType MatchPattern `
+                    -ValidationParameters @{ Pattern = $addressPattern }
+            }
+
             $Allocations = [ordered]@{}
             $($Recipients).ForEach({
                 $recipient = $_
@@ -139,10 +154,20 @@ function New-CardanoTransaction {
 
             do{
                 $allocationActionsComplete = $false
-                Write-Host "Current allocated tokens:"; Write-AllocatedTokens $Allocations                
-                Write-Host "Current transaction fee: " -NoNewline; Write-TransactionFee
-                Write-Host "Current unallocated tokens:"; Write-UnallocatedTokens $Utxos $Allocations
-                Write-Host "NOTE: Any unallocated tokens will be automatically allocated as change for a recipient that will need to be specified"
+                $unallocatedTokens = Get-UnallocatedTokens $Utxos $Allocations
+                $changeAllocations = [ordered]@{ $ChangeRecipient = [System.Collections.ArrayList]@() }
+                $unallocatedTokens.ForEach({ $changeAllocations.$ChangeRecipient.Add($_) | Out-Null })
+
+                Write-Host "Current transaction fee: " -NoNewline -ForegroundColor Yellow
+                Write-TransactionFee
+                Write-Host "Current allocated tokens:" -ForegroundColor Yellow
+                Write-AllocatedTokens $Allocations
+                Write-Host "Current change tokens:" -ForegroundColor Yellow
+                Write-ChangeTokens $changeAllocations
+                Write-Host "Current unallocated tokens:" -ForegroundColor Yellow
+                Write-Host "NOTE: Any unallocated tokens are automatically allocated as change" -ForegroundColor Yellow
+                Write-UnallocatedTokens $unallocatedTokens
+
                 $allocationActionSelection = Get-OptionSelection `
                     -Instruction 'Select an allocation action, or specify finished allocating:' `
                     -Options @('Allocate token', 'Deallocate token', 'Finished allocating')
@@ -196,7 +221,19 @@ function New-CardanoTransaction {
 
                         $allocation.Quantity = & $allocationActions[$_].Action $allocation.Quantity $quantitySelection
                     }
-                    'Finished allocating' { $allocationActionsComplete = $true }
+                    'Finished allocating' { 
+                        $allocationConfirmationSelectionOptions = [ordered]@{
+                            Correct = 'The allocation summary above reflects the correct allocations'
+                            ContinueEditing = 'Continue editing allocations'
+                        }
+                        $allocationConfirmationSelection = Get-OptionSelection `
+                            -Instruction "Confirm allocations are correct:" `
+                            -Options $allocationConfirmationSelectionOptions.Values
+                        
+                        $allocationActionsComplete = $(
+                            $allocationConfirmationSelection -eq $allocationConfirmationSelectionOptions.Correct
+                        )
+                    }
                     default { Write-Host "Invalid Selection: $_" -ForegroundColor Red }
                 }
             }
