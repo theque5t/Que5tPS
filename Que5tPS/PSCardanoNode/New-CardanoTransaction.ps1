@@ -45,32 +45,6 @@ function New-CardanoTransaction {
             return $unallocatedTokens
         }
         
-        function Write-AllocatedTokens ($Allocations) {
-            $Allocations.GetEnumerator() | 
-            Select-Object Key, Value -ExpandProperty Value | 
-            Format-Table PolicyId, Name, Quantity, @{Label='Recipient';Expression={$_.Key}} | 
-            Out-String |
-            Write-Host -ForegroundColor Cyan
-        }
-        
-        function Write-ChangeTokens($ChangeAllocations){
-            $ChangeAllocations.GetEnumerator() | 
-            Select-Object Key, Value -ExpandProperty Value | 
-            Format-Table PolicyId, Name, Quantity, @{Label='Change Recipient';Expression={$_.Key}} | 
-            Out-String |
-            Write-Host -ForegroundColor Cyan
-        }
-
-        function Write-UnallocatedTokens($UnallocatedTokens) {
-            $unallocatedTokens | Format-Table PolicyId, Name, Quantity | 
-            Out-String | 
-            Write-Host -ForegroundColor Green
-        }
-
-        function Write-TransactionFee {
-            Write-Host $(Get-Random -Maximum 10)
-        }
-
         $addressPattern = '^(addr1|stake1|addr_test1|stake_test1)[a-z0-9]+$|^(Ae2|DdzFF|37bt)[a-zA-Z0-9]+$'
         if([string]::IsNullOrWhiteSpace($Utxos)){
             if([string]::IsNullOrWhiteSpace($Addresses)){
@@ -158,15 +132,27 @@ function New-CardanoTransaction {
                 $changeAllocations = [ordered]@{ $ChangeRecipient = [System.Collections.ArrayList]@() }
                 $unallocatedTokens.ForEach({ $changeAllocations.$ChangeRecipient.Add($_) | Out-Null })
 
-                Write-Host "Current transaction fee: " -NoNewline -ForegroundColor Yellow
-                Write-TransactionFee
-                Write-Host "Current allocated tokens:" -ForegroundColor Yellow
-                Write-AllocatedTokens $Allocations
-                Write-Host "Current change tokens:" -ForegroundColor Yellow
-                Write-ChangeTokens $changeAllocations
-                Write-Host "Current unallocated tokens:" -ForegroundColor Yellow
-                Write-Host "NOTE: Any unallocated tokens are automatically allocated as change" -ForegroundColor Yellow
-                Write-UnallocatedTokens $unallocatedTokens
+                $allocationSummary = @(
+                    @{ Object = "Current transaction fee: "; ForegroundColor = 'Yellow'; NoNewline = $true}
+                    @{ Object = Get-Random -Maximum 10 }
+                    @{ Object = "Current allocated tokens:"; ForegroundColor = 'Yellow'}
+                    @{ Object = $Allocations.GetEnumerator() | 
+                                Select-Object Key, Value -ExpandProperty Value | 
+                                Format-Table PolicyId, Name, Quantity, @{Label='Recipient';Expression={$_.Key}} | 
+                                Out-String 
+                       ForegroundColor = 'Cyan' }
+                    @{ Object = "Current change tokens:"; ForegroundColor = 'Yellow'}
+                    @{ Object = $changeAllocations.GetEnumerator() | 
+                                Select-Object Key, Value -ExpandProperty Value | 
+                                Format-Table PolicyId, Name, Quantity, @{Label='Change Recipient';Expression={$_.Key}} | 
+                                Out-String
+                                ForegroundColor = 'Cyan' }
+                    @{ Object = "Current unallocated tokens:"; ForegroundColor = 'Yellow'}
+                    @{ Object = "NOTE: Any unallocated tokens are automatically allocated as change"; ForegroundColor = 'DarkYellow'}
+                    @{ Object = $unallocatedTokens | Format-Table PolicyId, Name, Quantity | Out-String
+                        ForegroundColor = 'Green' }
+                )
+                Write-HostBatch $allocationSummary
 
                 $allocationActionSelection = Get-OptionSelection `
                     -Instruction 'Select an allocation action, or specify finished allocating:' `
