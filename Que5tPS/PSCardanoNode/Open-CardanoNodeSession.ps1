@@ -30,6 +30,9 @@ function Open-CardanoNodeSession {
     }
     while(-not $(Get-CardanoNodeTip))
 
+    $env:CARDANO_NODE_PROTOCOL_PARAMETERS = "$env:CARDANO_HOME\protocolParameters-$($(New-Guid).Guid).json" 
+    Set-CardanoNodeProtocolParameters
+
     $env:CARDANO_NODE_SESSION = $true
 
     Assert-CardanoNodeSessionIsOpen

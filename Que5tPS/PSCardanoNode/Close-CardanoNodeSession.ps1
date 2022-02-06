@@ -6,13 +6,15 @@ function Close-CardanoNodeSession {
     Write-VerboseLog 'Closing Cardano node session...'
     
     Set-CardanoNodeProcessStopped
-    @('DEADALUS_HOME',
-      'CARDANO_NODE_NETWORK',
-      'CARDANO_CLI_NETWORK_ARG',
-      'CARDANO_CLI_NETWORK_ARG_VALUE'
-      'CARDANO_NODE_SESSION'
-      'CARDANO_NODE_SOCKET_PATH'
-    ).ForEach({ Remove-Item "env:\$_" })
+    @('env:\DEADALUS_HOME'
+      'env:\CARDANO_NODE_NETWORK'
+      'env:\CARDANO_CLI_NETWORK_ARG'
+      'env:\CARDANO_CLI_NETWORK_ARG_VALUE'
+      $env:CARDANO_NODE_PROTOCOL_PARAMETERS
+      'env:\CARDANO_NODE_PROTOCOL_PARAMETERS'
+      'env:\CARDANO_NODE_SESSION'
+      'env:\CARDANO_NODE_SOCKET_PATH'
+    ).ForEach({ Remove-Item "$_" })
     
     Assert-CardanoNodeSessionIsClosed
     Write-VerboseLog 'Cardano node session closed'
