@@ -11,8 +11,7 @@ function Invoke-CardanoCLI {
         return $output
     }
     catch{
-        $_
-        Write-Output $output
+        Write-TerminatingError $(@($_.ToString(), $output | Out-String) -join "`n")
     }
 }
 
