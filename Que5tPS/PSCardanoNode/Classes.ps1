@@ -21,32 +21,87 @@ class CardanoTransactionOutput {
 }
 
 class CardanoTransaction {
-    [datetime]$DateCreated
-    [bool]$Signed
-    [bool]$Submitted
-    [System.IO.FileInfo]$File
+    # [bool]$Signed
+    # [bool]$Submitted
+    $StateFile
+    $TxBodyFile
+    $TxBodyFileContent
+    $TxBodyFileObject
+    $TxBodyFileView
+    $TxBodyFileViewObject
+
     [CardanoUtxoList]$Inputs
     [CardanoTransactionOutput[]]$Outputs
     [Int64]$Fee
 
-    CardanoTransaction($File, $Inputs, $Outputs){
-        $this.DateCreated = Get-Date
-        $this.Signed = $false
-        $this.Submitted = $false
-        if(-not (Test-Path $File)){ New-Item $File }
-        $this.File = Get-Item $File
-        $this.Inputs = $Inputs
-        $this.Outputs = $Outputs
-        $this.Fee = $this.GetMinimumFee()
+    CardanoTransaction([System.IO.DirectoryInfo]$WorkingDir, [string]$Name){
+        $this.StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
+        $this.TxBodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
+        if(-not (Test-Path $this.StateFile)){ New-Item $this.StateFile }
+        if(-not (Test-Path $this.TxBodyFile)){ New-Item $this.TxBodyFile }
+        $this.ImportState()
+        $this.RefreshState()
     }
 
-    [void]SetFile(){
+    [void]ImportState(){
+        $this.StateFile = Get-Item $this.StateFile
+        $this.TxBodyFile = Get-Item $this.TxBodyFile
+        if($this.StateFile.Length -gt 0){
+            $state = Get-Content $this.StateFile | ConvertFrom-Yaml
+            
+            $_inputs = New-Object CardanoUtxoList
+            $state.Inputs.Utxos.GetEnumerator().ForEach({
+                $utxo = [CardanoUtxo]::new($_.Id, $_.Address, $_.Data)
+                $_.Value.GetEnumerator().ForEach({
+                    $utxo.AddToken($_.PolicyId, $_.Name, $_.Quantity)
+                })
+                $_inputs.AddUtxo($utxo)
+            })
+            $this.Inputs = $_inputs
+            
+            $_outputs = [System.Collections.ArrayList]@()
+            $state.Outputs.GetEnumerator().ForEach({
+                $_tokens = [System.Collections.ArrayList]@()
+                $_.Tokens.GetEnumerator().ForEach({
+                    $_tokens.Add([CardanoToken]::new($_.PolicyId, $_.Name, $_.Quantity))
+                })
+                $_outputs.Add([CardanoTransactionOutput]::new($_.Address, $_tokens))
+            })
+            $this.Outputs = $_outputs
+
+            $this.Fee = $this.GetMinimumFee()
+            $this.RefreshTxBody()
+        }
+    }
+
+    [void]ExportState(){
+        @{ Inputs = $this.Inputs
+           Outputs = $this.Outputs
+        } | ConvertTo-Yaml -OutFile $this.StateFile -Force
+    }
+
+    # Object state takes precedence
+    # Overwrite state file with object state and then import
+    [void]RefreshState(){
+        $this.ExportState()
+        $this.ImportState()       
+    }
+
+    [void]ImportTxBody(){
+        # $this.FileContent = Get-Content $this.File
+        # $this.FileContentObject = if($this.FileContent){ $this.FileContent | ConvertFrom-Json  }
+        # $this.FileView = if($this.FileContent){ 
+        #     Invoke-CardanoCLI transaction view --tx-body-file $this.File
+        # }
+        # $this.FileViewObject = if($this.FileView) { $this.FileView | ConvertFrom-Yaml }
+    }
+
+    [void]ExportTxBody(){
         $templates = @{
-            File = { '--out-file {0}' -f $args[0] }
-            Input = {'--tx-in {0}#{1}' -f $args[0].TxHash, $args[0].Index}
+            Input = {'{0}#{1}' -f $args[0].TxHash, $args[0].Index}
             Output = { 
                 $multipleTokens = $($args[0].Tokens.Where({ $_.Name -ne 'lovelace'})).Count
-                '--tx-out {0}+{1}{2}{3}{4}' -f ( 
+                '{0}+{1}{2}{3}{4}' -f ( 
                     $args[0].Address,
                     $($args[0].Tokens.Where({ $_.Name -eq 'lovelace'})).Quantity,
                     $(if($multipleTokens){ '+"' }),
@@ -56,19 +111,41 @@ class CardanoTransaction {
                     $(if($multipleTokens){ '"' })
                 )
             }
-            Fee = { '--fee {0}' -f $args[0] }
         }
         $_args = [System.Collections.ArrayList]@()
-        $_args.Add('transaction build-raw')
-        $_args.Add($( & $templates.File $this.File.FullName ))
-        $this.Inputs.Utxos.ForEach({ $_args.Add($(& $templates.Input $_)) })
-        $this.Outputs.ForEach({ $_args.Add($( & $templates.Output $_ )) })
-        $_args.Add($( & $templates.Fee $this.GetMinimumFee() ))
-        # return $_args
+        $_args.Add('transaction')
+        $_args.Add('build-raw')
+        $_args.Add('--out-file')
+        $_args.Add($this.TxBodyFile.FullName)
+        $this.Inputs.Utxos.ForEach({ 
+            $_args.Add('--tx-in')
+            $_args.Add($(& $templates.Input $_))
+        })
+        $this.Outputs.ForEach({ 
+            $_args.Add('--tx-out')
+            $_args.Add($( & $templates.Output $_ ))
+        })
+
+        $_args.Add('--fee')
+        $_args.Add($this.Fee)
         Invoke-CardanoCLI @_args
     }
 
+    # Object state takes precedence
+    # Export tx body using object state and then import
+    [void]RefreshTxBody(){
+        $this.ExportTxBody()
+        $this.ImportTxBody()
+    }
+
+    [void]AddOutput([CardanoTransactionOutput]$Output){
+        $this.Outputs += $Output
+    }
+
     [Int64]GetMinimumFee(){
+        # $this.ExportTxBody()
+        # $_args = [System.Collections.ArrayList]@()
+        # [Int64]$MinimumFee = Invoke-CardanoCLI @_args
         [Int64]$MinimumFee = 0
         return $MinimumFee
     }
