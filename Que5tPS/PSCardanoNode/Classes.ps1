@@ -88,12 +88,13 @@ class CardanoTransaction {
     }
 
     [void]ImportTxBody(){
-        # $this.FileContent = Get-Content $this.File
-        # $this.FileContentObject = if($this.FileContent){ $this.FileContent | ConvertFrom-Json  }
-        # $this.FileView = if($this.FileContent){ 
-        #     Invoke-CardanoCLI transaction view --tx-body-file $this.File
-        # }
-        # $this.FileViewObject = if($this.FileView) { $this.FileView | ConvertFrom-Yaml }
+        $this.TxBodyFile = Get-Item $this.TxBodyFile
+        $this.TxBodyFileContent = Get-Content $this.TxBodyFile
+        $this.TxBodyFileObject = if($this.TxBodyFileContent){ $this.TxBodyFileContent | ConvertFrom-Json  }
+        $this.TxBodyFileView = if($this.TxBodyFileContent){ 
+            Invoke-CardanoCLI transaction view --tx-body-file $this.TxBodyFile
+        }
+        $this.TxBodyFileViewObject = if($this.TxBodyFileView) { $this.TxBodyFileView | ConvertFrom-Yaml }
     }
 
     [void]ExportTxBody(){
