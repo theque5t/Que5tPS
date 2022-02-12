@@ -144,9 +144,8 @@ class CardanoTransaction {
         $this.Inputs.AddUtxo($Utxo)
     }
 
-    [void]RemoveInput([string]$Id){ 
-        $_utxo = $this.Inputs.Utxos.Where({ $_.Id -eq $Id })
-        $this.Inputs.RemoveUtxo($_utxo)
+    [void]RemoveInput([string]$Id){
+        $this.Inputs.RemoveUtxo($Id)
     }
 
     [void]AddOutput([CardanoTransactionOutput]$Output){
@@ -210,9 +209,9 @@ class CardanoUtxoList {
         $this.Utxos += $_utxo
     }
 
-    [void]RemoveUtxo([CardanoUtxo]$_utxo){
+    [void]RemoveUtxo($Id){
         $this.Utxos = $this.Utxos.Where({ 
-            $_ -ne $_utxo 
+            $_.Id -ne $Id 
         })
     }
 }
