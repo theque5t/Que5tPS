@@ -75,8 +75,9 @@ class CardanoTransaction {
     }
 
     [void]ExportState(){
-        @{ Inputs = $this.Inputs
-           Outputs = $this.Outputs
+        [ordered]@{ 
+            Inputs = $this.Inputs
+            Outputs = $this.Outputs
         } | ConvertTo-Yaml -OutFile $this.StateFile -Force
     }
 
@@ -139,15 +140,42 @@ class CardanoTransaction {
         $this.ImportTxBody()
     }
 
+    [void]AddInput([CardanoUtxo]$Utxo){ 
+        $this.Inputs.AddUtxo($Utxo)
+    }
+
+    [void]RemoveInput([string]$Id){ 
+        $_utxo = $this.Inputs.Utxos.Where({ $_.Id -eq $Id })
+        $this.Inputs.RemoveUtxo($_utxo)
+    }
+
     [void]AddOutput([CardanoTransactionOutput]$Output){
         $this.Outputs += $Output
     }
 
+    [void]RemoveOutput([string]$Address){ 
+        $this.Outputs = $this.Outputs.Where({
+            $_.Address -ne $Address
+        })
+    }
+
+    [string[]]GetWitnesses(){
+        return $this.Inputs.Utxos.ForEach({ $_.Address }) | Sort-Object | Get-Unique
+    }
+
     [Int64]GetMinimumFee(){
-        # $this.ExportTxBody()
-        # $_args = [System.Collections.ArrayList]@()
-        # [Int64]$MinimumFee = Invoke-CardanoCLI @_args
-        [Int64]$MinimumFee = 0
+        $this.ExportTxBody()
+        $_args = @(
+            'transaction', 'calculate-min-fee'
+            '--tx-body-file', $this.TxBodyFile.FullName
+            '--tx-in-count', $this.Inputs.Utxos.Count
+            '--tx-out-count', $this.Outputs.Count
+            '--witness-count', $($this.GetWitnesses()).Count
+            '--protocol-params-file', $env:CARDANO_NODE_PROTOCOL_PARAMETERS
+            $env:CARDANO_CLI_NETWORK_ARG, $env:CARDANO_CLI_NETWORK_ARG_VALUE
+        )
+        $MinimumFee = Invoke-CardanoCLI @_args
+        $MinimumFee = [Int64]$MinimumFee.TrimEnd(' Lovelace')
         return $MinimumFee
     }
 }
@@ -180,5 +208,11 @@ class CardanoUtxoList {
 
     [void]AddUtxo([CardanoUtxo]$_utxo){
         $this.Utxos += $_utxo
+    }
+
+    [void]RemoveUtxo([CardanoUtxo]$_utxo){
+        $this.Utxos = $this.Utxos.Where({ 
+            $_ -ne $_utxo 
+        })
     }
 }
