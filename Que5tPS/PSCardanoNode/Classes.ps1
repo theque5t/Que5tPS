@@ -98,7 +98,7 @@ class CardanoTransaction {
         $this.TxBodyFileViewObject = if($this.TxBodyFileView) { $this.TxBodyFileView | ConvertFrom-Yaml }
     }
 
-    [void]ExportTxBody(){
+    [void]ExportTxBody($Fee){
         $templates = @{
             Input = {'{0}#{1}' -f $args[0].TxHash, $args[0].Index}
             Output = { 
@@ -129,8 +129,12 @@ class CardanoTransaction {
         })
 
         $_args.Add('--fee')
-        $_args.Add($this.Fee)
+        $_args.Add($Fee)
         Invoke-CardanoCLI @_args
+    }
+
+    [void]ExportTxBody(){
+        $this.ExportTxBody($this.Fee)
     }
 
     # Object state takes precedence
@@ -163,7 +167,7 @@ class CardanoTransaction {
     }
 
     [Int64]GetMinimumFee(){
-        $this.ExportTxBody()
+        $this.ExportTxBody(0)
         $_args = @(
             'transaction', 'calculate-min-fee'
             '--tx-body-file', $this.TxBodyFile.FullName
