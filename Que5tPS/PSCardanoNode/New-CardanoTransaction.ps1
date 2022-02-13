@@ -2,7 +2,7 @@ function New-CardanoTransaction {
     [CmdletBinding()]
     param(
         $WorkingDir,
-        $File = "$WorkingDir\transaction-$($(New-Guid).Guid).json",
+        $Name = "transaction-$($(New-Guid).Guid)",
         $Addresses,
         [CardanoUtxoList]$Utxos
     )
@@ -128,24 +128,21 @@ function New-CardanoTransaction {
             })
 
             do{
-                
-
                 $allocationActionsComplete = $false
                 $unallocatedTokens = Get-UnallocatedTokens $Utxos $Allocations
                 $changeAllocations = [ordered]@{ $ChangeRecipient = [System.Collections.ArrayList]@() }
                 $unallocatedTokens.ForEach({ $changeAllocations.$ChangeRecipient.Add($_) | Out-Null })
 
-                
-                $Allocations.GetEnumerator().ForEach({
-                    $transactionOutputs += [CardanoTransactionOutput]::new($_.Key, $_.Value)
-                })
                 $transaction = [CardanoTransaction]::new(
-                    $File, $Utxos, $transactionOutputs
+                    $WorkingDir, $Name
                 )
+                $Allocations.GetEnumerator().ForEach({
+                    $transaction.AddOutput([CardanoTransactionOutput]::new($_.Key, $_.Value))
+                })
 
                 $allocationSummary = @(
                     @{ Object = "Current transaction fee: "; ForegroundColor = 'Yellow'; NoNewline = $true}
-                    @{ Object = Get-CardanoTransactionMinimumFee -File $File }
+                    @{ Object = $transaction.GetMinimumFee() }
                     @{ Object = "Current allocated tokens:"; ForegroundColor = 'Yellow'}
                     @{ Object = $Allocations.GetEnumerator() | 
                                 Select-Object Key, Value -ExpandProperty Value | 
