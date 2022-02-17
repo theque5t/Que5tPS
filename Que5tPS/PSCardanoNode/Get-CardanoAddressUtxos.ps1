@@ -23,7 +23,7 @@ function Get-CardanoAddressUtxos {
             )
             Invoke-CardanoCLI @_args
             $queryOutput = Get-Content $outputFile | ConvertFrom-Json -AsHashtable
-            $utxos = [CardanoUtxoList]::new()
+            $utxos = [CardanoUtxo[]]@()
             $queryOutput.GetEnumerator().ForEach({
                 Write-VerboseLog "Processing utxo $($_.Name)..."
                 $utxo = [CardanoUtxo]::new($_.Name, $_.Value.address, $_.Value.data)
@@ -48,7 +48,7 @@ function Get-CardanoAddressUtxos {
                         }
                     }
                 })
-                $utxos.AddUtxo($utxo)
+                $utxos += $utxo
             })
 
             return $utxos
