@@ -216,9 +216,29 @@ class CardanoTransaction {
             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
     }
 
-    [CardanoTransactionOutput[]] InteractivelySetOutputs(){
-    # [void] InteractivelySetOutputs(){
-        $outputAddresses = Get-FreeformInput `
+    [void] PrintTransactionSummary(){
+        $_allocationFormat = { 
+            Select-Object Address, Value -ExpandProperty Value |
+            Format-Table PolicyId, Name, Quantity, @{Label="Recipient";Expression={$_.Address}} |
+            Out-String
+        }
+        Write-HostBatch @(
+            @{ Object = "Current transaction fee: "; ForegroundColor = 'Yellow'; NoNewline = $true}
+            @{ Object = $this.GetMinimumFee() }
+            @{ Object = "Current allocated tokens:"; ForegroundColor = 'Yellow'}
+            @{ Object = & $_allocationFormat $this.GetAllocations(); ForegroundColor = 'Cyan' }
+            @{ Object = "Current change tokens:"; ForegroundColor = 'Yellow'}
+            @{ Object = & $_allocationFormat $this.GetChangeAllocation(); ForegroundColor = 'Cyan' }
+            @{ Object = "Current unallocated tokens:"; ForegroundColor = 'Yellow'}
+            # @{ Object = "NOTE: Any unallocated tokens are automatically allocated as change"; ForegroundColor = 'DarkYellow'}
+            @{ Object = $this.GetUnallocatedTokens() | Format-Table PolicyId, Name, Quantity | Out-String
+               ForegroundColor = 'Green' }
+        )
+    }
+
+    # [CardanoTransactionOutput[]] InteractivelySetOutputs(){
+    [void] InteractivelySetOutputs(){
+        $outputAddressesSelection = Get-FreeformInput `
             -Instruction $(
                 "Specify 1 or more recipient addresses (e.g. <address1>,<address2>, ...)." +
                 "`nSeperate addresses using a comma."
@@ -231,14 +251,86 @@ class CardanoTransaction {
         # Do something with change
         # $this.InteractivelySetChangeAddress()
 
-        $_outputs = [CardanoTransactionOutput[]]
-        $outputAddresses.ForEach({
-            $_outputs += [CardanoTransactionOutput]::new(
+        $_tokens = $this.GetInputTokens()
+        $_tokens.ForEach({ $_.Quantity = 0 })
+        $outputAddressesSelection.ForEach({
+            $this.Outputs += [CardanoTransactionOutput]::new(
                 $_, 
-                $this.GetUnallocatedTokens().ForEach({ $_.Quantity = 0 })
+                $_tokens
             )
         })
-        return $_outputs
+        
+        do{
+            $allocationActionsComplete = $false
+            $this.PrintTransactionSummary()
+
+            $allocationActionSelection = Get-OptionSelection `
+                -Instruction 'Select an option:' `
+                -Options @('Set Allocation', 'Set Change Recipient', 'Finished Allocating')
+
+            switch($allocationActionSelection){
+                'Set Allocation' {
+                    $recipientOptionsSelection = Get-OptionSelection `
+                        -Instruction 'Select a recipient:' `
+                        -Options $this.GetAllocations().Address
+
+                    $tokenOptionsSelection = Get-OptionSelection `
+                        -Instruction 'Select a token:' `
+                        -Options $this.GetAllocations().Where({ 
+                            $_.Address -eq $recipientOptionsSelection 
+                         }).Value `
+                        -OptionDisplayTemplate @(
+                            @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+                            @{ Object = ')' },
+                            @{ Object = ' | PolicyId: ' ; NoNewline = $true },
+                            @{ Expression = '$($option.Value.PolicyId)'; ForegroundColor = 'Green' },
+                            @{ Object = ' | Name: ' ; NoNewline = $true },
+                            @{ Expression = '$($option.Value.Name)'; ForegroundColor = 'Green' },
+                            @{ Object = ' | Quantity: ' ; NoNewline = $true },
+                            @{ Expression = '$($option.Value.Quantity)'; ForegroundColor = 'Green' }
+                            @{ NoNewline = $false }
+                        )
+
+                    $quantitySelection = Get-FreeformInput `
+                        -Instruction 'Select a quantity to allocate:' `
+                        -InputType 'int' `
+                        -ValidationType InRange `
+                        -ValidationParameters @{ 
+                            Minimum = 0
+                            Maximum = $this.GetUnallocatedTokens().Where({
+                                $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and
+                                $_.Name -eq $tokenOptionsSelection.Name
+                            }).Quantity
+                        }
+                    
+                    $this.Outputs.Where({ 
+                        $_.Address -eq $recipientOptionsSelection 
+                    }).Where({
+                        $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and
+                        $_.Name -eq $tokenOptionsSelection.Name
+                    }).Quantity = $quantitySelection
+                }
+                
+                'Set Change Recipient' {
+                    $this.InteractivelySetChangeAddress()
+                }
+
+                'Finished Allocating'{
+                    $allocationConfirmationSelectionOptions = [ordered]@{
+                        Correct = 'The allocation summary above reflects the correct allocations'
+                        ContinueEditing = 'Continue editing allocations'
+                    }
+                    $allocationConfirmationSelection = Get-OptionSelection `
+                        -Instruction "Confirm allocations are correct:" `
+                        -Options $allocationConfirmationSelectionOptions.Values
+                    
+                    $allocationActionsComplete = $(
+                        $allocationConfirmationSelection -eq $allocationConfirmationSelectionOptions.Correct
+                    )
+                }
+            }
+        }
+        until($allocationActionsComplete)
     }
 
     [void] Minting(){
