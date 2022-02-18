@@ -239,7 +239,7 @@ function Get-FreeformInput {
     param(
         $Instruction,
         $InputType,
-        [ValidateSet('InRange','MatchPattern')]
+        [ValidateSet('InRange','MatchPattern','TestCommand')]
         $ValidationType,
         $ValidationParameters,
         [switch]$Delimited,
@@ -270,6 +270,9 @@ function Get-FreeformInput {
                  }
                 'MatchPattern' {
                     $validated = $value -match $ValidationParameters.Pattern
+                }
+                'TestCommand' {
+                    $validated = $value | & $ValidationParameters.Command
                 }
             }
             if($validated){ $inputValue.Add($value) | Out-Null }
