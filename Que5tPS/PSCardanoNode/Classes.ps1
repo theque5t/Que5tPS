@@ -222,18 +222,102 @@ class CardanoTransaction {
             Format-Table PolicyId, Name, Quantity, @{Label="Recipient";Expression={$_.Address}} |
             Out-String
         }
-        Write-HostBatch @(
-            @{ Object = "Current transaction fee: "; ForegroundColor = 'Yellow'; NoNewline = $true}
-            @{ Object = 0 }
-            # @{ Object = $this.GetMinimumFee() }
-            @{ Object = "Current allocations:"; ForegroundColor = 'Yellow'}
-            @{ Object = & $_allocationFormat $this.GetAllocations(); ForegroundColor = 'Cyan' }
-            @{ Object = "Current change allocation:"; ForegroundColor = 'Yellow'}
-            @{ Object = & $_allocationFormat $this.GetChangeAllocation(); ForegroundColor = 'Cyan' }
-            @{ Object = "Current unallocated tokens:"; ForegroundColor = 'Yellow'}
-            # @{ Object = "NOTE: Any unallocated tokens are automatically allocated as change"; ForegroundColor = 'DarkYellow'}
-            @{ Object = $this.GetUnallocatedTokens() | Format-Table PolicyId, Name, Quantity | Out-String
-               ForegroundColor = 'Green' }
+        $_labelPrefix = @{ Object = '  - '; NoNewline = $true }
+        $_valuePrefix = @{ Object = '    '; NoNewline = $true }
+        
+        $_header = @(
+            @{ Object = '=' * 97 }
+            @{ Object = ' ' * 39 + 'TRANSACTION SUMMARY' + ' ' * 39 }
+            @{ Object = '=' * 97 }
+        )
+
+        $_hasInputs = $this.HasInputs()
+        $_inputsSection = @(
+            @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
+            @{ Object = '| INPUTS | Description: Funds being spent'; ForegroundColor = 'DarkGray' }
+            @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
+            @{ Object = '' }
+            @{ Prefix = $_labelPrefix;
+                Object = 'UTXOs: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasInputs }
+        )
+        if($_hasInputs){
+        $this.Inputs.ForEach({ 
+            $_inputsSection += 
+            @{ Object = '' },
+            @{ Prefix = @{ Object = '    | '; NoNewline = $true } 
+               Object = 'Id: '; ForegroundColor = 'Yellow'; NoNewline = $true },
+            @{ Object = $_.Id },
+            @{ Prefix = @{ Object = '    | '; NoNewline = $true } 
+               Object = 'Data: '; ForegroundColor = 'Yellow'; NoNewline = $true },
+            @{ Object = $_.Data },
+            @{ Prefix = @{ Object = '    | '; NoNewline = $true }
+               Object = 'Holding Address: '; ForegroundColor = 'Yellow'; NoNewline = $true },
+            @{ Object = $_.Address },
+            @{ Prefix = @{ Object = '    | '; NoNewline = $true }
+               Object = 'Tokens:'; ForegroundColor = 'Yellow' },
+            @{ Prefix = @{ Object = '    |  '; NoNewline = $true }; 
+               Object = $_.Value | Format-Table "PolicyId", "Name", "Quantity" | Out-String },
+            @{ Object = '' }
+        })}
+        else{
+            $_inputsSection += @{ Object = 'None' }
+        }
+        $_inputsSection += @{ NoNewLine = $_hasInputs }
+        
+        $_hasUnallocatedTokens = $this.HasUnallocatedTokens()
+        $_hasAllocatedTokens = $this.HasAllocatedTokens()
+        $_allocationsSection = @(
+            @{ Object = '+---------+' + '-' * 86; ForegroundColor = 'DarkGray' }
+            @{ Object = '| OUTPUTS | Description: Allocations of funds being spent'; ForegroundColor = 'DarkGray'  }    
+            @{ Object = '+---------+'; ForegroundColor = 'DarkGray'  }
+            @{ Object = '' }
+            @{ Prefix = $_labelPrefix;
+                Object = 'Unallocated Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasUnallocatedTokens }
+            @{ Prefix = $_hasUnallocatedTokens ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
+                Object = $_hasUnallocatedTokens ? $($this.GetUnallocatedTokens() | Out-String) : 'None' }
+            @{ NoNewLine = $_hasUnallocatedTokens }
+            @{ Prefix = $_labelPrefix;
+                Object = 'Allocated Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasAllocatedTokens }
+            @{ Prefix = $_hasAllocatedTokens ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
+                Object = $_hasAllocatedTokens ? $(& $_allocationFormat $this.GetAllocations()) : 'None' }
+            @{ NoNewLine = $_hasAllocatedTokens }
+        )
+        
+        $_hasChangeAddress = $this.HasChangeAddress()
+        $_changeSection = @(
+            @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
+            @{ Object = '| CHANGE | Description: Allocation for any unallocated funds'; ForegroundColor = 'DarkGray' }    
+            @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
+            @{ Object = '' }
+            @{ Prefix = $_labelPrefix;
+               Object = 'Change Recipient: '; ForegroundColor = 'Yellow'; NoNewline = $true }
+            @{ Object = $_hasChangeAddress ? $this.ChangeAddress : 'None - Not specified' }
+            @{ Object = '' }
+            @{ Prefix = $_labelPrefix;
+               Object = 'Change Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasChangeAddress }
+            @{ Prefix = $_hasChangeAddress ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
+               Object = $_hasChangeAddress ? $($this.GetChangeTokens() | Out-String) : 'None - Requires change recipient' }
+            @{ NoNewLine = $_hasChangeAddress }
+        )
+
+        $_feeSection = @(
+            @{ Object = '+------+' + '-' * 89; ForegroundColor = 'DarkGray' }
+            @{ Object = '| FEES | Description: Costs associated to transaction'; ForegroundColor = 'DarkGray' }
+            @{ Object = '+------+'; ForegroundColor = 'DarkGray' }
+            @{ Object = '' }
+            @{ Prefix = $_labelPrefix;
+               Object = 'Minimum transaction fee: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
+            @{ Object = 0; }
+            # @{ Object = $this.GetMinimumFee(); ForegroundColor = 'Cyan'}
+            @{ Object = '' }
+        )
+
+        $_footer = @(
+            @{ Object = '=' * 97 }
+        )
+
+        Write-HostBatch $(
+            $_header + $_inputsSection + $_allocationsSection + $_changeSection + $_feeSection + $_footer
         )
     }
 
@@ -324,7 +408,7 @@ class CardanoTransaction {
 
                 'Finished Allocating'{
                     $allocationConfirmationSelectionOptions = [ordered]@{
-                        Correct = 'The transaction summary above is correct'
+                        Done = 'Done editing'
                         ContinueEditing = 'Continue editing'
                     }
                     $allocationConfirmationSelection = Get-OptionSelection `
@@ -332,7 +416,7 @@ class CardanoTransaction {
                         -Options $allocationConfirmationSelectionOptions.Values
                     
                     $allocationActionsComplete = $(
-                        $allocationConfirmationSelection -eq $allocationConfirmationSelectionOptions.Correct
+                        $allocationConfirmationSelection -eq $allocationConfirmationSelectionOptions.Done
                     )
                 }
             }
@@ -348,8 +432,16 @@ class CardanoTransaction {
         return Merge-CardanoTokens $this.Inputs.Value
     }
 
+    [bool] HasInputs(){
+        return [bool]$this.Inputs.Count
+    }
+
     [CardanoToken[]] GetOutputTokens(){
         return Merge-CardanoTokens $this.Outputs.Value
+    }
+
+    [bool] HasOutputs(){
+        return [bool]$this.Outputs.Count
     }
 
     [CardanoToken[]] GetUnallocatedTokens(){
@@ -358,8 +450,16 @@ class CardanoTransaction {
         return Merge-CardanoTokens $($this.GetInputTokens() + $allocatedTokens)
     }
 
+    [bool] HasUnallocatedTokens(){
+        return [bool]$this.GetUnallocatedTokens().Where({ $_.Quantity -gt 0 })
+    }
+
     [CardanoToken[]] GetAllocatedTokens(){
         return $this.GetOutputTokens()
+    }
+
+    [bool] HasAllocatedTokens(){
+        return [bool]$this.GetAllocatedTokens().Where({ $_.Quantity -gt 0 })
     }
 
     [CardanoTransactionOutput[]] GetAllocations(){
@@ -376,9 +476,13 @@ class CardanoTransaction {
         $this.RefreshState()
     }
 
+    [bool] HasChangeAddress(){
+        return [bool]$this.ChangeAddress
+    }
+
     [CardanoTransactionOutput[]] GetChangeAllocation(){
         $changeAllocation = [CardanoTransactionOutput[]]@()
-        if($this.ChangeAddress){
+        if($this.HasChangeAddress()){
             $changeAllocation += [CardanoTransactionOutput]::new(
                 $this.ChangeAddress,
                 $this.GetChangeTokens()

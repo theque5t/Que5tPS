@@ -263,10 +263,15 @@ function Get-FreeformInput {
             $value = $value -as ($InputType -as [type])
             switch ($ValidationType) {
                 'InRange' { 
+                    Write-Verbose "`$ValidationType: $_"
+                    Write-Verbose "`$value: $value"
+                    Write-Verbose "`$ValidationParameters.Minimum: $($ValidationParameters.Minimum)"
+                    Write-Verbose "`$ValidationParameters.Maximum: $($ValidationParameters.Maximum)"
                     $validated = (
                         ( $value -ge $ValidationParameters.Minimum ) -and 
                         ( $value -le $ValidationParameters.Maximum )
                     )
+                    Write-Verbose "`$validated: $validated"
                  }
                 'MatchPattern' {
                     $validated = $value -match $ValidationParameters.Pattern
