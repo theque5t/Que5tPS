@@ -34,47 +34,48 @@ class CardanoTransaction {
     [CardanoUtxo[]]$Inputs
     [CardanoTransactionOutput[]]$Outputs
     [string]$ChangeAddress
-    [Int64]$Fee
 
     CardanoTransaction([System.IO.DirectoryInfo]$WorkingDir, [string]$Name){
         $this.WorkingDir = $WorkingDir
-        # $this.StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
-        # $this.TxBodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
-        # if(-not (Test-Path $this.StateFile)){ New-Item $this.StateFile }
-        # if(-not (Test-Path $this.TxBodyFile)){ New-Item $this.TxBodyFile }
-        # $this.ImportState()
+        $this.StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
+        $this.TxBodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
+        if(-not (Test-Path $this.StateFile)){ New-Item $this.StateFile }
+        if(-not (Test-Path $this.TxBodyFile)){ New-Item $this.TxBodyFile }
+        $this.ImportState()
+        $this.RefreshState()
     }
 
-    # [void]ImportState(){
-    #     $this.StateFile = Get-Item $this.StateFile
-    #     $this.TxBodyFile = Get-Item $this.TxBodyFile
-    #     if($this.StateFile.Length -gt 0){
-    #         $state = Get-Content $this.StateFile | ConvertFrom-Yaml
+    [void]ImportState(){
+        $this.StateFile = Get-Item $this.StateFile
+        $this.TxBodyFile = Get-Item $this.TxBodyFile
+        if($this.StateFile.Length -gt 0){
+            $state = Get-Content $this.StateFile | ConvertFrom-Yaml
+            $state.Inputs = [array]$state.Inputs
+            $state.Outputs = [array]$state.Outputs
             
-    #         $_inputs = New-Object CardanoUtxoList
-    #         $state.Inputs.Utxos.GetEnumerator().ForEach({
-    #             $utxo = [CardanoUtxo]::new($_.Id, $_.Address, $_.Data)
-    #             $_.Value.GetEnumerator().ForEach({
-    #                 $utxo.AddToken($_.PolicyId, $_.Name, $_.Quantity)
-    #             })
-    #             $_inputs.AddUtxo($utxo)
-    #         })
-    #         $this.Inputs = $_inputs
+            $this.Inputs = [CardanoUtxo[]]@()
+            $state.Inputs.ForEach({
+                $utxo = [CardanoUtxo]::new($_.Id, $_.Address, $_.Data)
+                $_.Value.GetEnumerator().ForEach({
+                    $utxo.AddToken($_.PolicyId, $_.Name, $_.Quantity)
+                })
+                $this.Inputs += $utxo
+            })
             
-    #         $_outputs = [System.Collections.ArrayList]@()
-    #         $state.Outputs.GetEnumerator().ForEach({
-    #             $_tokens = [System.Collections.ArrayList]@()
-    #             $_.Tokens.GetEnumerator().ForEach({
-    #                 $_tokens.Add([CardanoToken]::new($_.PolicyId, $_.Name, $_.Quantity))
-    #             })
-    #             $_outputs.Add([CardanoTransactionOutput]::new($_.Address, $_tokens))
-    #         })
-    #         $this.Outputs = $_outputs
+            $this.Outputs = [CardanoTransactionOutput[]]@()
+            $state.Outputs.ForEach({
+                $_tokens = [CardanoToken[]]@()
+                $_.Value.GetEnumerator().ForEach({
+                    $_tokens += ([CardanoToken]::new($_.PolicyId, $_.Name, $_.Quantity))
+                })
+                $this.Outputs += ([CardanoTransactionOutput]::new($_.Address, $_tokens))
+            })
 
-    #         $this.Fee = $this.GetMinimumFee()
-    #         $this.RefreshTxBody()
-    #     }
-    # }
+            $this.ChangeAddress = $state.ChangeAddress
+
+            $this.RefreshTxBody()
+        }
+    }
 
     [void]ExportState(){
         [ordered]@{ 
@@ -87,65 +88,70 @@ class CardanoTransaction {
     # Object state takes precedence
     # Overwrite state file with object state and then import
     [void]RefreshState(){
-    #     $this.ExportState()
-    #     $this.ImportState()       
+        $this.ExportState()
+        $this.ImportState()
     }
 
-    # [void]ImportTxBody(){
-    #     $this.TxBodyFile = Get-Item $this.TxBodyFile
-    #     $this.TxBodyFileContent = Get-Content $this.TxBodyFile
-    #     $this.TxBodyFileObject = if($this.TxBodyFileContent){ $this.TxBodyFileContent | ConvertFrom-Json  }
-    #     $this.TxBodyFileView = if($this.TxBodyFileContent){ 
-    #         Invoke-CardanoCLI transaction view --tx-body-file $this.TxBodyFile
-    #     }
-    #     $this.TxBodyFileViewObject = if($this.TxBodyFileView) { $this.TxBodyFileView | ConvertFrom-Yaml }
-    # }
+    [void]ImportTxBody(){
+        $this.TxBodyFile = Get-Item $this.TxBodyFile
+        $this.TxBodyFileContent = Get-Content $this.TxBodyFile
+        $this.TxBodyFileObject = if($this.TxBodyFileContent){ $this.TxBodyFileContent | ConvertFrom-Json  }
+        $this.TxBodyFileView = if($this.TxBodyFileContent){ 
+            Invoke-CardanoCLI transaction view --tx-body-file $this.TxBodyFile
+        }
+        $this.TxBodyFileViewObject = if($this.TxBodyFileView) { $this.TxBodyFileView | ConvertFrom-Yaml }
+    }
 
-    # [void]ExportTxBody($Fee){
-    #     $templates = @{
-    #         Input = {'{0}#{1}' -f $args[0].TxHash, $args[0].Index}
-    #         Output = { 
-    #             $multipleTokens = $($args[0].Tokens.Where({ $_.Name -ne 'lovelace'})).Count
-    #             '{0}+{1}{2}{3}{4}' -f ( 
-    #                 $args[0].Address,
-    #                 $($args[0].Tokens.Where({ $_.Name -eq 'lovelace'})).Quantity,
-    #                 $(if($multipleTokens){ '+"' }),
-    #                 $($($args[0].Tokens.Where({ $_.Name -ne 'lovelace'})).ForEach({ 
-    #                     "$($_.Quantity) $($_.PolicyId).$($_.Name)" 
-    #                 }) -join ' + '),
-    #                 $(if($multipleTokens){ '"' })
-    #             )
-    #         }
-    #     }
-    #     $_args = [System.Collections.ArrayList]@()
-    #     $_args.Add('transaction')
-    #     $_args.Add('build-raw')
-    #     $_args.Add('--out-file')
-    #     $_args.Add($this.TxBodyFile.FullName)
-    #     $this.Inputs.Utxos.ForEach({ 
-    #         $_args.Add('--tx-in')
-    #         $_args.Add($(& $templates.Input $_))
-    #     })
-    #     $this.Outputs.ForEach({ 
-    #         $_args.Add('--tx-out')
-    #         $_args.Add($( & $templates.Output $_ ))
-    #     })
+    # [System.Collections.ArrayList]ExportTxBody($Fee){
+    [void]ExportTxBody($Fee){
+        if($this.HasInputs()){
+            Assert-CardanoNodeInSync
+            $templates = @{
+                Input = {'{0}#{1}' -f $args[0].TxHash, $args[0].Index}
+                Output = { 
+                    $multipleTokens = $($args[0].Value.Where({ $_.Name -ne 'lovelace'})).Count
+                    '{0}+{1}{2}{3}{4}' -f ( 
+                        $args[0].Address,
+                        $($args[0].Value.Where({ $_.Name -eq 'lovelace'})).Quantity,
+                        $(if($multipleTokens){ '+"' }),
+                        $($($args[0].Value.Where({ $_.Name -ne 'lovelace'})).ForEach({ 
+                            "$($_.Quantity) $($_.PolicyId).$($_.Name)" 
+                        }) -join ' + '),
+                        $(if($multipleTokens){ '"' })
+                    )
+                }
+            }
+            $_args = [System.Collections.ArrayList]@()
+            $_args.Add('transaction')
+            $_args.Add('build-raw')
+            $_args.Add('--out-file')
+            $_args.Add($this.TxBodyFile.FullName)
+            $this.Inputs.ForEach({ 
+                $_args.Add('--tx-in')
+                $_args.Add($(& $templates.Input $_))
+            })
+            $this.Outputs.ForEach({ 
+                $_args.Add('--tx-out')
+                $_args.Add($( & $templates.Output $_ ))
+            })
 
-    #     $_args.Add('--fee')
-    #     $_args.Add($Fee)
-    #     Invoke-CardanoCLI @_args
-    # }
+            $_args.Add('--fee')
+            $_args.Add($Fee)
+            # return $_args
+            Invoke-CardanoCLI @_args
+        }
+    }
 
-    # [void]ExportTxBody(){
-    #     $this.ExportTxBody($this.Fee)
-    # }
+    [void]ExportTxBody(){
+        $this.ExportTxBody(0)
+    }
 
-    # # Object state takes precedence
-    # # Export tx body using object state and then import
-    # [void]RefreshTxBody(){
-    #     $this.ExportTxBody()
-    #     $this.ImportTxBody()
-    # }
+    # Object state takes precedence
+    # Export tx body using object state and then import
+    [void]RefreshTxBody(){
+        $this.ExportTxBody()
+        $this.ImportTxBody()
+    }
 
     [void] AddInput([CardanoUtxo]$Utxo){ 
         $this.Inputs += $Utxo
@@ -216,109 +222,8 @@ class CardanoTransaction {
             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
     }
 
-    [void] PrintTransactionSummary(){
-        $_allocationFormat = { 
-            $args[0] | Select-Object Address, Value -ExpandProperty Value |
-            Format-Table PolicyId, Name, Quantity, @{Label="Recipient";Expression={$_.Address}} |
-            Out-String
-        }
-        $_labelPrefix = @{ Object = '  - '; NoNewline = $true }
-        $_valuePrefix = @{ Object = '    '; NoNewline = $true }
-        
-        $_header = @(
-            @{ Object = '=' * 97 }
-            @{ Object = ' ' * 39 + 'TRANSACTION SUMMARY' + ' ' * 39 }
-            @{ Object = '=' * 97 }
-        )
-
-        $_hasInputs = $this.HasInputs()
-        $_inputsSection = @(
-            @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
-            @{ Object = '| INPUTS | Description: Funds being spent'; ForegroundColor = 'DarkGray' }
-            @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
-            @{ Object = '' }
-            @{ Prefix = $_labelPrefix;
-                Object = 'UTXOs: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasInputs }
-        )
-        if($_hasInputs){
-        $this.Inputs.ForEach({ 
-            $_inputsSection += 
-            @{ Object = '' },
-            @{ Prefix = @{ Object = '    | '; NoNewline = $true } 
-               Object = 'Id: '; ForegroundColor = 'Yellow'; NoNewline = $true },
-            @{ Object = $_.Id },
-            @{ Prefix = @{ Object = '    | '; NoNewline = $true } 
-               Object = 'Data: '; ForegroundColor = 'Yellow'; NoNewline = $true },
-            @{ Object = $_.Data },
-            @{ Prefix = @{ Object = '    | '; NoNewline = $true }
-               Object = 'Holding Address: '; ForegroundColor = 'Yellow'; NoNewline = $true },
-            @{ Object = $_.Address },
-            @{ Prefix = @{ Object = '    | '; NoNewline = $true }
-               Object = 'Tokens:'; ForegroundColor = 'Yellow' },
-            @{ Prefix = @{ Object = '    |  '; NoNewline = $true }; 
-               Object = $_.Value | Format-Table "PolicyId", "Name", "Quantity" | Out-String },
-            @{ Object = '' }
-        })}
-        else{
-            $_inputsSection += @{ Object = 'None' }
-        }
-        $_inputsSection += @{ NoNewLine = $_hasInputs }
-        
-        $_hasUnallocatedTokens = $this.HasUnallocatedTokens()
-        $_hasAllocatedTokens = $this.HasAllocatedTokens()
-        $_allocationsSection = @(
-            @{ Object = '+---------+' + '-' * 86; ForegroundColor = 'DarkGray' }
-            @{ Object = '| OUTPUTS | Description: Allocations of funds being spent'; ForegroundColor = 'DarkGray'  }    
-            @{ Object = '+---------+'; ForegroundColor = 'DarkGray'  }
-            @{ Object = '' }
-            @{ Prefix = $_labelPrefix;
-                Object = 'Unallocated Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasUnallocatedTokens }
-            @{ Prefix = $_hasUnallocatedTokens ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
-                Object = $_hasUnallocatedTokens ? $($this.GetUnallocatedTokens() | Out-String) : 'None' }
-            @{ NoNewLine = $_hasUnallocatedTokens }
-            @{ Prefix = $_labelPrefix;
-                Object = 'Allocated Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasAllocatedTokens }
-            @{ Prefix = $_hasAllocatedTokens ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
-                Object = $_hasAllocatedTokens ? $(& $_allocationFormat $this.GetAllocations()) : 'None' }
-            @{ NoNewLine = $_hasAllocatedTokens }
-        )
-        
-        $_hasChangeAddress = $this.HasChangeAddress()
-        $_changeSection = @(
-            @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
-            @{ Object = '| CHANGE | Description: Allocation for any unallocated funds'; ForegroundColor = 'DarkGray' }    
-            @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
-            @{ Object = '' }
-            @{ Prefix = $_labelPrefix;
-               Object = 'Change Recipient: '; ForegroundColor = 'Yellow'; NoNewline = $true }
-            @{ Object = $_hasChangeAddress ? $this.ChangeAddress : 'None - Not specified' }
-            @{ Object = '' }
-            @{ Prefix = $_labelPrefix;
-               Object = 'Change Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasChangeAddress }
-            @{ Prefix = $_hasChangeAddress ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
-               Object = $_hasChangeAddress ? $($this.GetChangeTokens() | Out-String) : 'None - Requires change recipient' }
-            @{ NoNewLine = $_hasChangeAddress }
-        )
-
-        $_feeSection = @(
-            @{ Object = '+------+' + '-' * 89; ForegroundColor = 'DarkGray' }
-            @{ Object = '| FEES | Description: Costs associated to transaction'; ForegroundColor = 'DarkGray' }
-            @{ Object = '+------+'; ForegroundColor = 'DarkGray' }
-            @{ Object = '' }
-            @{ Prefix = $_labelPrefix;
-               Object = 'Minimum transaction fee: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
-            @{ Object = 0; }
-            # @{ Object = $this.GetMinimumFee(); ForegroundColor = 'Cyan'}
-            @{ Object = '' }
-        )
-
-        $_footer = @(
-            @{ Object = '=' * 97 }
-        )
-
-        Write-HostBatch $(
-            $_header + $_inputsSection + $_allocationsSection + $_changeSection + $_feeSection + $_footer
-        )
+    [void] FormatTransactionSummary(){
+        Format-CardanoTransactionSummary $this
     }
 
     # [CardanoTransactionOutput[]] InteractivelySetOutputs(){
@@ -348,7 +253,7 @@ class CardanoTransaction {
         
         do{
             $allocationActionsComplete = $false
-            $this.PrintTransactionSummary()
+            $this.FormatTransactionSummary()
 
             $allocationActionSelection = Get-OptionSelection `
                 -Instruction 'Select an option:' `
