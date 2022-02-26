@@ -10,13 +10,24 @@ class CardanoToken {
     }
 }
 
+class CardanoTransactionAllocation {
+    [string]$Recipient
+    [CardanoToken[]]$Value
+
+    CardanoTransactionAllocation($Recipient, $Value){
+        Assert-CardanoAddressIsValid $Recipient
+        $this.Recipient = $Recipient
+        $this.Value = $Value
+    }
+}
+
 class CardanoTransactionOutput {
     [string]$Address
     [CardanoToken[]]$Value
 
-    CardanoTransactionOutput($Address, $Value){
-        $this.Address = $Address
-        $this.Value = $Value
+    CardanoTransactionOutput([CardanoTransactionAllocation]$Allocation){
+        $this.Address = $Allocation.Recipient
+        $this.Value = $Allocation.Value.Where({ $_.Quantity -gt 0 })
     }
 }
 
@@ -32,8 +43,8 @@ class CardanoTransaction {
     $TxBodyFileViewObject
 
     [CardanoUtxo[]]$Inputs
-    [CardanoTransactionOutput[]]$Outputs
-    [string]$ChangeAddress
+    [CardanoTransactionAllocation[]]$Allocations
+    [string]$ChangeRecipient
 
     CardanoTransaction([System.IO.DirectoryInfo]$WorkingDir, [string]$Name){
         $this.WorkingDir = $WorkingDir
@@ -51,7 +62,7 @@ class CardanoTransaction {
         if($this.StateFile.Length -gt 0){
             $state = Get-Content $this.StateFile | ConvertFrom-Yaml
             $state.Inputs = [array]$state.Inputs
-            $state.Outputs = [array]$state.Outputs
+            $state.Allocations = [array]$state.Allocations
             
             $this.Inputs = [CardanoUtxo[]]@()
             $state.Inputs.ForEach({
@@ -59,19 +70,19 @@ class CardanoTransaction {
                 $_.Value.GetEnumerator().ForEach({
                     $utxo.AddToken($_.PolicyId, $_.Name, $_.Quantity)
                 })
-                $this.Inputs += $utxo
+                $this.AddInput($utxo)
             })
             
-            $this.Outputs = [CardanoTransactionOutput[]]@()
-            $state.Outputs.ForEach({
+            $this.Allocations = [CardanoTransactionAllocation[]]@()
+            $state.Allocations.ForEach({
                 $_tokens = [CardanoToken[]]@()
                 $_.Value.GetEnumerator().ForEach({
                     $_tokens += ([CardanoToken]::new($_.PolicyId, $_.Name, $_.Quantity))
                 })
-                $this.Outputs += ([CardanoTransactionOutput]::new($_.Address, $_tokens))
+                $this.AddAllocation([CardanoTransactionAllocation]::new($_.Recipient, $_tokens))
             })
 
-            $this.ChangeAddress = $state.ChangeAddress
+            $this.ChangeRecipient = $state.ChangeRecipient
 
             $this.RefreshTxBody()
         }
@@ -80,8 +91,8 @@ class CardanoTransaction {
     [void]ExportState(){
         [ordered]@{ 
             Inputs = $this.Inputs
-            Outputs = $this.Outputs
-            ChangeAddress = $this.ChangeAddress
+            Allocations = $this.Allocations
+            ChangeRecipient = $this.ChangeRecipient
         } | ConvertTo-Yaml -OutFile $this.StateFile -Force
     }
 
@@ -103,7 +114,8 @@ class CardanoTransaction {
     }
 
     # [System.Collections.ArrayList]ExportTxBody($Fee){
-    [void]ExportTxBody($Fee){
+    #     $_args = [System.Collections.ArrayList]@()
+    [void]ExportTxBody([Int64]$Fee){
         if($this.HasInputs()){
             Assert-CardanoNodeInSync
             $templates = @{
@@ -126,20 +138,22 @@ class CardanoTransaction {
             $_args.Add('build-raw')
             $_args.Add('--out-file')
             $_args.Add($this.TxBodyFile.FullName)
-            $this.Inputs.ForEach({ 
+            $this.GetInputs().ForEach({ 
                 $_args.Add('--tx-in')
                 $_args.Add($(& $templates.Input $_))
             })
-            $this.Outputs.ForEach({ 
+            $this.GetOutputs().ForEach({ 
                 $_args.Add('--tx-out')
                 $_args.Add($( & $templates.Output $_ ))
             })
-
+    
             $_args.Add('--fee')
             $_args.Add($Fee)
-            # return $_args
+            
             Invoke-CardanoCLI @_args
         }
+        else{ New-Item $this.TxBodyFile -Force }
+        # return $_args
     }
 
     [void]ExportTxBody(){
@@ -163,113 +177,242 @@ class CardanoTransaction {
         })
     }
 
-    [void] AddOutput([CardanoTransactionOutput]$Output){
-        $this.Outputs += $Output
+    [void] AddAllocation([CardanoTransactionAllocation]$Allocation){
+        $this.Allocations += $Allocation
     }
 
-    [void] RemoveOutput([string]$Address){ 
-        $this.Outputs = $this.Outputs.Where({
-            $_.Address -ne $Address
+    [void] RemoveAllocation([string]$Recipient){ 
+        $this.Allocations = $this.Allocations.Where({
+            $_.Recipient -ne $Recipient
         })
-    }
-
-    [void] InteractivelySetInputs(){
-        $addresses = Get-FreeformInput `
-            -Instruction $(
-                "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." +
-                "`nSeperate addresses using a comma."
-            ) `
-            -InputType 'string' `
-            -ValidationType TestCommand `
-            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' } `
-            -Delimited
-
-        $addressesUtxos = [CardanoUtxo[]]@()
-        $addresses.ForEach({
-            $addressesUtxos += Get-CardanoAddressUtxos -Address $_ -WorkingDir $this.WorkingDir
-        })
-
-        $this.Inputs = Get-OptionSelection `
-            -MultipleChoice `
-            -Instruction $(
-                "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." +
-                "`nSeperate numbers using a comma.`n"
-            ) `
-            -Options $addressesUtxos `
-            -OptionDisplayTemplate @(
-                @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
-                @{ Object = ')' },
-                @{ Object = ' | UTXO Id: ' ; NoNewline = $true },
-                @{ Expression = '$($option.Value.Id)'; ForegroundColor = 'Green' },
-                @{ Object = ' | UTXO Data: ' ; NoNewline = $true },
-                @{ Expression = '$($option.Value.Data)'; ForegroundColor = 'Green' },
-                @{ Object = ' | UTXO Holding Address: ' ; NoNewline = $true },
-                @{ Expression = '$($option.Value.Address)'; ForegroundColor = 'Green' }
-                @{ Object = ' | UTXO Tokens:' },
-                @{ Prefix = @{ Object = ' |   '; NoNewline = $true }
-                    Expression = '$($option.Value | Select-Object * -ExpandProperty Value | Format-List "PolicyId", "Name", "Quantity" | Out-String)'
-                    ForegroundColor = 'Green'
-                },
-                @{ NoNewline = $false }
-            )
-    }
-
-    [void] InteractivelySetChangeAddress(){
-        $this.ChangeAddress = Get-FreeformInput `
-            -Instruction "Specify 1 address to be the recipient of any change (unallocated tokens):" `
-            -InputType 'string' `
-            -ValidationType TestCommand `
-            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
     }
 
     [void] FormatTransactionSummary(){
         Format-CardanoTransactionSummary $this
     }
 
-    # [CardanoTransactionOutput[]] InteractivelySetOutputs(){
-    [void] InteractivelySetOutputs(){
-        $outputAddressesSelection = Get-FreeformInput `
-            -Instruction $(
-                "Specify 1 or more recipient addresses (e.g. <address1>,<address2>, ...)." +
-                "`nSeperate addresses using a comma."
-            ) `
-            -InputType 'string' `
-            -ValidationType TestCommand `
-            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' } `
-            -Delimited
+    [void] Minting(){
+        Write-Host TODO
+    }
 
-        # Do something with change
-        # $this.InteractivelySetChangeAddress()
+    [CardanoUtxo[]]GetInputs(){
+        return $this.Inputs
+    }
 
-        $this.Outputs = [CardanoTransactionOutput[]]@()
-        $_tokens = $this.GetInputTokens()
-        $_tokens.ForEach({ $_.Quantity = 0 })
-        $outputAddressesSelection.ForEach({
-            $this.Outputs += [CardanoTransactionOutput]::new(
-                $_, 
-                $_tokens
+    [CardanoToken[]] GetInputTokens(){
+        return Merge-CardanoTokens $this.GetInputs().Value
+    }
+
+    [bool] HasInputs(){
+        return [bool]$this.GetInputs().Count
+    }
+
+    [CardanoTransactionAllocation[]] GetAllocations(){
+        return $this.Allocations
+    }
+
+    [CardanoToken[]] GetAllocatedTokens(){
+        return Merge-CardanoTokens $this.GetAllocations().Value
+    }
+
+    [bool] HasAllocations(){
+        return [bool]$this.GetAllocations().Count
+    }
+
+    [bool] HasAllocatedTokens(){
+        return [bool]$this.GetAllocatedTokens().Count
+    }
+
+    # balance being the difference between input and output token quantities
+    [CardanoToken[]] GetTokenBalances(){
+        $allocatedTokens = $this.GetAllocatedTokens()
+        $allocatedTokens.ForEach({ $_.Quantity = -$_.Quantity })
+        return Merge-CardanoTokens $($this.GetInputTokens() + $allocatedTokens)
+    }
+
+    [CardanoToken[]] GetUnallocatedTokens(){
+        return $this.GetTokenBalances().Where({ $_.Quantity -gt 0 })
+    }
+
+    [bool] HasUnallocatedTokens(){
+        return [bool]$this.GetUnallocatedTokens().Count
+    }
+
+    [void] SetChangeRecipient([string]$Recipient){
+        Assert-CardanoAddressIsValid $Recipient
+        $this.ChangeRecipient = $Recipient
+        $this.RefreshState()
+    }
+
+    [void] RemoveChangeRecipient(){
+        $this.ChangeRecipient = ''
+        $this.RefreshState()
+    }
+
+    [bool] HasChangeRecipient(){
+        return [bool]$this.ChangeRecipient
+    }
+
+    [CardanoTransactionAllocation[]] GetChangeAllocation(){
+        $changeAllocation = [CardanoTransactionAllocation[]]@()
+        if($this.HasChangeRecipient() -and $this.HasUnallocatedTokens()){
+            $changeAllocation += [CardanoTransactionAllocation]::new(
+                $this.ChangeRecipient,
+                $this.GetUnallocatedTokens()
             )
+        }
+        return $changeAllocation
+    }
+
+    [bool] HasChangeAllocation(){
+        return [bool]$this.GetChangeAllocation().Count
+    }
+
+    [CardanoTransactionOutput[]]GetOutputs(){
+        $outputs = [CardanoTransactionOutput[]]@()
+        $($this.GetAllocations() + $this.GetChangeAllocation()).Where({
+            $($_.Value.Quantity | Measure-Object -Sum).Sum -gt 0
+        }).ForEach({
+            $outputs += [CardanoTransactionOutput]::new($_)
         })
-        
+        return $outputs
+    }
+
+    [CardanoToken[]] GetOutputTokens(){
+        return Merge-CardanoTokens $this.GetOutputs().Value
+    }
+
+    [bool] HasOutputs(){
+        return [bool]$this.GetOutputs().Count
+    }
+
+    [string[]]GetWitnesses(){
+        return $this.GetInputs().ForEach({ $_.Address }) | Sort-Object | Get-Unique
+    }
+
+    [System.Object]GetMinimumFee(){
+        $MinimumFee = $null
+        if($this.HasInputs()){
+            Assert-CardanoNodeInSync
+            $this.ExportTxBody(0)
+            $_args = @(
+                'transaction', 'calculate-min-fee'
+                '--tx-body-file', $this.TxBodyFile.FullName
+                '--tx-in-count', $this.GetInputs().Count
+                '--tx-out-count', $this.GetOutputs().Count
+                '--witness-count', $this.GetWitnesses().Count
+                '--protocol-params-file', $env:CARDANO_NODE_PROTOCOL_PARAMETERS
+                $env:CARDANO_CLI_NETWORK_ARG, $env:CARDANO_CLI_NETWORK_ARG_VALUE
+            )
+            $MinimumFee = Invoke-CardanoCLI @_args
+            $MinimumFee = [Int64]$MinimumFee.TrimEnd(' Lovelace')
+        }
+        return $MinimumFee
+    }
+
+    [bool] IsBalanced(){ 
+        $outputTokens = $this.GetOutputTokens()
+        $outputTokens.ForEach({ $_.Quantity = -$_.Quantity })
+        $inputOutputTokenDifference = $(Merge-CardanoTokens $(
+            $this.GetInputTokens() + $outputTokens
+        )).Where({ $_.Quantity -gt 0 }).Count
+        return -not $inputOutputTokenDifference
+    }
+
+    [bool] IsSigned(){ return $false }
+    [bool] IsSubmitted(){ return $false }
+
+    [void] SetInteractively(){
         do{
-            $allocationActionsComplete = $false
+            $interactionComplete = $false
             $this.FormatTransactionSummary()
 
-            $allocationActionSelection = Get-OptionSelection `
+            $actionSelection = Get-OptionSelection `
                 -Instruction 'Select an option:' `
-                -Options @('Set Allocation', 'Set Change Recipient', 'Finished Allocating')
+                -Options @(
+                    'Set Inputs'
+                    if($this.HasInputs()){ 
+                        'Set Allocation Recipient(s)'
+                        'Set Change Recipient' 
+                    }
+                    if($this.HasAllocations()){
+                        'Set Allocation'
+                    }
+                    'Done Editing'
+                )
 
-            switch($allocationActionSelection){
+            switch($actionSelection){
+                'Set Inputs' {
+                    $addresses = Get-FreeformInput `
+                        -Instruction $(
+                            "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." +
+                            "`nSeperate addresses using a comma."
+                        ) `
+                        -InputType 'string' `
+                        -ValidationType TestCommand `
+                        -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' } `
+                        -Delimited
+
+                    $addressesUtxos = [CardanoUtxo[]]@()
+                    $addresses.ForEach({
+                        $addressesUtxos += Get-CardanoAddressUtxos -Address $_ -WorkingDir $this.WorkingDir
+                    })
+
+                    $this.Inputs = Get-OptionSelection `
+                        -MultipleChoice `
+                        -Instruction $(
+                            "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." +
+                            "`nSeperate numbers using a comma.`n"
+                        ) `
+                        -Options $addressesUtxos `
+                        -OptionDisplayTemplate @(
+                            @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+                            @{ Object = ')' },
+                            @{ Object = ' | UTXO Id: ' ; NoNewline = $true },
+                            @{ Expression = '$($option.Value.Id)'; ForegroundColor = 'Green' },
+                            @{ Object = ' | UTXO Data: ' ; NoNewline = $true },
+                            @{ Expression = '$($option.Value.Data)'; ForegroundColor = 'Green' },
+                            @{ Object = ' | UTXO Holding Address: ' ; NoNewline = $true },
+                            @{ Expression = '$($option.Value.Address)'; ForegroundColor = 'Green' }
+                            @{ Object = ' | UTXO Tokens:' },
+                            @{ Prefix = @{ Object = ' |   '; NoNewline = $true }
+                                Expression = '$($option.Value | Select-Object * -ExpandProperty Value | Format-List "PolicyId", "Name", "Quantity" | Out-String)'
+                                ForegroundColor = 'Green'
+                            },
+                            @{ NoNewline = $false }
+                        )
+                    $this.Allocations = [CardanoTransactionAllocation[]]@()
+                }
+
+                'Set Allocation Recipient(s)' {
+                    $allocationRecipientsSelection = Get-FreeformInput `
+                        -Instruction $(
+                            "Specify 1 or more recipient addresses (e.g. <address1>,<address2>, ...)." +
+                            "`nSeperate addresses using a comma."
+                        ) `
+                        -InputType 'string' `
+                        -ValidationType TestCommand `
+                        -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' } `
+                        -Delimited
+        
+                    $this.Allocations = [CardanoTransactionAllocation[]]@()
+                    $_tokens = $this.GetInputTokens()
+                    $_tokens.ForEach({ $_.Quantity = 0 })
+                    $allocationRecipientsSelection.ForEach({
+                        $this.AddAllocation([CardanoTransactionAllocation]::new($_, $_tokens))
+                    })
+                }
+
                 'Set Allocation' {
                     $recipientOptionsSelection = Get-OptionSelection `
                         -Instruction 'Select a recipient:' `
-                        -Options $($this.GetAllocations()).Address
+                        -Options $($this.GetAllocations()).Recipient
 
                     $tokenOptionsSelection = Get-OptionSelection `
                         -Instruction "Select one of the recipient's token allocations:" `
                         -Options $this.GetAllocations().Where({ 
-                            $_.Address -eq $recipientOptionsSelection 
-                         }).Value `
+                            $_.Recipient -eq $recipientOptionsSelection 
+                        }).Value `
                         -OptionDisplayTemplate @(
                             @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
                             @{ Object = ')' },
@@ -282,7 +425,7 @@ class CardanoTransaction {
                             @{ NoNewline = $false }
                         )
                     
-                    $quantityMaximum = $this.GetUnallocatedTokens().Where({
+                    $quantityMaximum = $this.GetTokenBalances().Where({
                         $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and
                         $_.Name -eq $tokenOptionsSelection.Name
                     }).Quantity + $tokenOptionsSelection.Quantity
@@ -292,15 +435,15 @@ class CardanoTransaction {
                             "Quantity available to allocate: $quantityMaximum" +
                             "`nSpecify a quantity to allocate."
                         ) `
-                        -InputType 'int' `
+                        -InputType 'Int64' `
                         -ValidationType InRange `
                         -ValidationParameters @{ 
                             Minimum = 0
                             Maximum = $quantityMaximum
                         }
                     
-                    $this.Outputs.Where({ 
-                        $_.Address -eq $recipientOptionsSelection 
+                    $this.Allocations.Where({ 
+                        $_.Recipient -eq $recipientOptionsSelection 
                     }).Where({
                         $_.Value.PolicyId -eq $tokenOptionsSelection.PolicyId -and
                         $_.Value.Name -eq $tokenOptionsSelection.Name
@@ -308,113 +451,20 @@ class CardanoTransaction {
                 }
                 
                 'Set Change Recipient' {
-                    $this.InteractivelySetChangeAddress()
+                    $_changeRecipient = Get-FreeformInput `
+                        -Instruction "Specify 1 address to be the recipient of any change (unallocated tokens):" `
+                        -InputType 'string' `
+                        -ValidationType TestCommand `
+                        -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
+                    $this.SetChangeRecipient($_changeRecipient)
                 }
 
-                'Finished Allocating'{
-                    $allocationConfirmationSelectionOptions = [ordered]@{
-                        Done = 'Done editing'
-                        ContinueEditing = 'Continue editing'
-                    }
-                    $allocationConfirmationSelection = Get-OptionSelection `
-                        -Instruction "Select an option:" `
-                        -Options $allocationConfirmationSelectionOptions.Values
-                    
-                    $allocationActionsComplete = $(
-                        $allocationConfirmationSelection -eq $allocationConfirmationSelectionOptions.Done
-                    )
+                'Done Editing'{
+                    $interactionComplete = $true
                 }
             }
         }
-        until($allocationActionsComplete)
-    }
-
-    [void] Minting(){
-        Write-Host TODO
-    }
-
-    [CardanoToken[]] GetInputTokens(){
-        return Merge-CardanoTokens $this.Inputs.Value
-    }
-
-    [bool] HasInputs(){
-        return [bool]$this.Inputs.Count
-    }
-
-    [CardanoToken[]] GetOutputTokens(){
-        return Merge-CardanoTokens $this.Outputs.Value
-    }
-
-    [bool] HasOutputs(){
-        return [bool]$this.Outputs.Count
-    }
-
-    [CardanoToken[]] GetUnallocatedTokens(){
-        $allocatedTokens = $this.GetAllocatedTokens()
-        $allocatedTokens.ForEach({ $_.Quantity = -$_.Quantity })
-        return Merge-CardanoTokens $($this.GetInputTokens() + $allocatedTokens)
-    }
-
-    [bool] HasUnallocatedTokens(){
-        return [bool]$this.GetUnallocatedTokens().Where({ $_.Quantity -gt 0 })
-    }
-
-    [CardanoToken[]] GetAllocatedTokens(){
-        return $this.GetOutputTokens()
-    }
-
-    [bool] HasAllocatedTokens(){
-        return [bool]$this.GetAllocatedTokens().Where({ $_.Quantity -gt 0 })
-    }
-
-    [CardanoTransactionOutput[]] GetAllocations(){
-        return $this.Outputs
-    }
-
-    [CardanoToken[]] GetChangeTokens(){
-        return $this.GetUnallocatedTokens()
-    }
-
-    [void] SetChangeAddress($Address){
-        Assert-CardanoAddressIsValid $Address
-        $this.ChangeAddress = $Address
-        $this.RefreshState()
-    }
-
-    [bool] HasChangeAddress(){
-        return [bool]$this.ChangeAddress
-    }
-
-    [CardanoTransactionOutput[]] GetChangeAllocation(){
-        $changeAllocation = [CardanoTransactionOutput[]]@()
-        if($this.HasChangeAddress()){
-            $changeAllocation += [CardanoTransactionOutput]::new(
-                $this.ChangeAddress,
-                $this.GetChangeTokens()
-            )
-        }
-        return $changeAllocation
-    }
-
-
-    [string[]]GetWitnesses(){
-        return $this.Inputs.ForEach({ $_.Address }) | Sort-Object | Get-Unique
-    }
-
-    [Int64]GetMinimumFee(){
-        $this.ExportTxBody(0)
-        $_args = @(
-            'transaction', 'calculate-min-fee'
-            '--tx-body-file', $this.TxBodyFile.FullName
-            '--tx-in-count', $this.Inputs.Utxos.Count
-            '--tx-out-count', $this.Outputs.Count
-            '--witness-count', $($this.GetWitnesses()).Count
-            '--protocol-params-file', $env:CARDANO_NODE_PROTOCOL_PARAMETERS
-            $env:CARDANO_CLI_NETWORK_ARG, $env:CARDANO_CLI_NETWORK_ARG_VALUE
-        )
-        $MinimumFee = Invoke-CardanoCLI @_args
-        $MinimumFee = [Int64]$MinimumFee.TrimEnd(' Lovelace')
-        return $MinimumFee
+        until($interactionComplete)
     }
 }
 
