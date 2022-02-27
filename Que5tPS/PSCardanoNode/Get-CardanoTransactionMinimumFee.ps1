@@ -1,21 +1,24 @@
-function Get-CardanoTransactionMinimumFee{
+function Get-CardanoTransactionMinimumFee {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, Position = 0)]
-        $File,
-        [Parameter(Mandatory = $true, Position = 1)]
-        $InputsCount,
-        [Parameter(Mandatory = $true, Position = 2)]
-        $OutputsCount,
-        [Parameter(Mandatory = $true, Position = 3)]
-        $WitnessCount
+        [parameter(ValueFromPipeline)]
+        [CardanoTransaction]$Transaction        
     )
-    $_args = @(
-            'transaction', 'calculate-min-fee'
-            '--tx-in-count', $InputsCount
-            '--tx-out-count', $OutputsCount
-            '--witness-count', $WitnessCount
-    )
-    $mininumFee = Invoke-CardanoCLI @_args
-    return $mininumFee
+    $MinimumFee = $null
+        if($Transaction.HasInputs()){
+            Assert-CardanoNodeInSync
+            $Transaction | Export-CardanoTransactionBody -Fee 0
+            $_args = @(
+                'transaction', 'calculate-min-fee'
+                '--tx-body-file', $Transaction.BodyFile.FullName
+                '--tx-in-count', $(Get-CardanoTransactionInputs $Transaction).Count
+                '--tx-out-count', $(Get-CardanoTransactionOutputs $Transaction).Count
+                '--witness-count', $(Get-CardanoTransactionWitnesses $Transaction).Count
+                '--protocol-params-file', $env:CARDANO_NODE_PROTOCOL_PARAMETERS
+                $env:CARDANO_CLI_NETWORK_ARG, $env:CARDANO_CLI_NETWORK_ARG_VALUE
+            )
+            $MinimumFee = Invoke-CardanoCLI @_args
+            $MinimumFee = [Int64]$MinimumFee.TrimEnd(' Lovelace')
+        }
+    return $MinimumFee
 }
