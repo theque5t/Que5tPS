@@ -13,7 +13,7 @@ function Import-CardanoTransactionState {
         
         $Transaction.Inputs = [CardanoUtxo[]]@()
         $state.Inputs.ForEach({
-            $utxo = [CardanoUtxo]::new($_.Id, $_.Address, $_.Data)
+            $utxo = New-CardanoUtxo -Id $_.Id -Address $_.Address -Data $_.Data
             $_.Value.GetEnumerator().ForEach({
                 $utxo | Add-CardanoUtxoToken $_.PolicyId $_.Name $_.Quantity
             })
@@ -24,9 +24,14 @@ function Import-CardanoTransactionState {
         $state.Allocations.ForEach({
             $_tokens = [CardanoToken[]]@()
             $_.Value.GetEnumerator().ForEach({
-                $_tokens += ([CardanoToken]::new($_.PolicyId, $_.Name, $_.Quantity))
+                $_tokens += New-CardanoToken `
+                    -PolicyId $_.PolicyId `
+                    -Name $_.Name `
+                    -Quantity $_.Quantity
             })
-            $allocation = [CardanoTransactionAllocation]::new($_.Recipient, $_tokens)
+            $allocation = New-CardanoTransactionAllocation `
+                -Recipient $_.Recipient `
+                -Value $_tokens
             $Transaction | Add-CardanoTransactionAllocation $allocation
         })
 

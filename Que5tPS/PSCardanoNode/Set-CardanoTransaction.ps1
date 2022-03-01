@@ -91,7 +91,10 @@ function Set-CardanoTransaction {
                         $_tokens = $Transaction.GetInputTokens()
                         $_tokens.ForEach({ $_.Quantity = 0 })
                         $allocationRecipientsSelection.ForEach({
-                            $Transaction.AddAllocation([CardanoTransactionAllocation]::new($_, $_tokens))
+                            $allocation = New-CardanoTransactionAllocation `
+                                -Recipient $_ `
+                                -Value $_tokens
+                            $Transaction.AddAllocation($allocation)
                         })
                     }
             

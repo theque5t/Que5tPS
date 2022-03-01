@@ -7,10 +7,9 @@ function Get-CardanoTransactionChangeAllocation {
     $changeAllocation = [CardanoTransactionAllocation[]]@()
     if($Transaction.HasChangeRecipient() -and $Transaction.HasUnallocatedTokens()){
         $unallocatedTokens = $Transaction | Get-CardanoTransactionUnallocatedTokens
-        $changeAllocation += [CardanoTransactionAllocation]::new(
-            $Transaction.ChangeRecipient,
-            $unallocatedTokens
-        )
+        $changeAllocation += New-CardanoTransactionAllocation `
+            -Recipient $Transaction.ChangeRecipient `
+            -Value $unallocatedTokens
     }
     return $changeAllocation
 }

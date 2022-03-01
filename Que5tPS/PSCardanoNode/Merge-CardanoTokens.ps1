@@ -5,11 +5,10 @@ function Merge-CardanoTokens{
     $mergedTokens = [CardanoToken[]]@()
     $tokenGroups = $Tokens | Group-Object -Property PolicyId, Name
     $tokenGroups.ForEach({
-        $mergedTokens += [CardanoToken]::new(
-            $_.Group[0].PolicyId,
-            $_.Group[0].Name,
-            $($($_.Group).Quantity | Measure-Object -Sum).Sum
-        )
+        $mergedTokens += New-CardanoToken `
+            -PolicyId $_.Group[0].PolicyId `
+            -Name $_.Group[0].Name `
+            -Quantity $($($_.Group).Quantity | Measure-Object -Sum).Sum
     })
     return $mergedTokens
 }

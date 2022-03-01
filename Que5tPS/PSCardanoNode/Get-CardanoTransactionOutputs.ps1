@@ -10,7 +10,7 @@ function Get-CardanoTransactionOutputs {
     $($allocations + $changeAllocation).Where({
         $($_.Value.Quantity | Measure-Object -Sum).Sum -gt 0
     }).ForEach({
-        $outputs += [CardanoTransactionOutput]::new($_)
+        $outputs += New-CardanoTransactionOutput -Allocation $_
     })
     return $outputs
 }

@@ -26,7 +26,10 @@ function Get-CardanoAddressUtxos {
             $utxos = [CardanoUtxo[]]@()
             $queryOutput.GetEnumerator().ForEach({
                 Write-VerboseLog "Processing utxo $($_.Name)..."
-                $utxo = [CardanoUtxo]::new($_.Name, $_.Value.address, $_.Value.data)
+                $utxo = New-CardanoUtxo `
+                    -Id $_.Name `
+                    -Address $_.Value.address `
+                    -Data $_.Value.data
                 $_.Value.value.GetEnumerator().ForEach({ 
                     Write-VerboseLog "Processing value $($_.Name)..."
                     $token = $_
