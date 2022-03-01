@@ -8,11 +8,12 @@ function New-CardanoUtxo {
         [Parameter(Mandatory = $true)]
         [string]$Data
     )
-    $utxo = [CardanoUtxo]::new()
-    $utxo.Id = $Id
-    $utxo.TxHash = $Id.Split('#')[0]
-    $utxo.Index = $Id.Split('#')[1]
-    $utxo.Address = $Address
-    $utxo.Data = $Data
+    $utxo = New-Object CardanoUtxo -Property @{
+        Id = $Id
+        TxHash = $Id.Split('#')[0]
+        Index = $Id.Split('#')[1]
+        Address = $Address
+        Data = $Data
+    }
     return $utxo
 }

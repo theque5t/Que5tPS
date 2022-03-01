@@ -6,8 +6,9 @@ function New-CardanoTransactionAllocation {
         [Parameter(Mandatory = $true)]
         [CardanoToken[]]$Value
     )
-    $allocation = [CardanoTransactionAllocation]::new()
-    $allocation.Recipient = $Recipient
-    $allocation.Value = $Value
+    $allocation = New-Object CardanoTransactionAllocation -Property @{
+        Recipient = $Recipient
+        Value = $Value
+    }
     return $allocation
 }

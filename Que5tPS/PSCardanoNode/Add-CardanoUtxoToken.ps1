@@ -10,7 +10,8 @@ function Add-CardanoUtxoToken {
         [Parameter(Mandatory = $true)]
         [string]$Quantity
     )
-    $Utxo.Value += [CardanoToken]::new(
-        $PolicyId, $Name, $Quantity
-    )
+    $Utxo.Value += New-CardanoToken `
+        -PolicyId $PolicyId `
+        -Name $Name `
+        -Quantity $Quantity
 }

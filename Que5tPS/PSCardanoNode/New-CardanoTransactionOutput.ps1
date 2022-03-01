@@ -4,8 +4,9 @@ function New-CardanoTransactionOutput {
         [Parameter(Mandatory = $true)]
         [CardanoTransactionAllocation]$Allocation
     )
-    $output = [CardanoTransactionOutput]::new()
-    $output.Address = $Allocation.Recipient
-    $output.Value = $Allocation.Value.Where({ $_.Quantity -gt 0 })
+    $output = New-Object CardanoTransactionOutput -Property @{
+        Address = $Allocation.Recipient
+        Value = $Allocation.Value.Where({ $_.Quantity -gt 0 })
+    }
     return $output
 }

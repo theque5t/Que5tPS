@@ -8,9 +8,10 @@ function New-CardanoToken {
         [Parameter(Mandatory = $true)]
         [string]$Quantity
     )
-    $token = [CardanoToken]::new()
-    $token.PolicyId = $PolicyId
-    $token.Name = $Name
-    $token.Quantity = $Quantity
+    $token = New-Object CardanoToken -Property @{
+        PolicyId = $PolicyId
+        Name = $Name
+        Quantity = $Quantity
+    }
     return $token
 }
