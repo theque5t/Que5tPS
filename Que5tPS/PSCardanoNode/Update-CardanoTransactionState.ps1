@@ -1,7 +1,7 @@
 function Update-CardanoTransactionState {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     $Transaction | Export-CardanoTransactionState

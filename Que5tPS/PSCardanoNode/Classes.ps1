@@ -56,7 +56,7 @@ class CardanoTransaction {
     }
 
     [void]ExportBody([Int64]$Fee){
-        $this | Export-CardanoTransactionBody $Fee
+        $this | Export-CardanoTransactionBody -Fee $Fee
     }
 
     [void]ExportBody(){
@@ -64,7 +64,7 @@ class CardanoTransaction {
     }
 
     [void]UpdateBody([Int64]$Fee){
-        $this | Update-CardanoTransactionBody $Fee
+        $this | Update-CardanoTransactionBody -Fee $Fee
     }
     
     [void]UpdateBody(){
@@ -72,23 +72,23 @@ class CardanoTransaction {
     }
 
     [void] AddInput([CardanoUtxo]$Utxo){ 
-        $this | Add-CardanoTransactionInput $Utxo
+        $this | Add-CardanoTransactionInput -Utxo $Utxo
     }
 
     [void] RemoveInput([string]$Id){
-        $this | Remove-CardanoTransactionInput $Id
+        $this | Remove-CardanoTransactionInput -Id $Id
     }
 
     [void] AddAllocation([CardanoTransactionAllocation]$Allocation){
-        $this | Add-CardanoTransactionAllocation $Allocation
+        $this | Add-CardanoTransactionAllocation -Allocation $Allocation
     }
 
     [void] RemoveAllocation([string]$Recipient){ 
-        $this | Remove-CardanoTransactionAllocation $Recipient
+        $this | Remove-CardanoTransactionAllocation -Recipient $Recipient
     }
 
     [void] FormatTransactionSummary(){
-        Format-CardanoTransactionSummary $this
+        $this | Format-CardanoTransactionSummary 
     }
 
     [void] Minting(){
@@ -140,7 +140,7 @@ class CardanoTransaction {
     }
 
     [void] SetChangeRecipient([string]$Recipient){
-        $this | Set-CardanoTransactionChangeRecipient $Recipient
+        $this | Set-CardanoTransactionChangeRecipient -Recipient $Recipient
     }
 
     [void] ClearChangeRecipient(){
@@ -184,7 +184,7 @@ class CardanoTransaction {
         $outputTokens.ForEach({ $_.Quantity = -$_.Quantity })
         $inputTokens = $this | Get-CardanoTransactionInputTokens
         $inputOutputTokensDifference = $(
-            Merge-CardanoTokens $($inputTokens + $outputTokens 
+            Merge-CardanoTokens -Tokens $($inputTokens + $outputTokens 
         )).Where({ $_.Quantity -gt 0 }).Count
         return -not $inputOutputTokensDifference
     }

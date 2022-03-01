@@ -1,7 +1,7 @@
 function Get-CardanoTransactionUnallocatedTokens {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     $tokenBalances = $Transaction | Get-CardanoTransactionTokenBalances

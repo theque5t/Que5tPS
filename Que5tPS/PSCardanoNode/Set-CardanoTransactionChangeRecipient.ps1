@@ -1,8 +1,9 @@
 function Set-CardanoTransactionChangeRecipient {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
+        [Parameter(Mandatory = $true)]
         [ValidateScript({ Assert-CardanoAddressIsValid $_ })]
         [string]$Recipient
     )

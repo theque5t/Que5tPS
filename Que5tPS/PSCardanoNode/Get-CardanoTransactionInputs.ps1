@@ -1,7 +1,7 @@
 function Get-CardanoTransactionInputs {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     return $Transaction.Inputs

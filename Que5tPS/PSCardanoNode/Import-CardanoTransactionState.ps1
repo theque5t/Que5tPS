@@ -1,7 +1,7 @@
 function Import-CardanoTransactionState {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     $Transaction.StateFile = Get-Item $Transaction.StateFile
@@ -17,7 +17,7 @@ function Import-CardanoTransactionState {
             $_.Value.GetEnumerator().ForEach({
                 $utxo | Add-CardanoUtxoToken $_.PolicyId $_.Name $_.Quantity
             })
-            $Transaction | Add-CardanoTransactionInput $utxo
+            $Transaction | Add-CardanoTransactionInput -Utxo $utxo
         })
         
         $Transaction.Allocations = [CardanoTransactionAllocation[]]@()
@@ -32,10 +32,12 @@ function Import-CardanoTransactionState {
             $allocation = New-CardanoTransactionAllocation `
                 -Recipient $_.Recipient `
                 -Value $_tokens
-            $Transaction | Add-CardanoTransactionAllocation $allocation
+            $Transaction | Add-CardanoTransactionAllocation `
+                -Allocation $allocation
         })
 
-        $Transaction | Set-CardanoTransactionChangeRecipient $state.ChangeRecipient
+        $Transaction | Set-CardanoTransactionChangeRecipient `
+            -Recipient $state.ChangeRecipient
 
         $Transaction | Update-CardanoTransactionBody
     }

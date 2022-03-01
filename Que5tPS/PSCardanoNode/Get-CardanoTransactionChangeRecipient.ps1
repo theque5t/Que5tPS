@@ -1,7 +1,7 @@
 function Get-CardanoTransactionChangeRecipient {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     return $Transaction.ChangeRecipient

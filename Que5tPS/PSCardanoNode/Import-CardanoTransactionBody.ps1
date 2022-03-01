@@ -1,7 +1,7 @@
 function Import-CardanoTransactionBody {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     $Transaction.BodyFile = Get-Item $Transaction.BodyFile

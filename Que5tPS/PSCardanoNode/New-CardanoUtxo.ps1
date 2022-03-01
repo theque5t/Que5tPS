@@ -4,6 +4,7 @@ function New-CardanoUtxo {
         [Parameter(Mandatory = $true)]
         [string]$Id,
         [Parameter(Mandatory = $true)]
+        [ValidateScript({ Assert-CardanoAddressIsValid $_ })]
         [string]$Address,
         [Parameter(Mandatory = $true)]
         [string]$Data

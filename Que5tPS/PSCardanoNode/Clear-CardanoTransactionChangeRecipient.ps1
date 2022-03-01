@@ -1,7 +1,7 @@
 function Clear-CardanoTransactionChangeRecipient {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     $Transaction.ChangeRecipient = ''

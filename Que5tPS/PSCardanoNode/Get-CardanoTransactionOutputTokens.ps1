@@ -1,10 +1,10 @@
 function Get-CardanoTransactionOutputTokens {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
     $outputs = $Transaction | Get-CardanoTransactionOutputs
-    $outputTokens = Merge-CardanoTokens $outputs.Value
+    $outputTokens = Merge-CardanoTokens -Tokens $outputs.Value
     return $outputTokens
 }

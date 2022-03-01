@@ -1,8 +1,9 @@
 function Export-CardanoTransactionBody {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
+        [Parameter(Mandatory = $true)]
         [Int64]$Fee = 0
     )
     if($Transaction.HasInputs()){

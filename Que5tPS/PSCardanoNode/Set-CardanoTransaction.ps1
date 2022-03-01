@@ -1,7 +1,7 @@
 function Set-CardanoTransaction {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
         [Parameter(ParameterSetName = 'Interactive')]
         [switch]$Interactive,
@@ -10,8 +10,8 @@ function Set-CardanoTransaction {
         [Parameter(ParameterSetName = 'NonInteractive')]
         [CardanoTransactionAllocation[]]$Allocations,
         [Parameter(ParameterSetName = 'NonInteractive')]
+        [ValidateScript({ Assert-CardanoAddressIsValid $_ })]
         [string]$ChangeRecipient
-        
     )
     switch ($PsCmdlet.ParameterSetName) {
         'Interactive' { 
@@ -94,7 +94,8 @@ function Set-CardanoTransaction {
                             $allocation = New-CardanoTransactionAllocation `
                                 -Recipient $_ `
                                 -Value $_tokens
-                            $Transaction.AddAllocation($allocation)
+                            $Transaction | Add-CardanoTransactionAllocation `
+                                -Allocation $allocation
                         })
                     }
             

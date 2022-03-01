@@ -1,8 +1,9 @@
 function Remove-CardanoTransactionInput {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
+        [Parameter(Mandatory = $true)]
         [ValidateScript({ 
             $_ -in $Transaction.Inputs.Id
         })]
