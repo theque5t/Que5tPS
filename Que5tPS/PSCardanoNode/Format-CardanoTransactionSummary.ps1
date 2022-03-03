@@ -23,7 +23,8 @@ function Format-CardanoTransactionSummary {
             Object = 'UTXOs: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasInputs }
     )
     if($_hasInputs){
-    $Transaction.GetInputs().ForEach({ 
+    $inputs = $Transaction | Get-CardanoTransactionInputs 
+    $inputs.ForEach({ 
         $_inputsSection += 
         @{ Object = '' },
         @{ Prefix = @{ Object = '    | '; NoNewline = $true } 
@@ -56,13 +57,14 @@ function Format-CardanoTransactionSummary {
         @{ Prefix = $_labelPrefix;
            Object = 'Unallocated Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasUnallocatedTokens }
         @{ Prefix = $_hasUnallocatedTokens ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
-           Object = $_hasUnallocatedTokens ? $($Transaction.GetUnallocatedTokens() | Out-String) : 'None' }
+           Object = $_hasUnallocatedTokens ? $($Transaction | Get-CardanoTransactionUnallocatedTokens | Out-String) : 'None' }
         @{ NoNewLine = $_hasUnallocatedTokens }
         @{ Prefix = $_labelPrefix;
            Object = 'Allocations: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasAllocatedTokens }
     )
     if($_hasAllocatedTokens){
-        $Transaction.GetAllocations().ForEach({ 
+        $allocations = $Transaction | Get-CardanoTransactionAllocations
+        $allocations.ForEach({ 
             $_allocationsSection += 
             @{ Object = '' },
             @{ Prefix = @{ Object = '    | '; NoNewline = $true } 
@@ -92,7 +94,7 @@ function Format-CardanoTransactionSummary {
         @{ Prefix = @{ Object = '    | '; NoNewline = $true };
            Object = 'Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasChangeAllocation }
         @{ Prefix = $_hasChangeAllocation ? @{ Object = '    | '; NoNewline = $true } : @{ Object = ''; NoNewline = $true }
-           Object = $_hasChangeAllocation ? $($Transaction.GetChangeAllocation().Value | Out-String) : 'None' }
+           Object = $_hasChangeAllocation ? $($($Transaction | Get-CardanoTransactionChangeAllocation).Value | Out-String) : 'None' }
         @{ NoNewLine = $_hasChangeAllocation }
         @{ Object = '' }
     )
@@ -104,7 +106,7 @@ function Format-CardanoTransactionSummary {
         @{ Object = '' }
         @{ Prefix = $_labelPrefix;
            Object = 'Minimum transaction fee: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
-        @{ Object = $Transaction.GetMinimumFee()}
+        @{ Object = $Transaction | Get-CardanoTransactionMinimumFee }
         @{ Object = '' }
     )
 
@@ -117,7 +119,8 @@ function Format-CardanoTransactionSummary {
         @{ Object = '' }
     )
     if($_hasOutputs){
-        $Transaction.GetOutputs().ForEach({ 
+        $outputs = $Transaction | Get-CardanoTransactionOutputs
+        $outputs.ForEach({ 
             $_outputs += 
             @{ Prefix = @{ Object = '    | '; NoNewline = $true } 
                Object = 'Address: '; ForegroundColor = 'Yellow'; NoNewline = $true },

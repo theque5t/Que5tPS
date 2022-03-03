@@ -17,7 +17,7 @@ function Set-CardanoTransaction {
         'Interactive' { 
             do{
                 $interactionComplete = $false
-                $Transaction.FormatTransactionSummary()
+                $Transaction | Format-CardanoTransactionSummary
             
                 $actionSelection = Get-OptionSelection `
                     -Instruction 'Select an option:' `
@@ -88,7 +88,7 @@ function Set-CardanoTransaction {
                             -Delimited
             
                         $Transaction.Allocations = [CardanoTransactionAllocation[]]@()
-                        $_tokens = $Transaction.GetInputTokens()
+                        $_tokens = $Transaction | Get-CardanoTransactionInputTokens
                         $_tokens.ForEach({ $_.Quantity = 0 })
                         $allocationRecipientsSelection.ForEach({
                             $allocation = New-CardanoTransactionAllocation `
@@ -102,11 +102,11 @@ function Set-CardanoTransaction {
                     'Set Allocation' {
                         $recipientOptionsSelection = Get-OptionSelection `
                             -Instruction 'Select a recipient:' `
-                            -Options $($Transaction.GetAllocations()).Recipient
+                            -Options $($Transaction | Get-CardanoTransactionAllocations).Recipient
             
                         $tokenOptionsSelection = Get-OptionSelection `
                             -Instruction "Select one of the recipient's token allocations:" `
-                            -Options $Transaction.GetAllocations().Where({ 
+                            -Options $($Transaction | Get-CardanoTransactionAllocations).Where({ 
                                 $_.Recipient -eq $recipientOptionsSelection 
                             }).Value `
                             -OptionDisplayTemplate @(
@@ -121,7 +121,7 @@ function Set-CardanoTransaction {
                                 @{ NoNewline = $false }
                             )
                         
-                        $quantityMaximum = $Transaction.GetTokenBalances().Where({
+                        $quantityMaximum = $($Transaction | Get-CardanoTransactionTokenBalances).Where({
                             $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and
                             $_.Name -eq $tokenOptionsSelection.Name
                         }).Quantity + $tokenOptionsSelection.Quantity
@@ -152,7 +152,7 @@ function Set-CardanoTransaction {
                             -InputType 'string' `
                             -ValidationType TestCommand `
                             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
-                        $Transaction.SetChangeRecipient($_changeRecipient)
+                        $Transaction | Set-CardanoTransactionChangeRecipient -Recipient $_changeRecipient
                     }
             
                     'Done Editing'{
