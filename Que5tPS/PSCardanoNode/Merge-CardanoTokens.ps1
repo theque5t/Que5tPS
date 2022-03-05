@@ -1,5 +1,6 @@
 function Merge-CardanoTokens{
     param(
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoToken[]]$Tokens
     )
     $mergedTokens = [CardanoToken[]]@()
