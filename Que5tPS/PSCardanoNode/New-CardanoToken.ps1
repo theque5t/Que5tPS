@@ -2,6 +2,7 @@ function New-CardanoToken {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$PolicyId,
         [Parameter(Mandatory = $true)]
         [string]$Name,
