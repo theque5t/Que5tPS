@@ -291,3 +291,16 @@ function Get-FreeformInput {
 
     return $inputValue
 }
+
+function Copy-Object($Object) {
+    $copy = @()
+    $Object.ForEach({
+        $currentObject = $_
+        $currentObjectCopy = New-Object $currentObject.GetType().Name
+        $currentObjectCopy.psobject.Properties.ForEach({
+            $_.Value = $currentObject.psobject.Properties[($_.Name)].Value
+        })
+        $copy += $currentObjectCopy
+    })    
+    return $copy
+}
