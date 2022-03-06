@@ -12,8 +12,8 @@ class CardanoUtxo {
     [string]$Address
     [string]$Data
 
-    [void]AddToken($_policyId, $_name, $_quantity){
-        $this | Add-CardanoUtxoToken $_policyId $_name $_quantity
+    [void]AddToken([CardanoToken]$Token){
+        $this | Add-CardanoUtxoToken -Token $Token
     }
 }
 

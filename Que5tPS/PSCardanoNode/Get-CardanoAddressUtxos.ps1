@@ -38,18 +38,22 @@ function Get-CardanoAddressUtxos {
                             $tokenPolicyId = $token.Name
                             $token.Value.GetEnumerator().ForEach({
                                 Write-VerboseLog "Processing token $($_.Name)..."
-                                $utxo | Add-CardanoUtxoToken `
-                                    -PolicyId $tokenPolicyId `
-                                    -Name $_.Name `
-                                    -Quantity $_.Value
+                                $utxo | Add-CardanoUtxoToken -Token $(
+                                    New-CardanoToken `
+                                        -PolicyId $tokenPolicyId `
+                                        -Name $_.Name `
+                                        -Quantity $_.Value
+                                )
                             })
                         }
                         'Int64' { 
                             Write-VerboseLog "Processing token $($_.Name)..."
-                            $utxo | Add-CardanoUtxoToken `
-                                -PolicyId '' `
-                                -Name $token.Name `
-                                -Quantity $token.Value
+                            $utxo | Add-CardanoUtxoToken -Token $(
+                                New-CardanoToken `
+                                    -PolicyId '' `
+                                    -Name $token.Name `
+                                    -Quantity $token.Value
+                            )
                         }
                     }
                 })
