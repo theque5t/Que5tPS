@@ -110,7 +110,7 @@ function Format-CardanoTransactionSummary {
         @{ Object = '' }
     )
 
-    $_hasOutputs = $this.HasOutputs()
+    $_hasOutputs = $Transaction | Test-CardanoTransactionHasOutputs
     $_outputs = @(
         @{ Object = '+---------+' + '-' * 86; ForegroundColor = 'DarkGray' }
         @{ Object = '| OUTPUTS | Description: Spending implementation for funds based on allocations'
