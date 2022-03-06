@@ -4,7 +4,7 @@ function Set-CardanoTransactionChangeRecipient {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
-        [ValidateScript({ Assert-CardanoAddressIsValid $_ })]
+        [ValidateScript({ Assert-CardanoAddressIsValid -Address $_ })]
         [string]$Recipient
     )
     $Transaction.ChangeRecipient = $Recipient

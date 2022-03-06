@@ -3,7 +3,7 @@ function Assert-CardanoAddressIsValid {
         [Parameter(Mandatory=$true)]
         $Address
     )
-    if(-not $(Test-CardanoAddressIsValid $Address)){
+    if(-not $(Test-CardanoAddressIsValid -Address $Address)){
         Write-FalseAssertionError
     }
 }
