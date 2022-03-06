@@ -1,6 +1,6 @@
 function Test-CardanoAddressIsValid {
     param(
-        [Parameter(Mandatory=$true, Position = 0, ValueFromPipeline)]
+        [Parameter(Mandatory=$true, ValueFromPipeline)]
         $Address
     )
     $addressPattern = '^(addr1|stake1|addr_test1|stake_test1)[a-z0-9]+$'+

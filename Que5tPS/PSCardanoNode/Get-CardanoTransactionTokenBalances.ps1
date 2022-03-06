@@ -5,8 +5,9 @@ function Get-CardanoTransactionTokenBalances {
         [CardanoTransaction]$Transaction        
     )
     $allocatedTokens = $Transaction | Get-CardanoTransactionAllocatedTokens
-    $allocatedTokens.ForEach({ $_.Quantity = -$_.Quantity })
     $inputTokens = $Transaction | Get-CardanoTransactionInputTokens
-    $tokenBalances = Merge-CardanoTokens -Tokens $($inputTokens + $allocatedTokens)
+    $tokenBalances = Get-CardanoTokensDifference `
+        -Set1 $inputTokens `
+        -Set2 $allocatedTokens
     return $tokenBalances
 }

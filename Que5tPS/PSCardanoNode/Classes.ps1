@@ -104,7 +104,7 @@ class CardanoTransaction {
     }
 
     [bool] HasInputs(){
-        return [bool]$($this | Get-CardanoTransactionInputs).Count
+        return $this | Test-CardanoTransactionHasInputs
     }
 
     [CardanoTransactionAllocation[]] GetAllocations(){
@@ -116,11 +116,11 @@ class CardanoTransaction {
     }
 
     [bool] HasAllocations(){
-        return [bool]$($this | Get-CardanoTransactionAllocations).Count
+        return $this | Test-CardanoTransactionHasAllocations
     }
 
     [bool] HasAllocatedTokens(){
-        return [bool]$($this | Get-CardanoTransactionAllocatedTokens).Count
+        return $this | Test-CardanoTransactionHasAllocatedTokens
     }
 
     [CardanoToken[]] GetTokenBalances(){
@@ -132,7 +132,7 @@ class CardanoTransaction {
     }
 
     [bool] HasUnallocatedTokens(){
-        return [bool]$($this | Get-CardanoTransactionUnallocatedTokens).Count
+        return $this | Test-CardanoTransactionHasUnallocatedTokens
     }
 
     [string] GetChangeRecipient(){
@@ -148,7 +148,7 @@ class CardanoTransaction {
     }
 
     [bool] HasChangeRecipient(){
-        return [bool]$($this | Get-CardanoTransactionChangeRecipient).Count
+        return $this | Test-CardanoTransactionHasChangeRecipient
     }
 
     [CardanoTransactionAllocation[]] GetChangeAllocation(){
@@ -156,7 +156,7 @@ class CardanoTransaction {
     }
 
     [bool] HasChangeAllocation(){
-        return [bool]$($this | Get-CardanoTransactionChangeAllocation).Count
+        return $this | Test-CardanoTransactionHasChangeAllocation
     }
 
     [CardanoTransactionOutput[]]GetOutputs(){
@@ -168,7 +168,7 @@ class CardanoTransaction {
     }
 
     [bool] HasOutputs(){
-        return [bool]$($this | Get-CardanoTransactionOutputs).Count
+        return $this | Test-CardanoTransactionHasOutputs
     }
 
     [string[]]GetWitnesses(){
@@ -180,18 +180,16 @@ class CardanoTransaction {
     }
 
     [bool] IsBalanced(){ 
-        $outputTokens = $this | Get-CardanoTransactionOutputTokens
-        $outputTokens.ForEach({ $_.Quantity = -$_.Quantity })
-        $inputTokens = $this | Get-CardanoTransactionInputTokens
-        $inputOutputTokensDifference = $(
-            Merge-CardanoTokens -Tokens $($inputTokens + $outputTokens 
-        )).Where({ $_.Quantity -gt 0 }).Count
-        return -not $inputOutputTokensDifference
+        return $this | Test-CardanoTransactionIsBalanced
     }
 
-    [bool] IsSigned(){ return $false }
+    [bool] IsSigned(){ 
+        return $this | Test-CardanoTransactionIsSigned
+    }
 
-    [bool] IsSubmitted(){ return $false }
+    [bool] IsSubmitted(){ 
+        return $this | Test-CardanoTransactionIsSubmitted
+    }
 
     [void] SetInteractively(){
         $this | Set-CardanoTransaction -Interactive
