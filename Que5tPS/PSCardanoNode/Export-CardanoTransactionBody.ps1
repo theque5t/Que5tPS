@@ -6,7 +6,7 @@ function Export-CardanoTransactionBody {
         [Parameter(Mandatory = $true)]
         [Int64]$Fee = 0
     )
-    if($Transaction.HasInputs()){
+    if($($Transaction | Test-CardanoTransactionHasInputs)){
         Assert-CardanoNodeInSync
         
         $templates = @{

@@ -23,11 +23,11 @@ function Set-CardanoTransaction {
                     -Instruction 'Select an option:' `
                     -Options @(
                         'Set Inputs'
-                        if($Transaction.HasInputs()){ 
+                        if($($Transaction | Test-CardanoTransactionHasInputs)){ 
                             'Set Allocation Recipient(s)'
                             'Set Change Recipient' 
                         }
-                        if($Transaction.HasAllocations()){
+                        if($($Transaction | Test-CardanoTransactionHasAllocations)){
                             'Set Allocation'
                         }
                         'Done Editing'

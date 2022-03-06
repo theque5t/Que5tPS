@@ -13,7 +13,7 @@ function Format-CardanoTransactionSummary {
         @{ Object = '=' * 97 }
     )
 
-    $_hasInputs = $Transaction.HasInputs()
+    $_hasInputs = $Transaction | Test-CardanoTransactionHasInputs
     $_inputsSection = @(
         @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
         @{ Object = '| INPUTS | Description: Funds being spent'; ForegroundColor = 'DarkGray' }
@@ -47,8 +47,8 @@ function Format-CardanoTransactionSummary {
     }
     $_inputsSection += @{ NoNewLine = $_hasInputs }
     
-    $_hasUnallocatedTokens = $Transaction.HasUnallocatedTokens()
-    $_hasAllocatedTokens = $Transaction.HasAllocatedTokens()
+    $_hasUnallocatedTokens = $Transaction | Test-CardanoTransactionHasUnallocatedTokens
+    $_hasAllocatedTokens = $Transaction | Test-CardanoTransactionHasAllocatedTokens
     $_allocationsSection = @(
         @{ Object = '+--------------+' + '-' * 81; ForegroundColor = 'DarkGray' }
         @{ Object = '| DISTRIBUTION | Description: Allocations of funds being spent'; ForegroundColor = 'DarkGray'  }    
@@ -81,8 +81,8 @@ function Format-CardanoTransactionSummary {
     }
     $_allocationsSection += @{ NoNewLine = $_hasAllocatedTokens }
         
-    $_hasChangeRecipient = $Transaction.HasChangeRecipient()
-    $_hasChangeAllocation = $Transaction.HasChangeAllocation()
+    $_hasChangeRecipient = $Transaction | Test-CardanoTransactionHasChangeRecipient
+    $_hasChangeAllocation = $Transaction | Test-CardanoTransactionHasChangeAllocation
     $_changeSection = @(
         @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
         @{ Object = '| CHANGE | Description: Allocation for any unallocated funds'; ForegroundColor = 'DarkGray' }    
@@ -144,13 +144,13 @@ function Format-CardanoTransactionSummary {
         @{ Object = '' }
         @{ Prefix = $_labelPrefix;
            Object = 'Balanced: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
-        @{ Object = $Transaction.IsBalanced()}
+        @{ Object = $Transaction | Test-CardanoTransactionIsBalanced}
         @{ Prefix = $_labelPrefix;
            Object = 'Signed: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
-        @{ Object = $Transaction.IsSigned()}
+        @{ Object = $Transaction | Test-CardanoTransactionIsSigned}
         @{ Prefix = $_labelPrefix;
            Object = 'Submitted: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
-        @{ Object = $Transaction.IsSubmitted()}
+        @{ Object = $Transaction | Test-CardanoTransactionIsSubmitted}
         @{ Object = '' }
     )
 
