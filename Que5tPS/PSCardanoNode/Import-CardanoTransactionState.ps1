@@ -41,8 +41,10 @@ function Import-CardanoTransactionState {
                 -Allocation $allocation
         })
 
-        $Transaction | Set-CardanoTransactionChangeRecipient `
-            -Recipient $state.ChangeRecipient
+        if($state.ChangeRecipient){
+            $Transaction | Set-CardanoTransactionChangeRecipient `
+                -Recipient $state.ChangeRecipient
+        }
 
         $Transaction | Update-CardanoTransactionBody
     }

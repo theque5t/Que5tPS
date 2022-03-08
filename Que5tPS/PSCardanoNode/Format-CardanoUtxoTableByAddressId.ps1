@@ -3,9 +3,9 @@ function Format-CardanoUtxoTableByAddressId {
     param(
         [parameter(ValueFromPipeline)]
         [CardanoUtxo]$Utxo
-
     )
-    $Utxo | 
+    $utxoCopy = Clone-Object -Object $Utxo
+    $utxoCopy | 
     Select-Object * -ExpandProperty Value | 
     Format-Table $(
         'PolicyId'

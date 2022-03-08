@@ -11,8 +11,9 @@ function New-CardanoTransaction {
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
         BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
     }
-    if(-not (Test-Path $transaction.StateFile)){ New-Item $transaction.StateFile }
-    if(-not (Test-Path $transaction.BodyFile)){ New-Item $transaction.BodyFile }
+    @($transaction.StateFile, $transaction.BodyFile).ForEach({
+        if(-not (Test-Path $_)){ New-Item $_ | Out-Null }
+    })
     $transaction | Import-CardanoTransactionState
     $transaction | Update-CardanoTransactionState
     return $transaction

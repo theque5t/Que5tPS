@@ -4,9 +4,10 @@ function New-CardanoUtxo {
         [Parameter(Mandatory = $true)]
         [string]$Id,
         [Parameter(Mandatory = $true)]
-        [ValidateScript({ Assert-CardanoAddressIsValid -Address $_ })]
+        [ValidateScript({ Test-CardanoAddressIsValid -Address $_ })]
         [string]$Address,
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Data
     )
     $utxo = New-Object CardanoUtxo -Property @{

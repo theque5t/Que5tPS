@@ -3,7 +3,6 @@ function Export-CardanoTransactionBody {
     param(
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
-        [Parameter(Mandatory = $true)]
         [Int64]$Fee = 0
     )
     if($($Transaction | Test-CardanoTransactionHasInputs)){
@@ -26,27 +25,27 @@ function Export-CardanoTransactionBody {
         }
 
         $_args = [System.Collections.ArrayList]@()
-        $_args.Add('transaction')
-        $_args.Add('build-raw')
-        $_args.Add('--out-file')
-        $_args.Add($Transaction.BodyFile.FullName)
+        [void]$_args.Add('transaction')
+        [void]$_args.Add('build-raw')
+        [void]$_args.Add('--out-file')
+        [void]$_args.Add($Transaction.BodyFile.FullName)
         
         $inputs = $Transaction | Get-CardanoTransactionInputs
         $inputs.ForEach({ 
-            $_args.Add('--tx-in')
-            $_args.Add($(& $templates.Input $_))
+            [void]$_args.Add('--tx-in')
+            [void]$_args.Add($(& $templates.Input $_))
         })
 
         $outputs = $Transaction | Get-CardanoTransactionOutputs
         $outputs.ForEach({ 
-            $_args.Add('--tx-out')
-            $_args.Add($( & $templates.Output $_ ))
+            [void]$_args.Add('--tx-out')
+            [void]$_args.Add($( & $templates.Output $_ ))
         })
 
-        $_args.Add('--fee')
-        $_args.Add($Fee)
+        [void]$_args.Add('--fee')
+        [void]$_args.Add($Fee)
         
         Invoke-CardanoCLI @_args
     }
-    else{ New-Item $Transaction.BodyFile -Force }
+    else{ New-Item $Transaction.BodyFile -Force | Out-Null }
 }

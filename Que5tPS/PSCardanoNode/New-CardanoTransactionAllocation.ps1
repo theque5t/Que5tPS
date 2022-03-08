@@ -2,7 +2,7 @@ function New-CardanoTransactionAllocation {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateScript({ Assert-CardanoAddressIsValid -Address $_ })]
+        [ValidateScript({ Test-CardanoAddressIsValid -Address $_ })]
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
         [CardanoToken[]]$Value

@@ -2,9 +2,10 @@ function Format-CardanoUtxosTable {
     [CmdletBinding()]
     param(
         [parameter(ValueFromPipeline)]
-        [CardanoUtxoList]$Utxos
+        [CardanoUtxo[]]$Utxos
     )
-    $Utxos.Utxos | 
+    $utxosCopy = Clone-Object -Object $Utxos
+    $utxosCopy |
     Select-Object * -ExpandProperty Value | 
     Format-Table $(
         'Id'

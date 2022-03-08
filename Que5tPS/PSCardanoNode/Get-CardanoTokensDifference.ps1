@@ -1,8 +1,10 @@
 function Get-CardanoTokensDifference {
     param(
         [parameter(Mandatory = $true)]
+        [AllowNull()]
         [CardanoToken[]]$Set1,
         [parameter(Mandatory = $true)]
+        [AllowNull()]
         [CardanoToken[]]$Set2
     )
     $set2Copy = Copy-Object $Set2

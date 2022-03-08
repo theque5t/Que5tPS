@@ -7,13 +7,13 @@ function Set-CardanoTransactionFile {
         $Parameters
     )
     $_args = [System.Collections.ArrayList]@()
-    $_args.Add('transaction')
-    $_args.Add('build-raw')
-    $_args.Add('--out-file')
-    $_args.Add($File)
+    [void]$_args.Add('transaction')
+    [void]$_args.Add('build-raw')
+    [void]$_args.Add('--out-file')
+    [void]$_args.Add($File)
     $Parameters.ForEach({
-        $_args.Add("--$($_.Type)")
-        $_args.Add("--$($_.Value)")
+        [void]$_args.Add("--$($_.Type)")
+        [void]$_args.Add("--$($_.Value)")
     })
     Invoke-CardanoCLI @_args
     Write-VerboseLog "Set transaction file: $File"

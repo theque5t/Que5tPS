@@ -4,7 +4,8 @@ function Format-CardanoUtxoListById {
         [parameter(ValueFromPipeline)]
         [CardanoUtxo]$Utxo
     )
-    $Utxo | 
+    $utxoCopy = Clone-Object -Object $Utxo
+    $utxoCopy | 
     Select-Object * -ExpandProperty Value | 
     Format-List $(
         'PolicyId'

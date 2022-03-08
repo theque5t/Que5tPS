@@ -10,7 +10,7 @@ function Set-CardanoTransaction {
         [Parameter(ParameterSetName = 'NonInteractive')]
         [CardanoTransactionAllocation[]]$Allocations,
         [Parameter(ParameterSetName = 'NonInteractive')]
-        [ValidateScript({ Assert-CardanoAddressIsValid -Address $_ })]
+        [ValidateScript({ Test-CardanoAddressIsValid -Address $_ })]
         [string]$ChangeRecipient
     )
     switch ($PsCmdlet.ParameterSetName) {
