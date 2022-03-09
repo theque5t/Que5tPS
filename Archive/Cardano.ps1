@@ -232,6 +232,18 @@ $tx4.GetChangeAllocation()
 
 $tx4.AddOutput([CardanoTransactionOutput]::new('addr_test3blah', @([CardanoToken]::new('ad234as', 'blah', 1))))
 
+$i
+$i = @()
+$i += New-CardanoToken -PolicyId '' -Name lovelace -Quantity 25
+$i += New-CardanoToken -PolicyId '' -Name lovelace -Quantity 50
+$i += New-CardanoToken -PolicyId '' -Name lovelace -Quantity 25
+
+$o
+$o = @()
+$o += New-CardanoToken -PolicyId '' -Name lovelace -Quantity 30
+
+Get-CardanoTokensDifference -Set1 $i -Set2 $o
+                                                                                                                                                                                                                          
 # $Utxos = New-Object CardanoUtxoList
 # $Utxos.AddUtxo($Utxo1)
 # $Utxos.AddUtxo($Utxo2)
