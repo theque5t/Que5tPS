@@ -1,4 +1,4 @@
-function New-CardanoTransaction {
+function Import-CardanoTransaction {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
@@ -11,8 +11,7 @@ function New-CardanoTransaction {
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
         BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
     }
-    $transaction | Assert-CardanoTransactionStateFileDoesNotExist
-    $transaction | Assert-CardanoTransactionBodyFileDoesNotExist
-    $transaction | Update-CardanoTransaction
+    $transaction | Import-CardanoTransactionState
+    $transaction | Import-CardanoTransactionBody
     return $transaction
 }

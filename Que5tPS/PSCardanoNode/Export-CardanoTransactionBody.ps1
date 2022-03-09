@@ -5,6 +5,8 @@ function Export-CardanoTransactionBody {
         [CardanoTransaction]$Transaction,
         [Int64]$Fee = 0
     )
+    New-Item $Transaction.BodyFile -Force | Out-Null
+
     if($($Transaction | Test-CardanoTransactionHasInputs)){
         Assert-CardanoNodeInSync
         
@@ -47,5 +49,4 @@ function Export-CardanoTransactionBody {
         
         Invoke-CardanoCLI @_args
     }
-    else{ New-Item $Transaction.BodyFile -Force | Out-Null }
 }

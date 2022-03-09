@@ -4,8 +4,8 @@ function Import-CardanoTransactionState {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
+    $transaction | Assert-CardanoTransactionStateFileExists
     $Transaction.StateFile = Get-Item $Transaction.StateFile
-    $Transaction.BodyFile = Get-Item $Transaction.BodyFile
     if($Transaction.StateFile.Length -gt 0){
         $state = Get-Content $Transaction.StateFile | ConvertFrom-Yaml
         $state.Inputs = [array]$state.Inputs
@@ -45,7 +45,5 @@ function Import-CardanoTransactionState {
             $Transaction | Set-CardanoTransactionChangeRecipient `
                 -Recipient $state.ChangeRecipient
         }
-
-        $Transaction | Update-CardanoTransactionBody
     }
 }
