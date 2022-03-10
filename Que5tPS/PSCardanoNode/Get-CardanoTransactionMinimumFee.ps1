@@ -2,7 +2,8 @@ function Get-CardanoTransactionMinimumFee {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true, ValueFromPipeline)]
-        [CardanoTransaction]$Transaction        
+        [CardanoTransaction]$Transaction,
+        [switch]$Token    
     )
     $MinimumFee = 0
     if($($Transaction | Test-CardanoTransactionHasInputs)){
@@ -19,6 +20,12 @@ function Get-CardanoTransactionMinimumFee {
         )
         $MinimumFee = Invoke-CardanoCLI @_args
         $MinimumFee = [Int64]$MinimumFee.TrimEnd(' Lovelace')
+    }
+    if($Token){
+        $MinimumFee = New-CardanoToken `
+            -PolicyId '' `
+            -Name 'lovelace' `
+            -Quantity $MinimumFee
     }
     return $MinimumFee
 }

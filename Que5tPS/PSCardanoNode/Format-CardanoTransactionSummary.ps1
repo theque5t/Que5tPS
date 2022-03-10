@@ -146,6 +146,9 @@ function Format-CardanoTransactionSummary {
            Object = 'Balanced: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
         @{ Object = $Transaction | Test-CardanoTransactionIsBalanced}
         @{ Prefix = $_labelPrefix;
+           Object = 'Fees Covered: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
+        @{ Object = $Transaction | Test-CardanoTransactionFeesCovered}
+        @{ Prefix = $_labelPrefix;
            Object = 'Signed: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
         @{ Object = $Transaction | Test-CardanoTransactionIsSigned}
         @{ Prefix = $_labelPrefix;
