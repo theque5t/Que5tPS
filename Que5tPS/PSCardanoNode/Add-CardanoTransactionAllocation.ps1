@@ -4,7 +4,11 @@ function Add-CardanoTransactionAllocation {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
-        [CardanoTransactionAllocation]$Allocation
+        [string]$Recipient,
+        [Parameter(Mandatory = $true)]
+        [CardanoToken[]]$Value
     )
-    $Transaction.Allocations += $Allocation
+    $Transaction.Allocations += New-CardanoTransactionAllocation `
+        -Recipient $recipient `
+        -Value $Value
 }

@@ -22,6 +22,11 @@ class CardanoTransactionAllocation {
     [CardanoToken[]]$Value
 }
 
+class CardanoTransactionFeeAllocation {
+    [string]$Recipient
+    [int]$Percentage
+}
+
 class CardanoTransactionOutput {
     [string]$Address
     [CardanoToken[]]$Value
@@ -37,6 +42,7 @@ class CardanoTransaction {
     $BodyFileViewObject
     [CardanoUtxo[]]$Inputs
     [CardanoTransactionAllocation[]]$Allocations
+    [CardanoTransactionFeeAllocation[]]$FeeAllocations
     [string]$ChangeRecipient
 
     [void]ImportState(){
@@ -107,8 +113,13 @@ class CardanoTransaction {
         return $this | Test-CardanoTransactionHasInputs
     }
 
+    [CardanoTransactionAllocation[]] GetAllocations([bool]$ChangeAllocation){
+        return $this | Get-CardanoTransactionAllocations `
+            -ChangeAllocation:$ChangeAllocation
+    }
+
     [CardanoTransactionAllocation[]] GetAllocations(){
-        return $this | Get-CardanoTransactionAllocations
+        return $this.GetAllocations($false)
     }
 
     [CardanoToken[]] GetAllocatedTokens(){
