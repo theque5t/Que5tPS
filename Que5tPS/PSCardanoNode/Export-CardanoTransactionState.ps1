@@ -7,6 +7,7 @@ function Export-CardanoTransactionState {
     [ordered]@{ 
         Inputs = $Transaction | Get-CardanoTransactionInputs
         Allocations = $Transaction | Get-CardanoTransactionAllocations
+        FeeAllocations = $Transaction | Get-CardanoTransactionFeeAllocations
         ChangeRecipient = $Transaction | Get-CardanoTransactionChangeRecipient
     } | ConvertTo-Yaml -OutFile $Transaction.StateFile -Force
 }

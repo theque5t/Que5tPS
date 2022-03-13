@@ -16,6 +16,7 @@ function Get-CardanoTransactionFeeAllocationsStatus {
         $covered = $balance -gt 0
         $feeAllocationsStatus += [PSCustomObject]@{
             Recipient = $_.Recipient
+            Percentage = $_.Percentage
             AllocatedFunds = $allocatedFunds
             AllocatedFees = $allocatedFees
             Balance = $balance

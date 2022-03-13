@@ -10,6 +10,7 @@ function Import-CardanoTransactionState {
         $state = Get-Content $Transaction.StateFile | ConvertFrom-Yaml
         $state.Inputs = [array]$state.Inputs
         $state.Allocations = [array]$state.Allocations
+        $state.FeeAllocations = [array]$state.FeeAllocations
         
         $Transaction.Inputs = [CardanoUtxo[]]@()
         $state.Inputs.ForEach({
@@ -39,6 +40,15 @@ function Import-CardanoTransactionState {
                 -Value $_tokens
             $Transaction | Add-CardanoTransactionAllocation `
                 -Allocation $allocation
+        })
+
+        $Transaction.FeeAllocations = [CardanoTransactionFeeAllocation[]]@()
+        $state.FeeAllocations.ForEach({
+            $feeAllocation = New-CardanoTransactionFeeAllocation `
+                -Recipient $_.Recipient `
+                -Percentage $_.Percentage
+            $Transaction | Add-CardanoTransactionFeeAllocation `
+                -FeeAllocation $feeAllocation
         })
 
         if($state.ChangeRecipient){
