@@ -98,7 +98,21 @@ function Set-CardanoTransaction {
                             -Recipients $allocationRecipientsSelection
                         $Transaction | Sync-CardanoTransactionFeeAllocations
                     }
-            
+
+                    'Set Change Recipient' {
+                        $_changeRecipient = Get-FreeformInput `
+                            -Instruction "Specify 1 address to be the recipient of any change (unallocated tokens):" `
+                            -InputType 'string' `
+                            -ValidationType TestCommand `
+                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
+                        $Transaction | Set-CardanoTransactionChangeRecipient -Recipient $_changeRecipient
+                        $Transaction | Sync-CardanoTransactionFeeAllocations
+                    }
+
+                    'Remove Change Recipient' {
+                        $Transaction | Remove-CardanoTransactionChangeRecipient
+                    }
+
                     'Set Allocation' {
                         $recipientOptionsSelection = Get-OptionSelection `
                             -Instruction 'Select a recipient:' `
@@ -145,20 +159,6 @@ function Set-CardanoTransaction {
                             -Quantity $quantitySelection
                     }
 
-                    'Set Change Recipient' {
-                        $_changeRecipient = Get-FreeformInput `
-                            -Instruction "Specify 1 address to be the recipient of any change (unallocated tokens):" `
-                            -InputType 'string' `
-                            -ValidationType TestCommand `
-                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
-                        $Transaction | Set-CardanoTransactionChangeRecipient -Recipient $_changeRecipient
-                        $Transaction | Sync-CardanoTransactionFeeAllocations
-                    }
-
-                    'Remove Change Recipient' {
-                        $Transaction | Remove-CardanoTransactionChangeRecipient
-                    }
-
                     'Set Fee Allocation' {
                         $recipientOptionsSelection = Get-OptionSelection `
                             -Instruction 'Select a recipient:' `
@@ -183,8 +183,6 @@ function Set-CardanoTransaction {
                             -Percentage $percentageSelection
                     }
 
-
-            
                     'Done Editing'{
                         $interactionComplete = $true
                     }

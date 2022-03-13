@@ -108,6 +108,22 @@ function Format-CardanoTransactionSummary {
            Object = 'Minimum transaction fee: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
         @{ Object = $Transaction | Get-CardanoTransactionMinimumFee }
         @{ Object = '' }
+        @{ Prefix = $_labelPrefix;
+            Object = 'Unallocated Fee Percentage: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
+         @{ Object = $Transaction | Get-CardanoTransactionUnallocatedFeePercentage -String }
+         @{ Object = '' }
+        @{ Prefix = $_labelPrefix;
+            Object = 'Allocated Fee Percentage: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
+         @{ Object = $Transaction | Get-CardanoTransactionAllocatedFeePercentage -String }
+         @{ Object = '' }
+         @{ Prefix = $_labelPrefix;
+            Object = 'Fee Allocations: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
+         @{ Object = $Transaction | Get-CardanoTransactionFeeAllocations }
+         @{ Object = '' }
+         @{ Prefix = $_labelPrefix;
+            Object = 'Fee Status: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
+         @{ Object = $Transaction | Get-CardanoTransactionFeeAllocationsStatus }
+         @{ Object = '' }
     )
 
     $_hasOutputs = $Transaction | Test-CardanoTransactionHasOutputs

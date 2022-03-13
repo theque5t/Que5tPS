@@ -9,7 +9,7 @@ function New-CardanoTransactionFeeAllocation {
     )
     $feeAllocation = New-Object CardanoTransactionFeeAllocation -Property @{
         Recipient = $Recipient
-        Percentage = $Percentage
+        Percentage = $Percentage / 100
     }
     return $feeAllocation
 }
