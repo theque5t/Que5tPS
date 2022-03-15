@@ -14,5 +14,5 @@ function Sync-CardanoTransactionFeeAllocations {
     $Transaction | Initialize-CardanoTransactionFeeAllocations `
         -Recipients $allocations.Where({ 
                 $_.Recipient -notin $feeAllocations.Recipient 
-            }).Recipients
+            }).Recipient
 }

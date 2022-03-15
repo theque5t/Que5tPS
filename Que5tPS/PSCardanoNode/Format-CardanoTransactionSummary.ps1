@@ -8,14 +8,14 @@ function Format-CardanoTransactionSummary {
     $_valuePrefix = @{ Object = '    '; NoNewline = $true }
     
     $_header = @(
-        @{ Object = '=' * 97 }
-        @{ Object = ' ' * 39 + 'TRANSACTION SUMMARY' + ' ' * 39 }
-        @{ Object = '=' * 97 }
+        @{ Object = '=' * 125 }
+        @{ Object = ' ' * 53 + 'TRANSACTION SUMMARY' + ' ' * 53 }
+        @{ Object = '=' * 125 }
     )
 
     $_hasInputs = $Transaction | Test-CardanoTransactionHasInputs
     $_inputsSection = @(
-        @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
+        @{ Object = '+--------+' + '-' * 115; ForegroundColor = 'DarkGray' }
         @{ Object = '| INPUTS | Description: Funds being spent'; ForegroundColor = 'DarkGray' }
         @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
         @{ Object = '' }
@@ -50,7 +50,7 @@ function Format-CardanoTransactionSummary {
     $_hasUnallocatedTokens = $Transaction | Test-CardanoTransactionHasUnallocatedTokens
     $_hasAllocatedTokens = $Transaction | Test-CardanoTransactionHasAllocatedTokens
     $_allocationsSection = @(
-        @{ Object = '+--------------+' + '-' * 81; ForegroundColor = 'DarkGray' }
+        @{ Object = '+--------------+' + '-' * 109; ForegroundColor = 'DarkGray' }
         @{ Object = '| DISTRIBUTION | Description: Allocations of funds being spent'; ForegroundColor = 'DarkGray'  }    
         @{ Object = '+--------------+'; ForegroundColor = 'DarkGray'  }
         @{ Object = '' }
@@ -84,7 +84,7 @@ function Format-CardanoTransactionSummary {
     $_hasChangeRecipient = $Transaction | Test-CardanoTransactionHasChangeRecipient
     $_hasChangeAllocation = $Transaction | Test-CardanoTransactionHasChangeAllocation
     $_changeSection = @(
-        @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
+        @{ Object = '+--------+' + '-' * 115; ForegroundColor = 'DarkGray' }
         @{ Object = '| CHANGE | Description: Allocation for any unallocated funds'; ForegroundColor = 'DarkGray' }    
         @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
         @{ Object = '' }
@@ -101,7 +101,7 @@ function Format-CardanoTransactionSummary {
 
     $_hasFeeAllocations = $Transaction | Test-CardanoTransactionHasFeeAllocations
     $_feeSection = @(
-        @{ Object = '+------+' + '-' * 89; ForegroundColor = 'DarkGray' }
+        @{ Object = '+------+' + '-' * 117; ForegroundColor = 'DarkGray' }
         @{ Object = '| FEES | Description: Costs associated to transaction'; ForegroundColor = 'DarkGray' }
         @{ Object = '+------+'; ForegroundColor = 'DarkGray' }
         @{ Object = '' }
@@ -111,13 +111,13 @@ function Format-CardanoTransactionSummary {
         @{ Prefix = $_labelPrefix;
            Object = 'Fee Allocations: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasFeeAllocations }
         @{ Prefix = $_hasFeeAllocations ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
-           Object = $_hasFeeAllocations ? $($Transaction | Get-CardanoTransactionFeeAllocationsStatus | Out-String) : 'None' }
+           Object = $_hasFeeAllocations ? $($Transaction | Get-CardanoTransactionFeeAllocationsStatus | Format-Table | Out-String) : 'None' }
         @{ NoNewLine = $_hasFeeAllocations }
     )
 
     $_hasOutputs = $Transaction | Test-CardanoTransactionHasOutputs
     $_outputs = @(
-        @{ Object = '+---------+' + '-' * 86; ForegroundColor = 'DarkGray' }
+        @{ Object = '+---------+' + '-' * 114; ForegroundColor = 'DarkGray' }
         @{ Object = '| OUTPUTS | Description: Spending implementation for funds based on allocations and fees'
            ForegroundColor = 'DarkGray' }
         @{ Object = '+---------+'; ForegroundColor = 'DarkGray' }
@@ -142,7 +142,7 @@ function Format-CardanoTransactionSummary {
     $_outputs += @{ NoNewLine = $_hasOutputs }
 
     $_status = @(
-        @{ Object = '+--------+' + '-' * 87; ForegroundColor = 'DarkGray' }
+        @{ Object = '+--------+' + '-' * 115; ForegroundColor = 'DarkGray' }
         @{ Object = '| STATUS | Description: State of transaction'
            ForegroundColor = 'DarkGray' }
         @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
@@ -151,7 +151,7 @@ function Format-CardanoTransactionSummary {
     )
 
     $_footer = @(
-        @{ Object = '=' * 97 }
+        @{ Object = '=' * 125 }
     )
 
     Write-HostBatch $(

@@ -7,7 +7,7 @@ function Initialize-CardanoTransactionAllocations {
         [string[]]$Recipients
     )
     
-    $value = Get-CardanoTransactionInputTokens
+    $value = $Transaction | Get-CardanoTransactionInputTokens
     $value.ForEach({ $_.Quantity = 0 })
     $Recipients.ForEach({
         $Transaction | Set-CardanoTransactionAllocation `

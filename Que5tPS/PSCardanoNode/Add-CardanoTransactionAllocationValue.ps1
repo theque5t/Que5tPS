@@ -8,6 +8,7 @@ function Add-CardanoTransactionAllocationValue {
         })]
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$PolicyId,
         [Parameter(Mandatory = $true)]
         [string]$Name,

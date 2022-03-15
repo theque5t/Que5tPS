@@ -8,6 +8,9 @@ function Set-CardanoTransactionFeeAllocationPercentage {
         })]
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
+        [ValidateScript({ 
+            $_ -ge 0 -and $_ -le $($Transaction | Get-CardanoTransactionUnallocatedFeePercentage) 
+        })]
         [int]$Percentage
     )
     $Transaction.FeeAllocations = $Transaction.FeeAllocations.Where({

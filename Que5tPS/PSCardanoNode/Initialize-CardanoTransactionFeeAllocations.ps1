@@ -6,7 +6,6 @@ function Initialize-CardanoTransactionFeeAllocations {
         [Parameter(Mandatory = $true)]
         [string[]]$Recipients
     )
-
     $Recipients.ForEach({
         $Transaction | Set-CardanoTransactionFeeAllocation `
             -Recipient $_ `

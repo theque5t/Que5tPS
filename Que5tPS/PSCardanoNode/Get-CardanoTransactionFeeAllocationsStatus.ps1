@@ -8,19 +8,20 @@ function Get-CardanoTransactionFeeAllocationsStatus {
     $allocations = $Transaction | Get-CardanoTransactionAllocations -ChangeAllocation
     $feeAllocations = $Transaction | Get-CardanoTransactionFeeAllocations
     $feeAllocations.ForEach({
-        $allocatedFunds = $allocations[$_.Recipient].Value.Where({
+        $allocatedLovelace = $allocations[$_.Recipient].Value.Where({
             $_.Name -eq 'lovelace'
         }).Quantity
+        $allocatedFunds = $allocatedLovelace ??= 0
         $allocatedFees = $allocatedFunds * $_.Percentage
         $balance = $allocatedFunds - $allocatedFees
-        $covered = $balance -gt 0
+        $covered = $balance -ge 0
         $feeAllocationsStatus += [PSCustomObject]@{
-            Recipient = $_.Recipient
-            Percentage = $_.Percentage
+            Percentage = $_.Percentage.ToString('P')
             AllocatedFunds = $allocatedFunds
             AllocatedFees = $allocatedFees
             Balance = $balance
             Covered = $covered
+            Recipient = $_.Recipient
         }
     })
     return $feeAllocationsStatus

@@ -3,9 +3,6 @@ function Set-CardanoTransactionAllocation {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
-        [ValidateScript({ 
-            $_ -in $Transaction.Allocations.Recipient 
-        })]
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
         [CardanoToken[]]$Value
