@@ -277,7 +277,8 @@ function Get-FreeformInput {
                     $validated = $value -match $ValidationParameters.Pattern
                 }
                 'TestCommand' {
-                    $validated = $value | & $ValidationParameters.Command
+                    $commandArgs = @{ $ValidationParameters.ValueArg = $value }
+                    $validated = & $ValidationParameters.Command @commandArgs
                 }
             }
             if($validated){ $inputValue.Add($value) | Out-Null }

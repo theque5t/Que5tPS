@@ -48,7 +48,7 @@ function Set-CardanoTransaction {
                             ) `
                             -InputType 'string' `
                             -ValidationType TestCommand `
-                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' } `
+                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' } `
                             -Delimited
             
                         $addressesUtxos = [CardanoUtxo[]]@()
@@ -90,7 +90,7 @@ function Set-CardanoTransaction {
                             ) `
                             -InputType 'string' `
                             -ValidationType TestCommand `
-                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' } `
+                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' } `
                             -Delimited
 
                         Clear-CardanoTransactionAllocations -Transaction $Transaction
@@ -104,7 +104,7 @@ function Set-CardanoTransaction {
                             -Instruction "Specify 1 address to be the recipient of any change (unallocated tokens):" `
                             -InputType 'string' `
                             -ValidationType TestCommand `
-                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
+                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' }
                         Set-CardanoTransactionChangeRecipient -Transaction $Transaction -Recipient $_changeRecipient
                         Sync-CardanoTransactionFeeAllocations -Transaction $Transaction
                     }
