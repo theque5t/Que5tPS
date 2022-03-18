@@ -16,7 +16,7 @@ function Import-CardanoTransactionState {
         $state.Inputs.ForEach({
             $utxo = New-CardanoUtxo -Id $_.Id -Address $_.Address -Data $_.Data
             $_.Value.GetEnumerator().ForEach({
-                $utxo | Add-CardanoUtxoToken -Token $(
+                Add-CardanoUtxoToken -Utxo $utxo -Token $(
                     New-CardanoToken `
                         -PolicyId $_.PolicyId `
                         -Name $_.Name `

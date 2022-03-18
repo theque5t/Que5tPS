@@ -1,7 +1,7 @@
 function Add-CardanoUtxoToken {
     [CmdletBinding()]
     param(
-        [parameter(ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoUtxo]$Utxo,
         [Parameter(Mandatory = $true)]
         [CardanoToken]$Token
