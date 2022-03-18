@@ -1,6 +1,6 @@
 function Test-CardanoTransactionIsBalanced {
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
     $inputTokens = Get-CardanoTransactionInputTokens -Transaction $Transaction

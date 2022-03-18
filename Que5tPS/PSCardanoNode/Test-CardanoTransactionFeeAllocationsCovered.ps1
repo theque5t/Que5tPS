@@ -1,6 +1,6 @@
 function Test-CardanoTransactionFeeAllocationsCovered {
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
     $feeAllocationsStatus = Get-CardanoTransactionFeeAllocationsStatus -Transaction $Transaction

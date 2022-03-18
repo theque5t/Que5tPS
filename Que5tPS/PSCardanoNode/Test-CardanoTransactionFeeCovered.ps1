@@ -1,6 +1,6 @@
 function Test-CardanoTransactionFeeCovered {
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
     $feeAllocationsCovered = Test-CardanoTransactionFeeAllocationsCovered -Transaction $Transaction

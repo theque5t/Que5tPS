@@ -1,6 +1,6 @@
 function Sync-CardanoTransactionFeeAllocations {
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction
     )
     $feeAllocations = Get-CardanoTransactionFeeAllocations -Transaction $Transaction

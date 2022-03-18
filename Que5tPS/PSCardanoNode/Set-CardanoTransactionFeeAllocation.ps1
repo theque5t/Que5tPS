@@ -1,6 +1,6 @@
 function Set-CardanoTransactionFeeAllocation {
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
         [string]$Recipient,

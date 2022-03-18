@@ -1,7 +1,7 @@
 function Import-CardanoTransactionBody {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
     Assert-CardanoTransactionBodyFileExists -Transaction $Transaction

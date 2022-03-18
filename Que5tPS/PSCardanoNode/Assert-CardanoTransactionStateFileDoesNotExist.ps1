@@ -1,6 +1,6 @@
 function Assert-CardanoTransactionStateFileDoesNotExist {
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction
     )
     if($(Test-CardanoTransactionStateFileExists -Transaction $Transaction)){

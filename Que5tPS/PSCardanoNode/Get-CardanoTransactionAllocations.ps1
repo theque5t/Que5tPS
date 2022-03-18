@@ -1,7 +1,7 @@
 function Get-CardanoTransactionAllocations {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [switch]$ChangeAllocation
     )

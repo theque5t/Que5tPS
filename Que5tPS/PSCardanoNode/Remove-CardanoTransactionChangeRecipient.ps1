@@ -1,6 +1,6 @@
 function Remove-CardanoTransactionChangeRecipient {
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
     $Transaction.ChangeRecipient = $null

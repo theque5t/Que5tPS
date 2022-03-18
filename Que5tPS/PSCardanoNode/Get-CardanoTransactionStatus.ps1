@@ -1,7 +1,7 @@
 function Get-CardanoTransactionStatus {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction
     )
     $transactionStatus = [PSCustomObject]@{

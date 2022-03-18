@@ -1,7 +1,7 @@
 function Get-CardanoTransactionUnallocatedFee {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [switch]$Token
     )

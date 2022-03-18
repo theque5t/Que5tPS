@@ -1,7 +1,7 @@
 function Get-CardanoTransactionFeeAllocationsStatus {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction
     )
     $feeAllocationsStatus = [PSCustomObject]@()

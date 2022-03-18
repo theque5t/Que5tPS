@@ -1,7 +1,7 @@
 function Set-CardanoTransaction {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Parameter(ParameterSetName = 'Interactive')]
         [switch]$Interactive,

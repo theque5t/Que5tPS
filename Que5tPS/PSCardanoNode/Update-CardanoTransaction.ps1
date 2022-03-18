@@ -1,7 +1,7 @@
 function Update-CardanoTransaction {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Int64]$Fee = 0      
     )
