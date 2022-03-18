@@ -14,7 +14,7 @@ function Set-CardanoTransactionFeeAllocationPercentage {
         })]
         [int]$Percentage
     )
-    $Transaction.FeeAllocations.Where({
+    $($Transaction.FeeAllocations.Where({
         $_.Recipient -eq $Recipient
-    }).Percentage = $Percentage / 100
+    })).Percentage = $Percentage / 100
 }
