@@ -13,7 +13,7 @@ class CardanoUtxo {
     [string]$Data
 
     [void]AddToken([CardanoToken]$Token){
-        $this | Add-CardanoUtxoToken -Token $Token
+        Add-CardanoUtxoToken -Transaction $this -Token $Token
     }
 }
 
@@ -46,55 +46,55 @@ class CardanoTransaction {
     [string]$ChangeRecipient
 
     [void]ImportState(){
-        $this | Import-CardanoTransactionState
+        Import-CardanoTransactionState -Transaction $this
     }
 
     [void]ExportState(){
-        $this | Export-CardanoTransactionState
+        Export-CardanoTransactionState -Transaction $this
     }
 
     [void]UpdateState(){
-        $this | Update-CardanoTransactionState
+        Update-CardanoTransactionState -Transaction $this
     }
 
     [void]ImportBody(){
-        $this | Import-CardanoTransactionBody
+        Import-CardanoTransactionBody -Transaction $this
     }
 
     [void]ExportBody([Int64]$Fee){
-        $this | Export-CardanoTransactionBody -Fee $Fee
+        Export-CardanoTransactionBody -Transaction $this -Fee $Fee
     }
 
     [void]ExportBody(){
-        $this | Export-CardanoTransactionBody -Fee 0
+        Export-CardanoTransactionBody -Transaction $this -Fee 0
     }
 
     [void]UpdateBody([Int64]$Fee){
-        $this | Update-CardanoTransactionBody -Fee $Fee
+        Update-CardanoTransactionBody -Transaction $this -Fee $Fee
     }
     
     [void]UpdateBody(){
-        $this | Update-CardanoTransactionBody -Fee 0
+        Update-CardanoTransactionBody -Transaction $this -Fee 0
     }
 
     [void] AddInput([CardanoUtxo]$Utxo){ 
-        $this | Add-CardanoTransactionInput -Utxo $Utxo
+        Add-CardanoTransactionInput -Transaction $this -Utxo $Utxo
     }
 
     [void] RemoveInput([string]$Id){
-        $this | Remove-CardanoTransactionInput -Id $Id
+        Remove-CardanoTransactionInput -Transaction $this -Id $Id
     }
 
     [void] AddAllocation([CardanoTransactionAllocation]$Allocation){
-        $this | Add-CardanoTransactionAllocation -Allocation $Allocation
+        Add-CardanoTransactionAllocation -Transaction $this -Allocation $Allocation
     }
 
     [void] RemoveAllocation([string]$Recipient){ 
-        $this | Remove-CardanoTransactionAllocation -Recipient $Recipient
+        Remove-CardanoTransactionAllocation -Transaction $this -Recipient $Recipient
     }
 
     [void] FormatTransactionSummary(){
-        $this | Format-CardanoTransactionSummary 
+        Format-CardanoTransactionSummary -Transaction $this 
     }
 
     [void] Minting(){
@@ -102,19 +102,19 @@ class CardanoTransaction {
     }
 
     [CardanoUtxo[]]GetInputs(){
-        return $this | Get-CardanoTransactionInputs
+        return Get-CardanoTransactionInputs -Transaction $this
     }
 
     [CardanoToken[]] GetInputTokens(){
-        return $this | Get-CardanoTransactionInputTokens
+        return Get-CardanoTransactionInputTokens -Transaction $this
     }
 
     [bool] HasInputs(){
-        return $this | Test-CardanoTransactionHasInputs
+        return Test-CardanoTransactionHasInputs -Transaction $this
     }
 
     [CardanoTransactionAllocation[]] GetAllocations([bool]$ChangeAllocation){
-        return $this | Get-CardanoTransactionAllocations `
+        return Get-CardanoTransactionAllocations -Transaction $this `
             -ChangeAllocation:$ChangeAllocation
     }
 
@@ -123,87 +123,87 @@ class CardanoTransaction {
     }
 
     [CardanoToken[]] GetAllocatedTokens(){
-        return $this | Get-CardanoTransactionAllocatedTokens
+        return Get-CardanoTransactionAllocatedTokens -Transaction $this
     }
 
     [bool] HasAllocations(){
-        return $this | Test-CardanoTransactionHasAllocations
+        return Test-CardanoTransactionHasAllocations -Transaction $this
     }
 
     [bool] HasAllocatedTokens(){
-        return $this | Test-CardanoTransactionHasAllocatedTokens
+        return Test-CardanoTransactionHasAllocatedTokens -Transaction $this
     }
 
     [CardanoToken[]] GetTokenBalances(){
-        return $this | Get-CardanoTransactionTokenBalances
+        return Get-CardanoTransactionTokenBalances -Transaction $this
     }
 
     [CardanoToken[]] GetUnallocatedTokens(){
-        return $this | Get-CardanoTransactionUnallocatedTokens
+        return Get-CardanoTransactionUnallocatedTokens -Transaction $this
     }
 
     [bool] HasUnallocatedTokens(){
-        return $this | Test-CardanoTransactionHasUnallocatedTokens
+        return Test-CardanoTransactionHasUnallocatedTokens -Transaction $this
     }
 
     [string] GetChangeRecipient(){
-        return $this | Get-CardanoTransactionChangeRecipient
+        return Get-CardanoTransactionChangeRecipient -Transaction $this
     }
 
     [void] SetChangeRecipient([string]$Recipient){
-        $this | Set-CardanoTransactionChangeRecipient -Recipient $Recipient
+        Set-CardanoTransactionChangeRecipient -Transaction $this -Recipient $Recipient
     }
 
     [void] ClearChangeRecipient(){
-        $this | Clear-CardanoTransactionChangeRecipient
+        Clear-CardanoTransactionChangeRecipient -Transaction $this
     }
 
     [bool] HasChangeRecipient(){
-        return $this | Test-CardanoTransactionHasChangeRecipient
+        return Test-CardanoTransactionHasChangeRecipient -Transaction $this
     }
 
     [CardanoTransactionAllocation[]] GetChangeAllocation(){
-        return $this | Get-CardanoTransactionChangeAllocation
+        return Get-CardanoTransactionChangeAllocation -Transaction $this
     }
 
     [bool] HasChangeAllocation(){
-        return $this | Test-CardanoTransactionHasChangeAllocation
+        return Test-CardanoTransactionHasChangeAllocation -Transaction $this
     }
 
     [CardanoTransactionOutput[]]GetOutputs(){
-        return $this | Get-CardanoTransactionOutputs
+        return Get-CardanoTransactionOutputs -Transaction $this
     }
 
     [CardanoToken[]] GetOutputTokens(){
-        return $this | Get-CardanoTransactionOutputTokens
+        return Get-CardanoTransactionOutputTokens -Transaction $this
     }
 
     [bool] HasOutputs(){
-        return $this | Test-CardanoTransactionHasOutputs
+        return Test-CardanoTransactionHasOutputs -Transaction $this
     }
 
     [string[]]GetWitnesses(){
-        return $this | Get-CardanoTransactionWitnesses
+        return Get-CardanoTransactionWitnesses -Transaction $this
     }
 
     [System.Object]GetMinimumFee(){
-       return $this | Get-CardanoTransactionMinimumFee
+       return Get-CardanoTransactionMinimumFee -Transaction $this
     }
 
     [bool] IsBalanced(){ 
-        return $this | Test-CardanoTransactionIsBalanced
+        return Test-CardanoTransactionIsBalanced -Transaction $this
     }
 
     [bool] IsSigned(){ 
-        return $this | Test-CardanoTransactionIsSigned
+        return Test-CardanoTransactionIsSigned -Transaction $this
     }
 
     [bool] IsSubmitted(){ 
-        return $this | Test-CardanoTransactionIsSubmitted
+        return Test-CardanoTransactionIsSubmitted -Transaction $this
     }
 
     [void] SetInteractively(){
-        $this | Set-CardanoTransaction -Interactive
+        Set-CardanoTransaction -Transaction $this -Interactive
     }
 }
 
