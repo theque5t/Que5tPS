@@ -172,7 +172,7 @@ function Set-CardanoTransaction {
 
                         $percentageSelection = Get-FreeformInput `
                             -Instruction 'Specify a percentage of the fee to allocate.' `
-                            -InputType 'Int64' `
+                            -InputType 'int' `
                             -ValidationType InRange `
                             -ValidationParameters @{ 
                                 Minimum = 0
