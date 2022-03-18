@@ -11,8 +11,8 @@ function New-CardanoTransaction {
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
         BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
     }
-    $transaction | Assert-CardanoTransactionStateFileDoesNotExist
-    $transaction | Assert-CardanoTransactionBodyFileDoesNotExist
-    $transaction | Update-CardanoTransaction
+    Assert-CardanoTransactionStateFileDoesNotExist -Transaction $Transaction
+    Assert-CardanoTransactionBodyFileDoesNotExist -Transaction $Transaction
+    Update-CardanoTransaction -Transaction $Transaction
     return $transaction
 }

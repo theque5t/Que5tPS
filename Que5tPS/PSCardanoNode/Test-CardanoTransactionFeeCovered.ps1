@@ -3,7 +3,7 @@ function Test-CardanoTransactionFeeCovered {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $feeAllocationsCovered = $Transaction | Test-CardanoTransactionFeeAllocationsCovered
-    $feeBalance = $Transaction | Get-CardanoTransactionFeeBalance
+    $feeAllocationsCovered = Test-CardanoTransactionFeeAllocationsCovered -Transaction $Transaction
+    $feeBalance = Get-CardanoTransactionFeeBalance -Transaction $Transaction
     return $($feeBalance -eq 0) -and $feeAllocationsCovered
 }

@@ -5,6 +5,6 @@ function Update-CardanoTransaction {
         [CardanoTransaction]$Transaction,
         [Int64]$Fee = 0      
     )
-    $Transaction | Update-CardanoTransactionState
-    $Transaction | Update-CardanoTransactionBody -Fee $Fee
+    Update-CardanoTransactionState -Transaction $Transaction
+    Update-CardanoTransactionBody -Transaction $Transaction -Fee $Fee
 }

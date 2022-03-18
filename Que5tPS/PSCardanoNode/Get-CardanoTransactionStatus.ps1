@@ -5,10 +5,10 @@ function Get-CardanoTransactionStatus {
         [CardanoTransaction]$Transaction
     )
     $transactionStatus = [PSCustomObject]@{
-        Balanced = $Transaction | Test-CardanoTransactionIsBalanced
-        FeeCovered = $Transaction | Test-CardanoTransactionFeeCovered
-        Signed = $Transaction | Test-CardanoTransactionIsSigned
-        Submitted = $Transaction | Test-CardanoTransactionIsSubmitted
+        Balanced = Test-CardanoTransactionIsBalanced -Transaction $Transaction
+        FeeCovered = Test-CardanoTransactionFeeCovered -Transaction $Transaction
+        Signed = Test-CardanoTransactionIsSigned -Transaction $Transaction
+        Submitted = Test-CardanoTransactionIsSubmitted -Transaction $Transaction
     }
     return $transactionStatus
 }

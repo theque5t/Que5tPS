@@ -4,7 +4,7 @@ function Import-CardanoTransactionBody {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $transaction | Assert-CardanoTransactionBodyFileExists
+    Assert-CardanoTransactionBodyFileExists -Transaction $Transaction
     $Transaction.BodyFile = Get-Item $Transaction.BodyFile
     $Transaction.BodyFileContent = Get-Content $Transaction.BodyFile
     $Transaction.BodyFileObject = if($Transaction.BodyFileContent){ 

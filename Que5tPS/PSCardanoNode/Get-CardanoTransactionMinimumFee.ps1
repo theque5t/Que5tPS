@@ -6,15 +6,15 @@ function Get-CardanoTransactionMinimumFee {
         [switch]$Token    
     )
     $MinimumFee = 0
-    if($($Transaction | Test-CardanoTransactionHasInputs)){
+    if($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){
         Assert-CardanoNodeInSync
-        $Transaction | Export-CardanoTransactionBody -Fee 0
+        Export-CardanoTransactionBody -Transaction $Transaction -Fee 0
         $_args = @(
             'transaction', 'calculate-min-fee'
             '--tx-body-file', $Transaction.BodyFile.FullName
-            '--tx-in-count', $($Transaction | Get-CardanoTransactionInputs).Count
-            '--tx-out-count', $($Transaction | Get-CardanoTransactionOutputs).Count
-            '--witness-count', $($Transaction | Get-CardanoTransactionWitnesses).Count
+            '--tx-in-count', $(Get-CardanoTransactionInputs -Transaction $Transaction).Count
+            '--tx-out-count', $(Get-CardanoTransactionOutputs -Transaction $Transaction).Count
+            '--witness-count', $(Get-CardanoTransactionWitnesses -Transaction $Transaction).Count
             '--protocol-params-file', $env:CARDANO_NODE_PROTOCOL_PARAMETERS
             $env:CARDANO_CLI_NETWORK_ARG, $env:CARDANO_CLI_NETWORK_ARG_VALUE
         )

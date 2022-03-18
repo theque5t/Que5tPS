@@ -7,7 +7,7 @@ function Export-CardanoTransactionBody {
     )
     New-Item $Transaction.BodyFile -Force | Out-Null
 
-    if($($Transaction | Test-CardanoTransactionHasInputs)){
+    if($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){
         Assert-CardanoNodeInSync
         
         $templates = @{
@@ -32,13 +32,13 @@ function Export-CardanoTransactionBody {
         [void]$_args.Add('--out-file')
         [void]$_args.Add($Transaction.BodyFile.FullName)
         
-        $inputs = $Transaction | Get-CardanoTransactionInputs
+        $inputs = Get-CardanoTransactionInputs -Transaction $Transaction
         $inputs.ForEach({ 
             [void]$_args.Add('--tx-in')
             [void]$_args.Add($(& $templates.Input $_))
         })
 
-        $outputs = $Transaction | Get-CardanoTransactionOutputs
+        $outputs = Get-CardanoTransactionOutputs -Transaction $Transaction
         $outputs.ForEach({ 
             [void]$_args.Add('--tx-out')
             [void]$_args.Add($( & $templates.Output $_ ))

@@ -5,8 +5,8 @@ function Get-CardanoTransactionUnallocatedFee {
         [CardanoTransaction]$Transaction,
         [switch]$Token
     )
-    $minimumFee = $Transaction | Get-CardanoTransactionMinimumFee
-    $unallocatedFeePercentage = $Transaction | Get-CardanoTransactionUnallocatedFeePercentage
+    $minimumFee = Get-CardanoTransactionMinimumFee -Transaction $Transaction
+    $unallocatedFeePercentage = Get-CardanoTransactionUnallocatedFeePercentage -Transaction $Transaction
     $unallocatedFee = $minimumFee * $unallocatedFeePercentage
     if($Token){
         $unallocatedFee = New-CardanoToken `

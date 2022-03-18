@@ -5,5 +5,5 @@ function Clear-CardanoTransactionChangeRecipient {
         [CardanoTransaction]$Transaction        
     )
     $Transaction.ChangeRecipient = ''
-    $Transaction | Update-CardanoTransactionState
+    Update-CardanoTransactionState -Transaction $Transaction
 }

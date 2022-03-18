@@ -3,8 +3,8 @@ function Get-CardanoTransactionFeeBalance {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $minimumFee = $Transaction | Get-CardanoTransactionMinimumFee
-    $allocatedFee = $Transaction | Get-CardanoTransactionAllocatedFee
+    $minimumFee = Get-CardanoTransactionMinimumFee -Transaction $Transaction
+    $allocatedFee = Get-CardanoTransactionAllocatedFee -Transaction $Transaction
     $feeBalance = $minimumFee - $allocatedFee
     return $feeBalance
 }

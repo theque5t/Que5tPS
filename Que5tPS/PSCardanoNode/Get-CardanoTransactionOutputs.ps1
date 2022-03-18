@@ -5,7 +5,7 @@ function Get-CardanoTransactionOutputs {
         [CardanoTransaction]$Transaction        
     )
     $outputs = [CardanoTransactionOutput[]]@()
-    $allocations = $Transaction | Get-CardanoTransactionAllocations -ChangeAllocation
+    $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
     $allocations.Where({
         $($_.Value.Quantity | Measure-Object -Sum).Sum -gt 0
     }).ForEach({

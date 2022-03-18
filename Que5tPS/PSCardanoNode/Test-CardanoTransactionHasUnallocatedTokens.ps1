@@ -3,5 +3,5 @@ function Test-CardanoTransactionHasUnallocatedTokens {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    return [bool]$($Transaction | Get-CardanoTransactionUnallocatedTokens).Count
+    return [bool]$(Get-CardanoTransactionUnallocatedTokens -Transaction $Transaction).Count
 }

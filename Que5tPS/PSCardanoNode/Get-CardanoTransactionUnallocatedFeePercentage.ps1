@@ -5,7 +5,7 @@ function Get-CardanoTransactionUnallocatedFeePercentage {
         [CardanoTransaction]$Transaction,
         [switch]$String
     )
-    $allocatedFeePercentage = $Transaction | Get-CardanoTransactionAllocatedFeePercentage
+    $allocatedFeePercentage = Get-CardanoTransactionAllocatedFeePercentage -Transaction $Transaction
     $unallocatedFeePercentage = 1 - $allocatedFeePercentage
     if($String){
         $unallocatedFeePercentage = $unallocatedFeePercentage.ToString('P')

@@ -4,7 +4,7 @@ function Get-CardanoTransactionUnallocatedTokens {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $tokenBalances = $Transaction | Get-CardanoTransactionTokenBalances
+    $tokenBalances = Get-CardanoTransactionTokenBalances -Transaction $Transaction
     $unallocatedTokens = $tokenBalances.Where({ $_.Quantity -gt 0 })
     return $unallocatedTokens
 }

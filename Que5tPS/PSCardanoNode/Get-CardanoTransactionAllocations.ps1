@@ -8,7 +8,7 @@ function Get-CardanoTransactionAllocations {
     $allocations = [CardanoTransactionAllocation[]]@()
     $allocations += $Transaction.Allocations
     if($ChangeAllocation){ 
-        $allocations += $Transaction | Get-CardanoTransactionChangeAllocation
+        $allocations += Get-CardanoTransactionChangeAllocation -Transaction $Transaction
      }
     return $allocations
 }

@@ -3,5 +3,5 @@ function Test-CardanoTransactionHasChangeRecipient {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    return [bool]$($Transaction | Get-CardanoTransactionChangeRecipient).Count
+    return [bool]$(Get-CardanoTransactionChangeRecipient -Transaction $Transaction).Count
 }

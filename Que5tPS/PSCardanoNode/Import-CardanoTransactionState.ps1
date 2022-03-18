@@ -4,7 +4,7 @@ function Import-CardanoTransactionState {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $transaction | Assert-CardanoTransactionStateFileExists
+    Assert-CardanoTransactionStateFileExists -Transaction $Transaction
     $Transaction.StateFile = Get-Item $Transaction.StateFile
     if($Transaction.StateFile.Length -gt 0){
         $state = Get-Content $Transaction.StateFile | ConvertFrom-Yaml
@@ -23,7 +23,7 @@ function Import-CardanoTransactionState {
                         -Quantity $_.Quantity
                 )
             })
-            $Transaction | Add-CardanoTransactionInput -Utxo $utxo
+            Add-CardanoTransactionInput -Transaction $Transaction -Utxo $utxo
         })
         
         $Transaction.Allocations = [CardanoTransactionAllocation[]]@()
@@ -38,7 +38,7 @@ function Import-CardanoTransactionState {
             $allocation = New-CardanoTransactionAllocation `
                 -Recipient $_.Recipient `
                 -Value $_tokens
-            $Transaction | Add-CardanoTransactionAllocation `
+            Add-CardanoTransactionAllocation -Transaction $Transaction `
                 -Allocation $allocation
         })
 
@@ -47,12 +47,12 @@ function Import-CardanoTransactionState {
             $feeAllocation = New-CardanoTransactionFeeAllocation `
                 -Recipient $_.Recipient `
                 -Percentage $_.Percentage
-            $Transaction | Add-CardanoTransactionFeeAllocation `
+            Add-CardanoTransactionFeeAllocation -Transaction $Transaction `
                 -FeeAllocation $feeAllocation
         })
 
         if($state.ChangeRecipient){
-            $Transaction | Set-CardanoTransactionChangeRecipient `
+            Set-CardanoTransactionChangeRecipient -Transaction $Transaction `
                 -Recipient $state.ChangeRecipient
         }
     }

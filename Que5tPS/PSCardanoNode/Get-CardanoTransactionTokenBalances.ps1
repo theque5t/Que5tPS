@@ -4,8 +4,8 @@ function Get-CardanoTransactionTokenBalances {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $allocatedTokens = $Transaction | Get-CardanoTransactionAllocatedTokens
-    $inputTokens = $Transaction | Get-CardanoTransactionInputTokens
+    $allocatedTokens = Get-CardanoTransactionAllocatedTokens -Transaction $Transaction
+    $inputTokens = Get-CardanoTransactionInputTokens -Transaction $Transaction
     $tokenBalances = Get-CardanoTokensDifference `
         -Set1 $inputTokens `
         -Set2 $allocatedTokens

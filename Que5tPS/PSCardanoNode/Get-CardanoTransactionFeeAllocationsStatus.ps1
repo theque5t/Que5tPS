@@ -5,8 +5,8 @@ function Get-CardanoTransactionFeeAllocationsStatus {
         [CardanoTransaction]$Transaction
     )
     $feeAllocationsStatus = [PSCustomObject]@()
-    $allocations = $Transaction | Get-CardanoTransactionAllocations -ChangeAllocation
-    $feeAllocations = $Transaction | Get-CardanoTransactionFeeAllocations
+    $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
+    $feeAllocations = Get-CardanoTransactionFeeAllocations -Transaction $Transaction
     $feeAllocations.ForEach({
         $allocatedLovelace = $allocations[$_.Recipient].Value.Where({
             $_.Name -eq 'lovelace'

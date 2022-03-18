@@ -11,7 +11,7 @@ function Import-CardanoTransaction {
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
         BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
     }
-    $transaction | Import-CardanoTransactionState
-    $transaction | Import-CardanoTransactionBody
+    Import-CardanoTransactionState -Transaction $Transaction
+    Import-CardanoTransactionBody -Transaction $Transaction
     return $transaction
 }

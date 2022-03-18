@@ -4,7 +4,7 @@ function Get-CardanoTransactionAllocatedTokens {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $allocations = $Transaction | Get-CardanoTransactionAllocations
+    $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction
     $allocatedTokens = Merge-CardanoTokens -Tokens $allocations.Value
     return $allocatedTokens
 }

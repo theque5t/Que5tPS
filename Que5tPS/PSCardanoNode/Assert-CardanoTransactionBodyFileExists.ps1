@@ -3,7 +3,7 @@ function Assert-CardanoTransactionBodyFileExists {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction
     )
-    if(-not $($Transaction | Test-CardanoTransactionBodyFileExists)){
+    if(-not $(Test-CardanoTransactionBodyFileExists -Transaction $Transaction)){
         Write-FalseAssertionError
     }
 }

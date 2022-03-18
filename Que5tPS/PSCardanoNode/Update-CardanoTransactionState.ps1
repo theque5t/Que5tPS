@@ -4,6 +4,6 @@ function Update-CardanoTransactionState {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $Transaction | Export-CardanoTransactionState
-    $Transaction | Import-CardanoTransactionState
+    Export-CardanoTransactionState -Transaction $Transaction
+    Import-CardanoTransactionState -Transaction $Transaction
 }

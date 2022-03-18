@@ -5,6 +5,6 @@ function Update-CardanoTransactionBody {
         [CardanoTransaction]$Transaction,
         [Int64]$Fee = 0
     )
-    $Transaction | Export-CardanoTransactionBody -Fee $Fee
-    $Transaction | Import-CardanoTransactionBody
+    Export-CardanoTransactionBody -Transaction $Transaction -Fee $Fee
+    Import-CardanoTransactionBody -Transaction $Transaction
 }

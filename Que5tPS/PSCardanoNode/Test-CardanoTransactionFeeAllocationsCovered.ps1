@@ -3,7 +3,7 @@ function Test-CardanoTransactionFeeAllocationsCovered {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $feeAllocationsStatus = $Transaction | Get-CardanoTransactionFeeAllocationsStatus
+    $feeAllocationsStatus = Get-CardanoTransactionFeeAllocationsStatus -Transaction $Transaction
     $feeAllocationsNotCovered = $feeAllocationsStatus.Where({ $_.Covered -eq $false })
     return $feeAllocationsNotCovered.Count -eq 0
 }

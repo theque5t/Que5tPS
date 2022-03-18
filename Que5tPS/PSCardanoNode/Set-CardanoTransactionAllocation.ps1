@@ -7,10 +7,10 @@ function Set-CardanoTransactionAllocation {
         [Parameter(Mandatory = $true)]
         [CardanoToken[]]$Value
     )
-    $Transaction | Remove-CardanoTransactionAllocation `
+    Remove-CardanoTransactionAllocation -Transaction $Transaction `
         -Recipient $Recipient `
 
-    $Transaction | Add-CardanoTransactionAllocation `
+    Add-CardanoTransactionAllocation -Transaction $Transaction `
         -Recipient $Recipient `
         -Value $Value
 }

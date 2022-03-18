@@ -7,7 +7,7 @@ function Add-CardanoTransactionFeeAllocation {
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ 
-            $_ -ge 0 -and $_ -le $($Transaction | Get-CardanoTransactionUnallocatedFeePercentage) 
+            $_ -ge 0 -and $_ -le $(Get-CardanoTransactionUnallocatedFeePercentage -Transaction $Transaction) 
         })]
         [int]$Percentage
     )

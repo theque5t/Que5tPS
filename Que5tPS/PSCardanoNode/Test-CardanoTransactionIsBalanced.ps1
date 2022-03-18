@@ -3,8 +3,8 @@ function Test-CardanoTransactionIsBalanced {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $inputTokens = $Transaction | Get-CardanoTransactionInputTokens
-    $outputTokens = $Transaction | Get-CardanoTransactionOutputTokens
+    $inputTokens = Get-CardanoTransactionInputTokens -Transaction $Transaction
+    $outputTokens = Get-CardanoTransactionOutputTokens -Transaction $Transaction
     $inputOutputTokensDifference = $(
         Get-CardanoTokensDifference `
             -Set1 $inputTokens `

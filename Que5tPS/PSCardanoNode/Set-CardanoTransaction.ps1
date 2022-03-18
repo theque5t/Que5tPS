@@ -17,23 +17,23 @@ function Set-CardanoTransaction {
         'Interactive' { 
             do{
                 $interactionComplete = $false
-                $Transaction | Format-CardanoTransactionSummary
+                Format-CardanoTransactionSummary -Transaction $Transaction
             
                 $actionSelection = Get-OptionSelection `
                     -Instruction 'Select an option:' `
                     -Options @(
                         'Set Inputs'
-                        if($($Transaction | Test-CardanoTransactionHasInputs)){ 
+                        if($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){ 
                             'Set Allocation Recipient(s)'
                             'Set Change Recipient' 
                         }
-                        if($($Transaction | Test-CardanoTransactionHasAllocations)){
+                        if($(Test-CardanoTransactionHasAllocations -Transaction $Transaction)){
                             'Set Allocation'
                         }
-                        if($($Transaction | Test-CardanoTransactionHasFeeAllocations)){
+                        if($(Test-CardanoTransactionHasFeeAllocations -Transaction $Transaction)){
                             'Set Fee Allocation'
                         }
-                        if($($Transaction | Test-CardanoTransactionHasChangeRecipient)){
+                        if($(Test-CardanoTransactionHasChangeRecipient -Transaction $Transaction)){
                             'Remove Change Recipient'
                         }
                         'Done Editing'
@@ -93,10 +93,10 @@ function Set-CardanoTransaction {
                             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' } `
                             -Delimited
 
-                        $Transaction | Clear-CardanoTransactionAllocations
-                        $Transaction | Initialize-CardanoTransactionAllocations `
+                        Clear-CardanoTransactionAllocations -Transaction $Transaction
+                        Initialize-CardanoTransactionAllocations -Transaction $Transaction `
                             -Recipients $allocationRecipientsSelection
-                        $Transaction | Sync-CardanoTransactionFeeAllocations
+                        Sync-CardanoTransactionFeeAllocations -Transaction $Transaction
                     }
 
                     'Set Change Recipient' {
@@ -105,22 +105,22 @@ function Set-CardanoTransaction {
                             -InputType 'string' `
                             -ValidationType TestCommand `
                             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid' }
-                        $Transaction | Set-CardanoTransactionChangeRecipient -Recipient $_changeRecipient
-                        $Transaction | Sync-CardanoTransactionFeeAllocations
+                        Set-CardanoTransactionChangeRecipient -Transaction $Transaction -Recipient $_changeRecipient
+                        Sync-CardanoTransactionFeeAllocations -Transaction $Transaction
                     }
 
                     'Remove Change Recipient' {
-                        $Transaction | Remove-CardanoTransactionChangeRecipient
+                        Remove-CardanoTransactionChangeRecipient -Transaction $Transaction
                     }
 
                     'Set Allocation' {
                         $recipientOptionsSelection = Get-OptionSelection `
                             -Instruction 'Select a recipient:' `
-                            -Options $($Transaction | Get-CardanoTransactionAllocations).Recipient
+                            -Options $(Get-CardanoTransactionAllocations -Transaction $Transaction).Recipient
             
                         $tokenOptionsSelection = Get-OptionSelection `
                             -Instruction "Select one of the recipient's token allocations:" `
-                            -Options $($Transaction | Get-CardanoTransactionAllocations).Where({ 
+                            -Options $(Get-CardanoTransactionAllocations -Transaction $Transaction).Where({ 
                                 $_.Recipient -eq $recipientOptionsSelection 
                             }).Value `
                             -OptionDisplayTemplate @(
@@ -135,7 +135,7 @@ function Set-CardanoTransaction {
                                 @{ NoNewline = $false }
                             )
                         
-                        $quantityMaximum = $($Transaction | Get-CardanoTransactionTokenBalances).Where({
+                        $quantityMaximum = $(Get-CardanoTransactionTokenBalances -Transaction $Transaction).Where({
                             $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and
                             $_.Name -eq $tokenOptionsSelection.Name
                         }).Quantity + $tokenOptionsSelection.Quantity
@@ -152,7 +152,8 @@ function Set-CardanoTransaction {
                                 Maximum = $quantityMaximum
                             }
                         
-                        $Transaction | Set-CardanoTransactionAllocationValue `
+                        Set-CardanoTransactionAllocationValue `
+                            -Transaction $Transaction `
                             -Recipient $recipientOptionsSelection `
                             -PolicyId $tokenOptionsSelection.PolicyId `
                             -Name $tokenOptionsSelection.Name `
@@ -163,7 +164,7 @@ function Set-CardanoTransaction {
                         $recipientOptionsSelection = Get-OptionSelection `
                             -Instruction 'Select a recipient:' `
                             -Options $(
-                                $Transaction | Get-CardanoTransactionAllocations -ChangeAllocation
+                                Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
                             ).Recipient
 
                         # $percentageMaximum = Get-CardanoTransactionFeeAllocations
@@ -178,7 +179,7 @@ function Set-CardanoTransaction {
                                 Maximum = $percentageMaximum
                             }
 
-                        $Transaction | Set-CardanoTransactionFeeAllocationPercentage `
+                        Set-CardanoTransactionFeeAllocationPercentage -Transaction $Transaction `
                             -Recipient $recipientOptionsSelection `
                             -Percentage $percentageSelection
                     }

@@ -4,7 +4,7 @@ function Get-CardanoTransactionInputTokens {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $inputs = $Transaction | Get-CardanoTransactionInputs
+    $inputs = Get-CardanoTransactionInputs -Transaction $Transaction
     $inputTokens = Merge-CardanoTokens -Tokens $inputs.Value
     return $inputTokens
 }

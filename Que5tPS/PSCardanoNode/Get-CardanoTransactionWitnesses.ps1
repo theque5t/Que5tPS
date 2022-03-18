@@ -4,7 +4,7 @@ function Get-CardanoTransactionWitnesses {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    $inputs = $Transaction | Get-CardanoTransactionInputs
+    $inputs = Get-CardanoTransactionInputs -Transaction $Transaction
     $witnesses = $inputs.ForEach({ $_.Address }) | Sort-Object | Get-Unique
     return $witnesses
 }

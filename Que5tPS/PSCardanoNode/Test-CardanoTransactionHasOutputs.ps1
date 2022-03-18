@@ -3,5 +3,5 @@ function Test-CardanoTransactionHasOutputs {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    return [bool]$($Transaction | Get-CardanoTransactionOutputs).Count
+    return [bool]$(Get-CardanoTransactionOutputs -Transaction $Transaction).Count
 }

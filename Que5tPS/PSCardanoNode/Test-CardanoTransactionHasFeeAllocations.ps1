@@ -3,5 +3,5 @@ function Test-CardanoTransactionHasFeeAllocations {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    return [bool]$($Transaction | Get-CardanoTransactionFeeAllocations).Count
+    return [bool]$(Get-CardanoTransactionFeeAllocations -Transaction $Transaction).Count
 }

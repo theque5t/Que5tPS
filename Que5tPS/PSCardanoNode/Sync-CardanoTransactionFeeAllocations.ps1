@@ -3,15 +3,15 @@ function Sync-CardanoTransactionFeeAllocations {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction
     )
-    $feeAllocations = $Transaction | Get-CardanoTransactionFeeAllocations
-    $allocations = $Transaction | Get-CardanoTransactionAllocations -ChangeAllocation
+    $feeAllocations = Get-CardanoTransactionFeeAllocations -Transaction $Transaction
+    $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
 
     $feeAllocations.Where({ $_.Recipient -notin $allocations.Recipient }).ForEach({
-        $Transaction | Remove-CardanoTransactionFeeAllocation `
+        Remove-CardanoTransactionFeeAllocation -Transaction $Transaction `
             -Recipient $_.Recipient
     })
 
-    $Transaction | Initialize-CardanoTransactionFeeAllocations `
+    Initialize-CardanoTransactionFeeAllocations -Transaction $Transaction `
         -Recipients $allocations.Where({ 
                 $_.Recipient -notin $feeAllocations.Recipient 
             }).Recipient

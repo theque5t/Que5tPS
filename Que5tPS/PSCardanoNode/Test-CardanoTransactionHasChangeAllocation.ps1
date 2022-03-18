@@ -3,5 +3,5 @@ function Test-CardanoTransactionHasChangeAllocation {
         [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction        
     )
-    return [bool]$($Transaction | Get-CardanoTransactionChangeAllocation).Count
+    return [bool]$(Get-CardanoTransactionChangeAllocation -Transaction $Transaction).Count
 }

@@ -1,6 +1,7 @@
 function Set-CardanoTransactionAllocationValue {
+    [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ 
@@ -15,14 +16,10 @@ function Set-CardanoTransactionAllocationValue {
         [Parameter(Mandatory = $true)]
         [string]$Quantity
     )
-    $Transaction | Remove-CardanoTransactionAllocationValue `
-        -Recipient $Recipient `
-        -PolicyId $PolicyId `
-        -Name $Name
-
-    $Transaction | Add-CardanoTransactionAllocationValue `
-        -Recipient $Recipient `
-        -PolicyId $PolicyId `
-        -Name $Name `
-        -Quantity $Quantity
+    $($Transaction.Allocations.Where({
+        $_.Recipient -eq $Recipient
+    }).Value.Where({
+        $_.PolicyId -eq $PolicyId -and
+        $_.Name -eq $Name
+    })).Quantity = $Quantity
 }
