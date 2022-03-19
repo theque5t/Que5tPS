@@ -10,10 +10,10 @@ function Get-CardanoTransactionAllocationFeePercentage {
         [string]$Recipient,
         [switch]$String
     )
-    $feeAllocation = Get-CardanoTransactionFeeAllocation `
+    $allocation = Get-CardanoTransactionAllocation `
         -Transaction $Transaction `
         -Recipient $Recipient
-    $allocationFeePercentage = $feeAllocation.Percentage
+    $allocationFeePercentage = $allocation.FeePercentage
     if($String){
         $allocationFeePercentage = $allocationFeePercentage.ToString('P')
     }

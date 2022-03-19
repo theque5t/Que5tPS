@@ -20,11 +20,7 @@ class CardanoUtxo {
 class CardanoTransactionAllocation {
     [string]$Recipient
     [CardanoToken[]]$Value
-}
-
-class CardanoTransactionFeeAllocation {
-    [string]$Recipient
-    [float]$Percentage
+    [float]$FeePercentage
 }
 
 class CardanoTransactionOutput {
@@ -42,7 +38,6 @@ class CardanoTransaction {
     $BodyFileViewObject
     [CardanoUtxo[]]$Inputs
     [CardanoTransactionAllocation[]]$Allocations
-    [CardanoTransactionFeeAllocation[]]$FeeAllocations
     [string]$ChangeRecipient
 
     [void]ImportState(){

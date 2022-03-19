@@ -1,11 +1,11 @@
-function Set-CardanoTransactionFeeAllocationPercentage {
+function Set-CardanoTransactionAllocationFeePercentage {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ 
-            $_ -in $Transaction.FeeAllocations.Recipient 
+            $_ -in $Transaction.Allocations.Recipient 
         })]
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
@@ -16,7 +16,7 @@ function Set-CardanoTransactionFeeAllocationPercentage {
         })]
         [int]$Percentage
     )
-    $($Transaction.FeeAllocations.Where({
+    $($Transaction.Allocations.Where({
         $_.Recipient -eq $Recipient
     })).Percentage = $Percentage / 100
 }

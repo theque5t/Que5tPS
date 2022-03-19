@@ -10,9 +10,9 @@ function Get-CardanoTransactionAllocationFee {
         [string]$Recipient
     )
     $minimumFee = Get-CardanoTransactionMinimumFee -Transaction $Transaction
-    $feeAllocation = Get-CardanoTransactionFeeAllocation `
+    $feePercentage = Get-CardanoTransactionAllocationFeePercentage `
         -Transaction $Transaction `
         -Recipient $Recipient
-    $allocationFee = $minimumFee * $feeAllocation.Percentage
+    $allocationFee = $minimumFee * $feePercentage
     return $allocationFee
 }

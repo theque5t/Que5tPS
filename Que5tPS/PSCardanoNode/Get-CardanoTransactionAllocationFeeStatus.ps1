@@ -26,7 +26,9 @@ function Get-CardanoTransactionAllocationFeeStatus {
         Balance = Get-CardanoTransactionAllocationFeeBalance `
             -Transaction $Transaction `
             -Recipient $Recipient
-        Covered = Test-CardanoTransactionAllocationFeeCovered
+        Covered = Test-CardanoTransactionAllocationFeeCovered `
+            -Transaction $Transaction `
+            -Recipient $Recipient
         Recipient = $Recipient
     }
 }

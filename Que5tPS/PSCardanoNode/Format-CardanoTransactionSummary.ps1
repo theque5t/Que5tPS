@@ -109,7 +109,7 @@ function Format-CardanoTransactionSummary {
            Object = 'Minimum Transaction Fee: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
         @{ Object = Get-CardanoTransactionMinimumFee -Transaction $Transaction }
         @{ Prefix = $_labelPrefix;
-           Object = 'Allocations Fee Status: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasFeeAllocations }
+           Object = 'Fee Allocations: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasFeeAllocations }
         @{ Prefix = $_hasFeeAllocations ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
            Object = $_hasFeeAllocations ? $(Get-CardanoTransactionAllocationsFeeStatus -Transaction $Transaction | Format-Table | Out-String) : 'None' }
         @{ NoNewLine = $_hasFeeAllocations }
