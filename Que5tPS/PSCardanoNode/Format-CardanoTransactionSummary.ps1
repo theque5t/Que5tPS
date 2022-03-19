@@ -1,7 +1,7 @@
 function Format-CardanoTransactionSummary {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $true, ValueFromPipeline)]
         [CardanoTransaction]$Transaction
     )
     $_labelPrefix = @{ Object = '  - '; NoNewline = $true }
@@ -106,12 +106,12 @@ function Format-CardanoTransactionSummary {
         @{ Object = '+------+'; ForegroundColor = 'DarkGray' }
         @{ Object = '' }
         @{ Prefix = $_labelPrefix;
-           Object = 'Minimum transaction fee: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
+           Object = 'Minimum Transaction Fee: '; ForegroundColor = 'Yellow'; NoNewLine = $true}
         @{ Object = Get-CardanoTransactionMinimumFee -Transaction $Transaction }
         @{ Prefix = $_labelPrefix;
-           Object = 'Fee Allocations: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasFeeAllocations }
+           Object = 'Allocations Fee Status: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasFeeAllocations }
         @{ Prefix = $_hasFeeAllocations ? $_valuePrefix : @{ Object = ''; NoNewline = $true }
-           Object = $_hasFeeAllocations ? $(Get-CardanoTransactionFeeAllocationsStatus -Transaction $Transaction | Format-Table | Out-String) : 'None' }
+           Object = $_hasFeeAllocations ? $(Get-CardanoTransactionAllocationsFeeStatus -Transaction $Transaction | Format-Table | Out-String) : 'None' }
         @{ NoNewLine = $_hasFeeAllocations }
     )
 

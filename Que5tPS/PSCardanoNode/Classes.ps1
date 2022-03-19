@@ -24,7 +24,7 @@ class CardanoTransactionAllocation {
 
 class CardanoTransactionFeeAllocation {
     [string]$Recipient
-    [int]$Percentage
+    [float]$Percentage
 }
 
 class CardanoTransactionOutput {

@@ -167,16 +167,15 @@ function Set-CardanoTransaction {
                                 Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
                             ).Recipient
 
-                        # $percentageMaximum = Get-CardanoTransactionFeeAllocations
-                        $percentageMaximum = 100
-
                         $percentageSelection = Get-FreeformInput `
                             -Instruction 'Specify a percentage of the fee to allocate.' `
                             -InputType 'int' `
                             -ValidationType InRange `
                             -ValidationParameters @{ 
                                 Minimum = 0
-                                Maximum = $percentageMaximum
+                                Maximum = Get-CardanoTransactionUnallocatedFeePercentage `
+                                    -Transaction $Transaction `
+                                    -Transform Int
                             }
 
                         Set-CardanoTransactionFeeAllocationPercentage -Transaction $Transaction `

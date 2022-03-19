@@ -1,4 +1,4 @@
-function Set-CardanoTransactionAllocationValue {
+function Get-CardanoTransactionAllocationValue {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
@@ -12,14 +12,14 @@ function Set-CardanoTransactionAllocationValue {
         [AllowEmptyString()]
         [string]$PolicyId,
         [Parameter(Mandatory = $true)]
-        [string]$Name,
-        [Parameter(Mandatory = $true)]
-        [Int64]$Quantity
+        [string]$Name
     )
-    $($Transaction.Allocations.Where({
-        $_.Recipient -eq $Recipient
-    }).Value.Where({
+    $allocation = Get-CardanoTransactionAllocation `
+        -Transaction $Transaction `
+        -Recipient $Recipient
+    $value = $allocation.Value.Where({
         $_.PolicyId -eq $PolicyId -and
         $_.Name -eq $Name
-    })).Quantity = $Quantity
+    })
+    return $value
 }

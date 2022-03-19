@@ -3,12 +3,14 @@ function Get-CardanoTransactionUnallocatedFeePercentage {
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
-        [switch]$String
+        [ValidateSet('String', 'Int')]
+        [string]$Transform
     )
     $allocatedFeePercentage = Get-CardanoTransactionAllocatedFeePercentage -Transaction $Transaction
     $unallocatedFeePercentage = 1 - $allocatedFeePercentage
-    if($String){
-        $unallocatedFeePercentage = $unallocatedFeePercentage.ToString('P')
+    switch ($Transform) {
+        'String' { $unallocatedFeePercentage = $unallocatedFeePercentage.ToString('P') }
+        'Int'    { $unallocatedFeePercentage = $unallocatedFeePercentage * 100 }
     }
     return $unallocatedFeePercentage
 }

@@ -7,7 +7,7 @@ function New-CardanoToken {
         [Parameter(Mandatory = $true)]
         [string]$Name,
         [Parameter(Mandatory = $true)]
-        [string]$Quantity
+        [Int64]$Quantity
     )
     $token = New-Object CardanoToken -Property @{
         PolicyId = $PolicyId
