@@ -8,7 +8,7 @@ function Get-CardanoTransactionAllocationsFeeStatus {
     $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction
     $allocations.ForEach({
         $allocationsFeeStatus += Get-CardanoTransactionAllocationFeeStatus `
-            -Transaction $Transaction
+            -Transaction $Transaction `
             -Recipient $_.Recipient
     })
     return $allocationsFeeStatus

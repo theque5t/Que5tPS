@@ -1,4 +1,4 @@
-function Get-CardanoTransactionAllocationFeeBalance {
+function Get-CardanoTransactionAllocationFundBalance {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
@@ -9,15 +9,14 @@ function Get-CardanoTransactionAllocationFeeBalance {
         })]
         [string]$Recipient
     )
-    $allocatedFunds = Get-CardanoTransactionAllocationValue `
+    $allocatedFunds = $(Get-CardanoTransactionAllocationValue `
         -Transaction $Transaction `
         -Recipient $Recipient `
         -PolicyId '' `
-        -Name 'lovelace' `
-        ??= 0
+        -Name 'lovelace').Quantity ?? 0
     $allocatedFees = Get-CardanoTransactionAllocationFee `
         -Transaction $Transaction `
         -Recipient $Recipient
-    $feeBalance = $allocatedFunds - $allocatedFees
-    return $feeBalance
+    $fundBalance = $allocatedFunds - $allocatedFees
+    return $fundBalance
 }

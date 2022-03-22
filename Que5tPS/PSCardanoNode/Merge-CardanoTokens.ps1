@@ -2,6 +2,7 @@ function Merge-CardanoTokens{
     param(
         [parameter(Mandatory = $true)]
         [AllowNull()]
+        [AllowEmptyCollection()]
         [CardanoToken[]]$Tokens
     )
     $mergedTokens = [CardanoToken[]]@()

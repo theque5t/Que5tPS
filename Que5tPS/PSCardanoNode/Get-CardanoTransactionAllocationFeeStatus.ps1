@@ -10,20 +10,19 @@ function Get-CardanoTransactionAllocationFeeStatus {
         [string]$Recipient
     )
     $feeAllocationsStatus += [PSCustomObject]@{
-        Percentage = Get-CardanoTransactionAllocationFeePercentage `
+        FeePercentage = Get-CardanoTransactionAllocationFeePercentage `
             -Transaction $Transaction `
             -Recipient $Recipient `
-            -String
-        AllocatedFunds = Get-CardanoTransactionAllocationValue `
+            -Transform String
+        AllocatedFunds = $(Get-CardanoTransactionAllocationValue `
             -Transaction $Transaction `
             -Recipient $Recipient `
             -PolicyId '' `
-            -Name 'lovelace' `
-            ??= 0
+            -Name 'lovelace').Quantity ?? 0
         AllocatedFees = Get-CardanoTransactionAllocationFee `
             -Transaction $Transaction `
             -Recipient $Recipient
-        Balance = Get-CardanoTransactionAllocationFeeBalance `
+        Balance = Get-CardanoTransactionAllocationFundBalance `
             -Transaction $Transaction `
             -Recipient $Recipient
         Covered = Test-CardanoTransactionAllocationFeeCovered `
@@ -31,4 +30,5 @@ function Get-CardanoTransactionAllocationFeeStatus {
             -Recipient $Recipient
         Recipient = $Recipient
     }
+    return $feeAllocationsStatus
 }

@@ -305,3 +305,11 @@ function Copy-Object($Object) {
     })    
     return $copy
 }
+
+function ConvertTo-RoundNumber {
+    param(
+        $Number,
+        $DecimalPlaces = 0
+    )
+    return [math]::Round($Number,$DecimalPlaces)
+}

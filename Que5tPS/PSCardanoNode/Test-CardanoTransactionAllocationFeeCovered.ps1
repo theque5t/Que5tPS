@@ -9,7 +9,7 @@ function Test-CardanoTransactionAllocationFeeCovered {
         })]
         [string]$Recipient
     )
-    $feeBalance = Get-CardanoTransactionAllocationFeeBalance `
+    $feeBalance = Get-CardanoTransactionAllocationFundBalance `
         -Transaction $Transaction `
         -Recipient $Recipient
     return $feeBalance -ge 0

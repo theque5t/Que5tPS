@@ -7,12 +7,21 @@ function Get-CardanoTransactionAllocationFee {
         [ValidateScript({ 
             $_ -in $Transaction.Allocations.Recipient 
         })]
-        [string]$Recipient
+        [string]$Recipient,
+        [switch]$Token
     )
     $minimumFee = Get-CardanoTransactionMinimumFee -Transaction $Transaction
     $feePercentage = Get-CardanoTransactionAllocationFeePercentage `
         -Transaction $Transaction `
         -Recipient $Recipient
-    $allocationFee = $minimumFee * $feePercentage
+    $allocationFee = Measure-CardanoTransactionAllocatedFee `
+        -Fee $minimumFee `
+        -Percentage $feePercentage
+    if($Token){
+        $allocationFee = New-CardanoToken `
+            -PolicyId '' `
+            -Name 'lovelace' `
+            -Quantity $allocationFee
+    }
     return $allocationFee
 }

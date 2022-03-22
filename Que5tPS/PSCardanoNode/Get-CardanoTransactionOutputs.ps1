@@ -2,14 +2,15 @@ function Get-CardanoTransactionOutputs {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
-        [CardanoTransaction]$Transaction        
+        [CardanoTransaction]$Transaction,
+        [Int64]$Fee = $(Get-CardanoTransactionMinimumFee -Transaction $Transaction)
     )
     $outputs = [CardanoTransactionOutput[]]@()
     $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
-    $allocations.Where({
-        $($_.Value.Quantity | Measure-Object -Sum).Sum -gt 0
-    }).ForEach({
-        $outputs += New-CardanoTransactionOutput -Allocation $_
+    $allocations.ForEach({
+        $outputs += New-CardanoTransactionOutput `
+            -Allocation $_ `
+            -Fee $Fee
     })
     return $outputs
 }

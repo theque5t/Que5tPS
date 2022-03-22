@@ -3,7 +3,8 @@ function Export-CardanoTransactionBody {
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
-        [Int64]$Fee = 0
+        [parameter(Mandatory = $true)]
+        [Int64]$Fee
     )
     New-Item $Transaction.BodyFile -Force | Out-Null
 
@@ -38,7 +39,7 @@ function Export-CardanoTransactionBody {
             [void]$_args.Add($(& $templates.Input $_))
         })
 
-        $outputs = Get-CardanoTransactionOutputs -Transaction $Transaction
+        $outputs = Get-CardanoTransactionOutputs -Transaction $Transaction -Fee $Fee
         $outputs.ForEach({ 
             [void]$_args.Add('--tx-out')
             [void]$_args.Add($( & $templates.Output $_ ))

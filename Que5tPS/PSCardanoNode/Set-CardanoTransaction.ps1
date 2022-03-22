@@ -29,8 +29,6 @@ function Set-CardanoTransaction {
                         }
                         if($(Test-CardanoTransactionHasAllocations -Transaction $Transaction)){
                             'Set Allocation'
-                        }
-                        if($(Test-CardanoTransactionHasFeeAllocations -Transaction $Transaction)){
                             'Set Fee Allocation'
                         }
                         if($(Test-CardanoTransactionHasChangeRecipient -Transaction $Transaction)){
@@ -96,7 +94,6 @@ function Set-CardanoTransaction {
                         Clear-CardanoTransactionAllocations -Transaction $Transaction
                         Initialize-CardanoTransactionAllocations -Transaction $Transaction `
                             -Recipients $allocationRecipientsSelection
-                        Sync-CardanoTransactionFeeAllocations -Transaction $Transaction
                     }
 
                     'Set Change Recipient' {
@@ -106,7 +103,6 @@ function Set-CardanoTransaction {
                             -ValidationType TestCommand `
                             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' }
                         Set-CardanoTransactionChangeRecipient -Transaction $Transaction -Recipient $_changeRecipient
-                        Sync-CardanoTransactionFeeAllocations -Transaction $Transaction
                     }
 
                     'Remove Change Recipient' {
@@ -135,10 +131,13 @@ function Set-CardanoTransaction {
                                 @{ NoNewline = $false }
                             )
                         
-                        $quantityMaximum = $(Get-CardanoTransactionTokenBalances -Transaction $Transaction).Where({
-                            $_.PolicyId -eq $tokenOptionsSelection.PolicyId -and
-                            $_.Name -eq $tokenOptionsSelection.Name
-                        }).Quantity + $tokenOptionsSelection.Quantity
+                        $quantityMaximum = $(
+                            Get-CardanoTransactionTokenBalance `
+                                -Transaction $Transaction `
+                                -PolicyId $tokenOptionsSelection.PolicyId `
+                                -Name $tokenOptionsSelection.Name
+                            ).Quantity + 
+                            $tokenOptionsSelection.Quantity
             
                         $quantitySelection = Get-FreeformInput `
                             -Instruction $(
@@ -166,21 +165,33 @@ function Set-CardanoTransaction {
                             -Options $(
                                 Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
                             ).Recipient
+                        
+                        $feePercentageMaximum = $(
+                            Get-CardanoTransactionUnallocatedFeePercentage `
+                                -Transaction $Transaction `
+                                -Transform Int `
+                            ) + $(
+                            Get-CardanoTransactionAllocationFeePercentage `
+                                -Transaction $Transaction `
+                                -Recipient $recipientOptionsSelection `
+                                -Transform Int
+                            )
 
-                        $percentageSelection = Get-FreeformInput `
-                            -Instruction 'Specify a percentage of the fee to allocate.' `
+                        $feePercentageSelection = Get-FreeformInput `
+                            -Instruction $(
+                                "Percentage available to allocate: $feePercentageMaximum" +
+                                "`nSpecify a percentage of the fee to allocate."
+                            ) `
                             -InputType 'int' `
                             -ValidationType InRange `
                             -ValidationParameters @{ 
                                 Minimum = 0
-                                Maximum = Get-CardanoTransactionUnallocatedFeePercentage `
-                                    -Transaction $Transaction `
-                                    -Transform Int
+                                Maximum = $feePercentageMaximum
                             }
 
-                        Set-CardanoTransactionFeeAllocationPercentage -Transaction $Transaction `
+                        Set-CardanoTransactionAllocationFeePercentage -Transaction $Transaction `
                             -Recipient $recipientOptionsSelection `
-                            -Percentage $percentageSelection
+                            -FeePercentage $feePercentageSelection
                     }
 
                     'Done Editing'{

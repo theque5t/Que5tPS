@@ -8,14 +8,16 @@ function Get-CardanoTransactionAllocationFeePercentage {
             $_ -in $Transaction.Allocations.Recipient 
         })]
         [string]$Recipient,
-        [switch]$String
+        [ValidateSet('String', 'Int')]
+        [string]$Transform
     )
     $allocation = Get-CardanoTransactionAllocation `
         -Transaction $Transaction `
         -Recipient $Recipient
     $allocationFeePercentage = $allocation.FeePercentage
-    if($String){
-        $allocationFeePercentage = $allocationFeePercentage.ToString('P')
+    switch ($Transform) {
+        'String' { $allocationFeePercentage = $allocationFeePercentage.ToString('P') }
+        'Int'    { $allocationFeePercentage = $allocationFeePercentage * 100 }
     }
     return $allocationFeePercentage
 }
