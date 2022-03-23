@@ -26,7 +26,7 @@ function Set-CardanoTransactionAllocationFeePercentage {
             -Recipient $Recipient
         $allocation.FeePercentage = $percentage
     }
-    if($_ -eq $Transaction.ChangeAllocation.Recipient){
+    if($Recipient -eq $Transaction.ChangeAllocation.Recipient){
         $Transaction.ChangeAllocation.FeePercentage = $percentage
     }
 }
