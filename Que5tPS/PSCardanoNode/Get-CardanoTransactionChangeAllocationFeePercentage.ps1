@@ -4,5 +4,7 @@ function Get-CardanoTransactionChangeAllocationFeePercentage {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
-    return $Transaction.ChangeAllocation.FeePercentage
+    return ConvertTo-RoundNumber `
+        -Number $Transaction.ChangeAllocation.FeePercentage `
+        -DecimalPlaces 2
 }

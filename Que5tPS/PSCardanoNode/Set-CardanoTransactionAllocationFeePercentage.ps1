@@ -17,13 +17,16 @@ function Set-CardanoTransactionAllocationFeePercentage {
         })]
         [int]$FeePercentage
     )
+    $percentage = ConvertTo-RoundNumber `
+        -Number $($FeePercentage / 100) `
+        -DecimalPlaces 2
     if($Recipient -in $Transaction.Allocations.Recipient){
         $allocation = Get-CardanoTransactionAllocation `
             -Transaction $Transaction `
             -Recipient $Recipient
-        $allocation.FeePercentage = $FeePercentage / 100
+        $allocation.FeePercentage = $percentage
     }
     if($_ -eq $Transaction.ChangeAllocation.Recipient){
-        $Transaction.ChangeAllocation.FeePercentage = $FeePercentage / 100
+        $Transaction.ChangeAllocation.FeePercentage = $percentage
     }
 }
