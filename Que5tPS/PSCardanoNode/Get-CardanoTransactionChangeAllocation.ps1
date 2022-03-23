@@ -2,15 +2,22 @@ function Get-CardanoTransactionChangeAllocation {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
-        [CardanoTransaction]$Transaction        
+        [CardanoTransaction]$Transaction,
+        [switch]$State
     )
-    $changeAllocation = [CardanoTransactionAllocation[]]@()
-    if($(Test-CardanoTransactionHasChangeRecipient -Transaction $Transaction) -and 
-       $(Test-CardanoTransactionHasUnallocatedTokens -Transaction $Transaction)){
-        $unallocatedTokens = Get-CardanoTransactionUnallocatedTokens -Transaction $Transaction
-        $changeAllocation += New-CardanoTransactionAllocation `
-            -Recipient $Transaction.ChangeRecipient `
-            -Value $unallocatedTokens
+    if($State){
+        return $Transaction.ChangeAllocation
     }
-    return $changeAllocation
+    else{
+        $changeAllocation = [CardanoTransactionAllocation[]]@()
+        if($(Test-CardanoTransactionHasChangeAllocationRecipient -Transaction $Transaction) -and 
+           $(Test-CardanoTransactionHasUnallocatedTokens -Transaction $Transaction)){
+            $unallocatedTokens = Get-CardanoTransactionUnallocatedTokens -Transaction $Transaction
+            $changeRecipient = Get-CardanoTransactionChangeAllocationRecipient -Transaction $Transaction
+            $changeAllocation += New-CardanoTransactionAllocation `
+                -Recipient $changeRecipient `
+                -Value $unallocatedTokens
+        }
+        return $changeAllocation
+    }
 }

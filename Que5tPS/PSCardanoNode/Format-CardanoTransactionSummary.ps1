@@ -81,7 +81,7 @@ function Format-CardanoTransactionSummary {
     }
     $_allocationsSection += @{ NoNewLine = $_hasAllocatedTokens }
         
-    $_hasChangeRecipient = Test-CardanoTransactionHasChangeRecipient -Transaction $Transaction
+    $_hasChangeRecipient = Test-CardanoTransactionHasChangeAllocationRecipient -Transaction $Transaction
     $_hasChangeAllocation = Test-CardanoTransactionHasChangeAllocation -Transaction $Transaction
     $_changeSection = @(
         @{ Object = '+--------+' + '-' * 119; ForegroundColor = 'DarkGray' }

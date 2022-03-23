@@ -17,9 +17,15 @@ class CardanoUtxo {
     }
 }
 
+
 class CardanoTransactionAllocation {
     [string]$Recipient
     [CardanoToken[]]$Value
+    [float]$FeePercentage
+}
+
+class CardanoTransactionChangeAllocation {
+    [string]$Recipient
     [float]$FeePercentage
 }
 
@@ -38,7 +44,7 @@ class CardanoTransaction {
     $BodyFileViewObject
     [CardanoUtxo[]]$Inputs
     [CardanoTransactionAllocation[]]$Allocations
-    [string]$ChangeRecipient
+    [CardanoTransactionChangeAllocation]$ChangeAllocation
 
     [void]ImportState(){
         Import-CardanoTransactionState -Transaction $this
@@ -142,15 +148,15 @@ class CardanoTransaction {
     }
 
     [string] GetChangeRecipient(){
-        return Get-CardanoTransactionChangeRecipient -Transaction $this
+        return Get-CardanoTransactionChangeAllocationRecipient -Transaction $this
     }
 
     [void] SetChangeRecipient([string]$Recipient){
-        Set-CardanoTransactionChangeRecipient -Transaction $this -Recipient $Recipient
+        Set-CardanoTransactionChangeAllocationRecipient -Transaction $this -Recipient $Recipient
     }
 
-    [void] ClearChangeRecipient(){
-        Clear-CardanoTransactionChangeRecipient -Transaction $this
+    [void] ResetChangeRecipient(){
+        Reset-CardanoTransactionChangeAllocation -Transaction $this
     }
 
     [bool] HasChangeRecipient(){

@@ -1,4 +1,4 @@
-function Set-CardanoTransactionChangeRecipient {
+function Set-CardanoTransactionChangeAllocationRecipient {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
@@ -7,5 +7,5 @@ function Set-CardanoTransactionChangeRecipient {
         [ValidateScript({ Test-CardanoAddressIsValid -Address $_ })]
         [string]$Recipient
     )
-    $Transaction.ChangeRecipient = $Recipient
+    $Transaction.ChangeAllocation.Recipient = $Recipient
 }

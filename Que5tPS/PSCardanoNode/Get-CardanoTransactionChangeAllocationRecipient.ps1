@@ -1,8 +1,8 @@
-function Get-CardanoTransactionChangeRecipient {
+function Get-CardanoTransactionChangeAllocationRecipient {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
-    return $Transaction.ChangeRecipient
+    return $Transaction.ChangeAllocation.Recipient
 }

@@ -42,9 +42,8 @@ function Import-CardanoTransactionState {
                 -Allocation $allocation
         })
 
-        if($state.ChangeRecipient){
-            Set-CardanoTransactionChangeRecipient -Transaction $Transaction `
-                -Recipient $state.ChangeRecipient
-        }
+        Set-CardanoTransactionChangeAllocation -Transaction $Transaction `
+                -Recipient $state.ChangeAllocation.Recipient `
+                -FeePercentage $state.ChangeAllocation.FeePercentage
     }
 }

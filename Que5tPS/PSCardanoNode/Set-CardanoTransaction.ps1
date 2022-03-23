@@ -32,7 +32,7 @@ function Set-CardanoTransaction {
                             'Set Fee Allocation'
                         }
                         if($(Test-CardanoTransactionHasChangeRecipient -Transaction $Transaction)){
-                            'Remove Change Recipient'
+                            'Clear Change Recipient'
                         }
                         'Done Editing'
                     )
@@ -102,11 +102,13 @@ function Set-CardanoTransaction {
                             -InputType 'string' `
                             -ValidationType TestCommand `
                             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' }
-                        Set-CardanoTransactionChangeRecipient -Transaction $Transaction -Recipient $_changeRecipient
+                        Set-CardanoTransactionChangeAllocationRecipient `
+                            -Transaction $Transaction `
+                            -Recipient $_changeRecipient
                     }
 
                     'Remove Change Recipient' {
-                        Remove-CardanoTransactionChangeRecipient -Transaction $Transaction
+                        Reset-CardanoTransactionChangeAllocation -Transaction $Transaction
                     }
 
                     'Set Allocation' {

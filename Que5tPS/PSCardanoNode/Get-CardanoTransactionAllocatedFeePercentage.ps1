@@ -5,7 +5,9 @@ function Get-CardanoTransactionAllocatedFeePercentage {
         [CardanoTransaction]$Transaction,
         [switch]$String
     )
-    $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction
+    $allocations = Get-CardanoTransactionAllocations `
+        -Transaction $Transaction `
+        -ChangeAllocation
     $allocatedFeePercentage = $($allocations.FeePercentage | Measure-Object -Sum).Sum
     if($String){
         $allocatedFeePercentage = $allocatedFeePercentage.ToString('P')
