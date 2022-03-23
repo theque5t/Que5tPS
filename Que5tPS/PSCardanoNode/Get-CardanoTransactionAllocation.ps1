@@ -5,7 +5,8 @@ function Get-CardanoTransactionAllocation {
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ 
-            $_ -in $Transaction.Allocations.Recipient 
+            $_ -in $Transaction.Allocations.Recipient -or
+            $_ -eq $Transaction.ChangeAllocation.Recipient
         })]
         [string]$Recipient
     )
