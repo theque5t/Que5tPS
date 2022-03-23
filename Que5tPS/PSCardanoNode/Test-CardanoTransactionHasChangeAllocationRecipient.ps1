@@ -3,5 +3,5 @@ function Test-CardanoTransactionHasChangeAllocationRecipient {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
-    return [bool]$(Get-CardanoTransactionChangeAllocationRecipient -Transaction $Transaction).Count
+    return [bool]$(Get-CardanoTransactionChangeAllocationRecipient -Transaction $Transaction)
 }

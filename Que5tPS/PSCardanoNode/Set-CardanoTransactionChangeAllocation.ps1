@@ -3,6 +3,7 @@ function Set-CardanoTransactionChangeAllocation {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ 

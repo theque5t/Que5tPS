@@ -14,9 +14,11 @@ function Get-CardanoTransactionChangeAllocation {
            $(Test-CardanoTransactionHasUnallocatedTokens -Transaction $Transaction)){
             $unallocatedTokens = Get-CardanoTransactionUnallocatedTokens -Transaction $Transaction
             $changeRecipient = Get-CardanoTransactionChangeAllocationRecipient -Transaction $Transaction
+            $changeFeePercentage = Get-CardanoTransactionChangeAllocationFeePercentage -Transaction $Transaction
             $changeAllocation += New-CardanoTransactionAllocation `
                 -Recipient $changeRecipient `
-                -Value $unallocatedTokens
+                -Value $unallocatedTokens `
+                -FeePercentage $changeFeePercentage
         }
         return $changeAllocation
     }

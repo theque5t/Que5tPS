@@ -90,7 +90,7 @@ function Format-CardanoTransactionSummary {
         @{ Object = '' }
         @{ Prefix = @{ Object = '    | '; NoNewline = $true };
            Object = 'Recipient: '; ForegroundColor = 'Yellow'; NoNewline = $true }
-        @{ Object = $_hasChangeRecipient ? $Transaction.ChangeRecipient : 'None - Not specified' }
+        @{ Object = $_hasChangeRecipient ? $(Get-CardanoTransactionChangeAllocationRecipient -Transaction $Transaction) : 'None - Not specified' }
         @{ Prefix = @{ Object = '    | '; NoNewline = $true };
            Object = 'Tokens: '; ForegroundColor = 'Yellow'; NoNewline = -not $_hasChangeAllocation }
         @{ Prefix = $_hasChangeAllocation ? @{ Object = '    | '; NoNewline = $true } : @{ Object = ''; NoNewline = $true }
