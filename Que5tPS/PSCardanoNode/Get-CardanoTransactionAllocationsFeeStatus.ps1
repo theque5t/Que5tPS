@@ -5,7 +5,7 @@ function Get-CardanoTransactionAllocationsFeeStatus {
         [CardanoTransaction]$Transaction
     )
     $allocationsFeeStatus = [PSCustomObject]@()
-    $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction
+    $allocations = Get-CardanoTransactionAllocations -Transaction $Transaction -ChangeAllocation
     $allocations.ForEach({
         $allocationsFeeStatus += Get-CardanoTransactionAllocationFeeStatus `
             -Transaction $Transaction `
