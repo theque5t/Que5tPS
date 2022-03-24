@@ -10,11 +10,7 @@ function Set-CardanoTransactionAllocationFeePercentage {
         })]
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
-        [ValidateScript({ 
-            $_percentage = $_/100
-            $_percentage -ge 0 -and 
-            $_percentage -le $(Get-CardanoTransactionUnallocatedFeePercentage -Transaction $Transaction) 
-        })]
+        [ValidateScript({ $_ -ge 0 -and $_ -le 100 })]
         [int]$FeePercentage
     )
     $percentage = ConvertTo-RoundNumber `
