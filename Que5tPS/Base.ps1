@@ -308,8 +308,19 @@ function Copy-Object($Object) {
 
 function ConvertTo-RoundNumber {
     param(
+        [parameter(Mandatory = $true)]
         $Number,
         $DecimalPlaces = 0
     )
     return [math]::Round($Number,$DecimalPlaces)
+}
+
+function ConvertTo-IntPercentage {
+    param(
+        [parameter(Mandatory = $true)]
+        $Number
+    )
+    $roundNumber = ConvertTo-RoundNumber -Number $Number -DecimalPlaces 2
+    $intPercentage = $roundNumber * 100
+    return $intPercentage
 }

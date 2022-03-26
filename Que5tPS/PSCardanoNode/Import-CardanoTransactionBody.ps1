@@ -4,6 +4,7 @@ function Import-CardanoTransactionBody {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
+    Assert-CardanoNodeSessionIsOpen
     Assert-CardanoTransactionBodyFileExists -Transaction $Transaction
     $Transaction.BodyFile = Get-Item $Transaction.BodyFile
     $Transaction.BodyFileContent = Get-Content $Transaction.BodyFile

@@ -7,7 +7,8 @@ function Initialize-CardanoTransactionChangeAllocation {
         [ValidateScript({ Test-CardanoAddressIsValid -Address $_ })]
         [string]$Recipient
     )    
-    Set-CardanoTransactionChangeAllocation -Transaction $Transaction `
+    Set-CardanoTransactionChangeAllocation `
+        -Transaction $Transaction `
         -Recipient $Recipient `
         -FeePercentage 0
 }

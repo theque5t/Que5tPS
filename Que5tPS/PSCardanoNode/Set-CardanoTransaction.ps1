@@ -92,7 +92,8 @@ function Set-CardanoTransaction {
                             -Delimited
 
                         Clear-CardanoTransactionAllocations -Transaction $Transaction
-                        Initialize-CardanoTransactionAllocations -Transaction $Transaction `
+                        Initialize-CardanoTransactionAllocations `
+                            -Transaction $Transaction `
                             -Recipients $allocationRecipientsSelection
                     }
 
@@ -107,7 +108,7 @@ function Set-CardanoTransaction {
                             -Recipient $_changeRecipient
                     }
 
-                    'Remove Change Recipient' {
+                    'Clear Change Recipient' {
                         Reset-CardanoTransactionChangeAllocation -Transaction $Transaction
                     }
 
@@ -191,7 +192,8 @@ function Set-CardanoTransaction {
                                 Maximum = $feePercentageMaximum
                             }
 
-                        Set-CardanoTransactionAllocationFeePercentage -Transaction $Transaction `
+                        Set-CardanoTransactionAllocationFeePercentage `
+                            -Transaction $Transaction `
                             -Recipient $recipientOptionsSelection `
                             -FeePercentage $feePercentageSelection
                     }

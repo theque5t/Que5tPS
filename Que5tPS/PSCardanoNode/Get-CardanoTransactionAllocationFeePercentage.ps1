@@ -20,7 +20,7 @@ function Get-CardanoTransactionAllocationFeePercentage {
         -DecimalPlaces 2
     switch ($Transform) {
         'String' { $allocationFeePercentage = $allocationFeePercentage.ToString('P') }
-        'Int'    { $allocationFeePercentage = $allocationFeePercentage * 100 }
+        'Int'    { $allocationFeePercentage = ConvertTo-IntPercentage -Number $allocationFeePercentage }
     }
     return $allocationFeePercentage
 }

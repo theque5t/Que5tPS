@@ -1,7 +1,7 @@
 function Format-CardanoTransactionSummary {
     [CmdletBinding()]
     param(
-        [parameter(Mandatory = $true, ValueFromPipeline)]
+        [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction
     )
     $_labelPrefix = @{ Object = '  - '; NoNewline = $true }

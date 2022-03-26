@@ -12,7 +12,7 @@ function Get-CardanoTransactionUnallocatedFeePercentage {
         -DecimalPlaces 2
     switch ($Transform) {
         'String' { $unallocatedFeePercentage = $unallocatedFeePercentage.ToString('P') }
-        'Int'    { $unallocatedFeePercentage = $unallocatedFeePercentage * 100 }
+        'Int'    { $unallocatedFeePercentage = ConvertTo-IntPercentage -Number $unallocatedFeePercentage }
     }
     return $unallocatedFeePercentage
 }

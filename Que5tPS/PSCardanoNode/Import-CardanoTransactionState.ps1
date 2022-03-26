@@ -34,16 +34,21 @@ function Import-CardanoTransactionState {
                     -Name $_.Name `
                     -Quantity $_.Quantity
             })
-            $allocation = New-CardanoTransactionAllocation `
+            Add-CardanoTransactionAllocation `
+                -Transaction $Transaction `
                 -Recipient $_.Recipient `
                 -Value $_tokens `
-                -FeePercentage $_.FeePercentage
-            Add-CardanoTransactionAllocation -Transaction $Transaction `
-                -Allocation $allocation
+                -FeePercentage $(
+                    ConvertTo-IntPercentage -Number $_.FeePercentage
+                )
         })
 
-        Set-CardanoTransactionChangeAllocation -Transaction $Transaction `
-                -Recipient $state.ChangeAllocation.Recipient `
-                -FeePercentage $state.ChangeAllocation.FeePercentage
+        Set-CardanoTransactionChangeAllocation `
+            -Transaction $Transaction `
+            -Recipient $state.ChangeAllocation.Recipient `
+            -FeePercentage $(
+                ConvertTo-IntPercentage -Number `
+                    $state.ChangeAllocation.FeePercentage
+            )
     }
 }
