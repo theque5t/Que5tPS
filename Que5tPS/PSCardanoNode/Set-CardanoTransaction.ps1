@@ -49,12 +49,11 @@ function Set-CardanoTransaction {
                             -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' } `
                             -Delimited
             
-                        $addressesUtxos = [CardanoUtxo[]]@()
-                        $addresses.ForEach({
-                            $addressesUtxos += Get-CardanoAddressUtxos -Address $_ -WorkingDir $Transaction.WorkingDir
-                        })
+                        $addressesUtxos = Get-CardanoAddressesUtxos `
+                            -Addresses $addresses `
+                            -WorkingDir $Transaction.WorkingDir
             
-                        $Transaction.Inputs = Get-OptionSelection `
+                        $addressesUtxosSelection = Get-OptionSelection `
                             -MultipleChoice `
                             -Instruction $(
                                 "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." +
@@ -77,7 +76,10 @@ function Set-CardanoTransaction {
                                 },
                                 @{ NoNewline = $false }
                             )
-                        $Transaction.Allocations = [CardanoTransactionAllocation[]]@()
+                        Set-CardanoTransactionInputs `
+                            -Transaction $Transaction `
+                            -Utxos $addressesUtxosSelection
+                        Clear-CardanoTransactionAllocations -Transaction $Transaction
                     }
             
                     'Set Allocation Recipient(s)' {
