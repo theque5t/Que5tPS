@@ -15,14 +15,20 @@ function Import-CardanoTransactionState {
         $state.Inputs.ForEach({
             $utxo = New-CardanoUtxo -Id $_.Id -Address $_.Address -Data $_.Data
             $_.Value.GetEnumerator().ForEach({
-                Add-CardanoUtxoToken -Utxo $utxo -Token $(
-                    New-CardanoToken `
-                        -PolicyId $_.PolicyId `
-                        -Name $_.Name `
-                        -Quantity $_.Quantity
-                )
+                Add-CardanoUtxoToken `
+                    -Utxo $utxo `
+                    -Token $(
+                        New-CardanoToken `
+                            -PolicyId $_.PolicyId `
+                            -Name $_.Name `
+                            -Quantity $_.Quantity
+                    ) `
+                    -UpdateState $False
             })
-            Add-CardanoTransactionInput -Transaction $Transaction -Utxo $utxo
+            Add-CardanoTransactionInput `
+                -Transaction $Transaction `
+                -Utxo $utxo `
+                -UpdateState $False
         })
         
         $Transaction.Allocations = [CardanoTransactionAllocation[]]@()
@@ -40,7 +46,8 @@ function Import-CardanoTransactionState {
                 -Value $_tokens `
                 -FeePercentage $(
                     ConvertTo-IntPercentage -Number $_.FeePercentage
-                )
+                ) `
+                -UpdateState $False
         })
 
         Set-CardanoTransactionChangeAllocation `
@@ -49,6 +56,7 @@ function Import-CardanoTransactionState {
             -FeePercentage $(
                 ConvertTo-IntPercentage -Number `
                     $state.ChangeAllocation.FeePercentage
-            )
+            ) `
+            -UpdateState $False
     }
 }

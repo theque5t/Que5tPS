@@ -14,12 +14,15 @@ function Set-CardanoTransactionAllocation {
     Remove-CardanoTransactionAllocation `
         -Transaction $Transaction `
         -Recipient $Recipient `
+        -UpdateState $False
 
     Add-CardanoTransactionAllocation `
         -Transaction $Transaction `
         -Recipient $Recipient `
         -Value $Value `
-        -FeePercentage $FeePercentage
+        -FeePercentage $FeePercentage `
+        -UpdateState $False
+
     if($UpdateState){
         Update-CardanoTransaction -Transaction $Transaction
     }

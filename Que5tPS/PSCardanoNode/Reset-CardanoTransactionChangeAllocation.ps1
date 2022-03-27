@@ -7,7 +7,8 @@ function Reset-CardanoTransactionChangeAllocation {
     Set-CardanoTransactionChangeAllocation `
         -Transaction $Transaction `
         -Recipient '' `
-        -FeePercentage 0
+        -FeePercentage 0 `
+        -UpdateState $False
     if($UpdateState){
         Update-CardanoTransaction -Transaction $Transaction
     }
