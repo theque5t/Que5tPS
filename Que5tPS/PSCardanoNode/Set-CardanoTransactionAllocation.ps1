@@ -8,7 +8,8 @@ function Set-CardanoTransactionAllocation {
         [CardanoToken[]]$Value,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ $_ -ge 0 -and $_ -le 100 })]
-        [int]$FeePercentage
+        [int]$FeePercentage,
+        [bool]$UpdateState = $true
     )
     Remove-CardanoTransactionAllocation `
         -Transaction $Transaction `
@@ -19,4 +20,7 @@ function Set-CardanoTransactionAllocation {
         -Recipient $Recipient `
         -Value $Value `
         -FeePercentage $FeePercentage
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
+    }
 }

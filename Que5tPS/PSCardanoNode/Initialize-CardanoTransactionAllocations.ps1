@@ -4,7 +4,8 @@ function Initialize-CardanoTransactionAllocations {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
-        [string[]]$Recipients
+        [string[]]$Recipients,
+        [bool]$UpdateState = $true
     )
     
     $value = Get-CardanoTransactionInputTokens -Transaction $Transaction
@@ -16,4 +17,7 @@ function Initialize-CardanoTransactionAllocations {
             -Value $value `
             -FeePercentage 0
     })
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
+    }
 }

@@ -11,7 +11,8 @@ function Set-CardanoTransactionAllocationFeePercentage {
         [string]$Recipient,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ $_ -ge 0 -and $_ -le 100 })]
-        [int]$FeePercentage
+        [int]$FeePercentage,
+        [bool]$UpdateState = $true
     )
     $percentage = ConvertTo-RoundNumber `
         -Number $($FeePercentage / 100) `
@@ -24,5 +25,8 @@ function Set-CardanoTransactionAllocationFeePercentage {
     }
     if($Recipient -eq $Transaction.ChangeAllocation.Recipient){
         $Transaction.ChangeAllocation.FeePercentage = $percentage
+    }
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
     }
 }

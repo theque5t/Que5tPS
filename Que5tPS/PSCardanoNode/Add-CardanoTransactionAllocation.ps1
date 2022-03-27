@@ -9,10 +9,14 @@ function Add-CardanoTransactionAllocation {
         [CardanoToken[]]$Value,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ $_ -ge 0 -and $_ -le 100 })]
-        [int]$FeePercentage
+        [int]$FeePercentage,
+        [bool]$UpdateState = $true
     )
     $Transaction.Allocations += New-CardanoTransactionAllocation `
         -Recipient $recipient `
         -Value $Value `
         -FeePercentage $FeePercentage
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
+    }
 }

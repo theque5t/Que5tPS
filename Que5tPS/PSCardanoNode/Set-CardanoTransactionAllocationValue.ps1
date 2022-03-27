@@ -14,7 +14,8 @@ function Set-CardanoTransactionAllocationValue {
         [Parameter(Mandatory = $true)]
         [string]$Name,
         [Parameter(Mandatory = $true)]
-        [Int64]$Quantity
+        [Int64]$Quantity,
+        [bool]$UpdateState = $true
     )
     $($Transaction.Allocations.Where({
         $_.Recipient -eq $Recipient
@@ -22,4 +23,7 @@ function Set-CardanoTransactionAllocationValue {
         $_.PolicyId -eq $PolicyId -and
         $_.Name -eq $Name
     })).Quantity = $Quantity
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
+    }
 }

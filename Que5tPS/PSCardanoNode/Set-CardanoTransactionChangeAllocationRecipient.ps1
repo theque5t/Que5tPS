@@ -5,7 +5,11 @@ function Set-CardanoTransactionChangeAllocationRecipient {
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
         [ValidateScript({ Test-CardanoAddressIsValid -Address $_ })]
-        [string]$Recipient
+        [string]$Recipient,
+        [bool]$UpdateState = $true
     )
     $Transaction.ChangeAllocation.Recipient = $Recipient
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
+    }
 }

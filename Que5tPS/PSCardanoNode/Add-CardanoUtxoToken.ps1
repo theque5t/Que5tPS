@@ -4,7 +4,11 @@ function Add-CardanoUtxoToken {
         [parameter(Mandatory = $true)]
         [CardanoUtxo]$Utxo,
         [Parameter(Mandatory = $true)]
-        [CardanoToken]$Token
+        [CardanoToken]$Token,
+        [bool]$UpdateState = $true
     )
     $Utxo.Value += $Token
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
+    }
 }

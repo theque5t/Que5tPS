@@ -3,7 +3,11 @@ function Set-CardanoTransactionInputs {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
-        [CardanoUtxo[]]$Utxos
+        [CardanoUtxo[]]$Utxos,
+        [bool]$UpdateState = $true
     )
     $Transaction.Inputs = $Utxos
+    if($UpdateState){
+        Update-CardanoTransaction -Transaction $Transaction
+    }
 }
