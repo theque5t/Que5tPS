@@ -66,16 +66,8 @@ class CardanoTransaction {
         Export-CardanoTransactionBody -Transaction $this -Fee $Fee
     }
 
-    [void]ExportBody(){
-        Export-CardanoTransactionBody -Transaction $this -Fee 0
-    }
-
     [void]UpdateBody([Int64]$Fee){
         Update-CardanoTransactionBody -Transaction $this -Fee $Fee
-    }
-    
-    [void]UpdateBody(){
-        Update-CardanoTransactionBody -Transaction $this -Fee 0
     }
 
     [void] AddInput([CardanoUtxo]$Utxo){ 
@@ -115,7 +107,8 @@ class CardanoTransaction {
     }
 
     [CardanoTransactionAllocation[]] GetAllocations([bool]$ChangeAllocation){
-        return Get-CardanoTransactionAllocations -Transaction $this `
+        return Get-CardanoTransactionAllocations `
+            -Transaction $this `
             -ChangeAllocation:$ChangeAllocation
     }
 
@@ -152,7 +145,9 @@ class CardanoTransaction {
     }
 
     [void] SetChangeRecipient([string]$Recipient){
-        Set-CardanoTransactionChangeAllocationRecipient -Transaction $this -Recipient $Recipient
+        Set-CardanoTransactionChangeAllocationRecipient `
+            -Transaction $this `
+            -Recipient $Recipient
     }
 
     [void] ResetChangeRecipient(){
