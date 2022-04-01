@@ -6,12 +6,7 @@ function Set-CardanoTransaction {
         [Parameter(ParameterSetName = 'Interactive')]
         [switch]$Interactive,
         [Parameter(ParameterSetName = 'NonInteractive')]
-        [CardanoUtxo[]]$Inputs,
-        [Parameter(ParameterSetName = 'NonInteractive')]
-        [CardanoTransactionAllocation[]]$Allocations,
-        [Parameter(ParameterSetName = 'NonInteractive')]
-        [ValidateScript({ Test-CardanoAddressIsValid -Address $_ })]
-        [string]$ChangeRecipient
+        [switch]$NonInteractive
     )
     switch ($PsCmdlet.ParameterSetName) {
         'Interactive' { 
@@ -213,7 +208,7 @@ function Set-CardanoTransaction {
                             -TransformCommand 'ConvertTo-CardanoKeySecureStringList' `
                             -TransformValueArg 'Objects' `
                             -ValidationType TestCommand `
-                            -ValidationParameters @{ Command = 'Test-CardanoSigningKeyIsValid'; ValueArg = 'SigningKey' } `
+                            -ValidationParameters @{ Command = 'Test-CardanoSigningKeyIsValid'; ValueArg = 'Key' } `
                             -Delimited `
                             -Sensitive
                         
