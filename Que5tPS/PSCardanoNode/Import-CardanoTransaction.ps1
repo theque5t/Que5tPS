@@ -10,8 +10,10 @@ function Import-CardanoTransaction {
         WorkingDir = $WorkingDir
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
         BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
+        SignedFile = "$($WorkingDir.FullName)\$Name.tx.signed"
     }
     Import-CardanoTransactionState -Transaction $Transaction
     Import-CardanoTransactionBody -Transaction $Transaction
+    Import-CardanoTransactionSigned -Transaction $Transaction
     return $transaction
 }

@@ -8,14 +8,17 @@ function New-CardanoTransaction {
     )
     $transaction = New-Object CardanoTransaction -Property @{
         WorkingDir = $WorkingDir
+        Name = $Name
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
         BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
+        SignedFile = "$($WorkingDir.FullName)\$Name.tx.signed"
         ChangeAllocation = New-CardanoTransactionChangeAllocation `
             -Recipient '' `
             -FeePercentage 0
     }
-    Assert-CardanoTransactionStateFileDoesNotExist -Transaction $Transaction
-    Assert-CardanoTransactionBodyFileDoesNotExist -Transaction $Transaction
-    Update-CardanoTransaction -Transaction $Transaction
+    Assert-CardanoTransactionStateFileDoesNotExist -Transaction $transaction
+    Assert-CardanoTransactionBodyFileDoesNotExist -Transaction $transaction
+    Assert-CardanoTransactionSignedFileDoesNotExist -Transaction $transaction
+    Update-CardanoTransaction -Transaction $transaction
     return $transaction
 }

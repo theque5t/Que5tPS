@@ -6,7 +6,8 @@ function Import-CardanoTransactionState {
     )
     Assert-CardanoTransactionStateFileExists -Transaction $Transaction
     $Transaction.StateFile = Get-Item $Transaction.StateFile
-    if($Transaction.StateFile.Length -gt 0){
+    $Transaction.StateFileContent = Get-Content $Transaction.StateFile
+    if($Transaction.StateFileContent){
         $state = Get-Content $Transaction.StateFile | ConvertFrom-Yaml
         $state.Inputs = [array]$state.Inputs
         $state.Allocations = [array]$state.Allocations
@@ -58,5 +59,7 @@ function Import-CardanoTransactionState {
                     $state.ChangeAllocation.FeePercentage
             ) `
             -UpdateState $False
+
+        $Transaction.SignedBodyHash = $state.SignedBodyHash
     }
 }

@@ -239,20 +239,27 @@ function Get-FreeformInput {
     param(
         $Instruction,
         $InputType,
+        [parameter(ParameterSetName = 'Transform')]
+        $TransformCommand,
+        [parameter(ParameterSetName = 'Transform')]
+        $TransformValueArg,
         [ValidateSet('InRange','MatchPattern','TestCommand')]
         $ValidationType,
         $ValidationParameters,
         [switch]$Delimited,
-        $Delimiter = ','
+        $Delimiter = ',',
+        [switch]$Sensitive
     )
 
     Write-Host $Instruction -ForegroundColor Yellow
 
     do{
         Write-Host "Input: " -ForegroundColor Yellow -NoNewline
-        $input = Read-Host
+        $input = Read-Host -AsSecureString:$Sensitive
         Write-Host
-        $input = $Delimited ? $input.split($Delimiter).Trim() : $input.Trim()
+        $input = $Sensitive ? $($input | ConvertFrom-SecureString -AsPlainText) : $input
+        $input = $Delimited ? $($input -split $Delimiter) : $input
+        $input = $input.Trim()
         Write-Verbose "`$input: $input"
         Write-Verbose "`$input.Count: $($input.Count)"
         $inputValue = New-Object System.Collections.ArrayList
@@ -261,6 +268,10 @@ function Get-FreeformInput {
         $input.ForEach({
             $value = $_
             $value = $value -as ($InputType -as [type])
+            if($TransformCommand){
+                $TransformCommandArgs = @{ $TransformValueArg = $value }
+                $value = & $TransformCommand @TransformCommandArgs
+            }
             switch ($ValidationType) {
                 'InRange' { 
                     Write-Verbose "`$ValidationType: $_"

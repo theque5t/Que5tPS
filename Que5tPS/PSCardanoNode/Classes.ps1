@@ -17,7 +17,6 @@ class CardanoUtxo {
     }
 }
 
-
 class CardanoTransactionAllocation {
     [string]$Recipient
     [CardanoToken[]]$Value
@@ -36,12 +35,17 @@ class CardanoTransactionOutput {
 
 class CardanoTransaction {
     [System.IO.DirectoryInfo]$WorkingDir
-    $StateFile
+    [string]$Name
     $BodyFile
     $BodyFileContent
     $BodyFileObject
     $BodyFileView
     $BodyFileViewObject
+    $SignedBodyHash
+    $SignedFile
+    $SignedFileContent
+    $StateFile
+    $StateFileContent
     [CardanoUtxo[]]$Inputs
     [CardanoTransactionAllocation[]]$Allocations
     [CardanoTransactionChangeAllocation]$ChangeAllocation

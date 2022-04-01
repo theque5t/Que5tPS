@@ -23,16 +23,19 @@ function Set-CardanoTransaction {
                     -Instruction 'Select an option:' `
                     -Options @(
                         'Set Inputs'
-                        if($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){ 
+                        if(Test-CardanoTransactionHasInputs -Transaction $Transaction){ 
                             'Set Allocation Recipient(s)'
                             'Set Change Recipient' 
                         }
-                        if($(Test-CardanoTransactionHasAllocations -Transaction $Transaction)){
+                        if(Test-CardanoTransactionHasAllocations -Transaction $Transaction){
                             'Set Allocation'
                             'Set Fee Allocation'
                         }
-                        if($(Test-CardanoTransactionHasChangeAllocationRecipient -Transaction $Transaction)){
+                        if(Test-CardanoTransactionHasChangeAllocationRecipient -Transaction $Transaction){
                             'Clear Change Recipient'
+                        }
+                        if(Test-CardanoTransactionSignable -Transaction $Transaction){
+                            'Sign Transaction'
                         }
                         'Done Editing'
                     )
@@ -198,6 +201,25 @@ function Set-CardanoTransaction {
                             -Transaction $Transaction `
                             -Recipient $recipientOptionsSelection `
                             -FeePercentage $feePercentageSelection
+                    }
+
+                    'Sign Transaction'{
+                        $signingKeysSelection = Get-FreeformInput `
+                            -Instruction $(
+                                "Specify 1 or more signing key strings and/or signing key file paths (e.g. <key1>,</path/to/key2.skey>, ...)." +
+                                "`nSeperate keys using a comma."
+                            ) `
+                            -InputType 'object' `
+                            -TransformCommand 'ConvertTo-CardanoKeySecureStringList' `
+                            -TransformValueArg 'Objects' `
+                            -ValidationType TestCommand `
+                            -ValidationParameters @{ Command = 'Test-CardanoSigningKeyIsValid'; ValueArg = 'SigningKey' } `
+                            -Delimited `
+                            -Sensitive
+                        
+                        Set-CardanoTransactionSigned `
+                            -Transaction $Transaction `
+                            -SigningKeys $signingKeysSelection
                     }
 
                     'Done Editing'{
