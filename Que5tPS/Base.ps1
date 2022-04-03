@@ -272,6 +272,7 @@ function Get-FreeformInput {
                 $TransformCommandArgs = @{ $TransformValueArg = $value }
                 $value = & $TransformCommand @TransformCommandArgs
             }
+            $validated = $true
             switch ($ValidationType) {
                 'InRange' { 
                     Write-Verbose "`$ValidationType: $_"

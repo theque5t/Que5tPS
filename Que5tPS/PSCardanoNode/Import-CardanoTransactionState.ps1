@@ -12,6 +12,10 @@ function Import-CardanoTransactionState {
         $state.Inputs = [array]$state.Inputs
         $state.Allocations = [array]$state.Allocations
         
+        Set-CardanoTransactionWitnessQuantity `
+            -Transaction $Transaction `
+            -Quantity $state.WitnessQuantity
+
         $Transaction.Inputs = [CardanoUtxo[]]@()
         $state.Inputs.ForEach({
             $utxo = New-CardanoUtxo -Id $_.Id -Address $_.Address -Data $_.Data
@@ -60,6 +64,7 @@ function Import-CardanoTransactionState {
             ) `
             -UpdateState $False
 
-        $Transaction.SignedBodyHash = $state.SignedBodyHash
+        $Transaction.Fee = $state.Fee
+        $Transaction.SignedStateHash = $state.SignedStateHash
     }
 }

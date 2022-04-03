@@ -41,14 +41,19 @@ class CardanoTransaction {
     $BodyFileObject
     $BodyFileView
     $BodyFileViewObject
-    $SignedBodyHash
+    $SignedStateHash
     $SignedFile
     $SignedFileContent
+    $SignedFileObject
+    $SignedFileView
+    $SignedFileViewObject
     $StateFile
     $StateFileContent
     [CardanoUtxo[]]$Inputs
     [CardanoTransactionAllocation[]]$Allocations
     [CardanoTransactionChangeAllocation]$ChangeAllocation
+    [Int64]$Fee
+    [Int64]$WitnessQuantity
 
     [void]ImportState(){
         Import-CardanoTransactionState -Transaction $this
@@ -182,8 +187,8 @@ class CardanoTransaction {
         return Test-CardanoTransactionHasOutputs -Transaction $this
     }
 
-    [string[]]GetWitnesses(){
-        return Get-CardanoTransactionWitnesses -Transaction $this
+    [string[]]GetWitnessQuantity(){
+        return Get-CardanoTransactionWitnessQuantity -Transaction $this
     }
 
     [System.Object]GetMinimumFee(){

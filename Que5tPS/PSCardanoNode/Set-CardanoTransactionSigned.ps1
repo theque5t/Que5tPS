@@ -9,7 +9,7 @@ function Set-CardanoTransactionSigned {
     )
     $SigningKeys = ConvertTo-CardanoKeySecureStringList -Objects $SigningKeys
     Update-CardanoTransaction -Transaction $Transaction -SigningKeys $SigningKeys
-    $($Transaction.SignedBodyHash = Get-CardanoTransactionBodyHash -Transaction $Transaction)
+    $Transaction.SignedStateHash = Get-CardanoTransactionStateHash -Transaction $Transaction
     if($UpdateState){
         Update-CardanoTransaction -Transaction $Transaction
     }

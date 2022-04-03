@@ -1,8 +1,8 @@
-function Get-CardanoTransactionBodyHash {
+function Get-CardanoTransactionSignedStateHash {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction
     )
-    return $(Get-FileHash $Transaction.BodyFile).Hash
+    return $Transaction.SignedStateHash
 }

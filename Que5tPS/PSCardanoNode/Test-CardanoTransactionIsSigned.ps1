@@ -4,7 +4,7 @@ function Test-CardanoTransactionIsSigned {
         [CardanoTransaction]$Transaction        
     )
     return [bool]$(
-        $Transaction.SignedBodyHash -eq 
-        $(Get-CardanoTransactionBodyHash -Transaction $Transaction)
+        $Transaction.SignedStateHash -eq 
+        $(Get-CardanoTransactionStateHash -Transaction $Transaction)
     )
 }

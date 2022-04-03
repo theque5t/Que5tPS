@@ -5,9 +5,11 @@ function Export-CardanoTransactionState {
         [CardanoTransaction]$Transaction        
     )
     [ordered]@{ 
+        WitnessQuantity = Get-CardanoTransactionWitnessQuantity -Transaction $Transaction
         Inputs = Get-CardanoTransactionInputs -Transaction $Transaction
         Allocations = Get-CardanoTransactionAllocations -Transaction $Transaction
         ChangeAllocation = Get-CardanoTransactionChangeAllocation -Transaction $Transaction -State
-        SignedBodyHash = $Transaction.SignedBodyHash
+        Fee = Get-CardanoTransactionMinimumFee -Transaction $Transaction
+        SignedStateHash = Get-CardanoTransactionSignedStateHash -Transaction $Transaction
     } | ConvertTo-Yaml -Options EmitDefaults -OutFile $Transaction.StateFile -Force
 }

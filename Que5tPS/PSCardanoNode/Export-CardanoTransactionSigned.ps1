@@ -5,7 +5,9 @@ function Export-CardanoTransactionSigned{
         [CardanoTransaction]$Transaction,
         [securestring[]]$SigningKeys
     )
-    New-Item $Transaction.SignedFile -Force | Out-Null
+    if(-not $(Test-Path $Transaction.SignedFile)){
+        New-Item $Transaction.SignedFile -Force | Out-Null
+    }
     if($SigningKeys){
         try{
             $signingKeyFiles = @()
@@ -16,7 +18,7 @@ function Export-CardanoTransactionSigned{
                 $signingKeyFiles += $signingKeyFile
             })
 
-            $_args = @(
+            $_args = [System.Collections.ArrayList]@(
                 'transaction', 'sign'
                 '--tx-body-file', $Transaction.BodyFile.FullName
                 '--out-file', $Transaction.SignedFile.FullName

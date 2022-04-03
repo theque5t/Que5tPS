@@ -9,8 +9,8 @@ function Import-CardanoTransaction {
     $transaction = New-Object CardanoTransaction -Property @{
         WorkingDir = $WorkingDir
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
-        BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
-        SignedFile = "$($WorkingDir.FullName)\$Name.tx.signed"
+        BodyFile = "$($WorkingDir.FullName)\$Name.tx.body.json"
+        SignedFile = "$($WorkingDir.FullName)\$Name.tx.signed.json"
     }
     Import-CardanoTransactionState -Transaction $Transaction
     Import-CardanoTransactionBody -Transaction $Transaction

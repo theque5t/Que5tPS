@@ -10,8 +10,8 @@ function New-CardanoTransaction {
         WorkingDir = $WorkingDir
         Name = $Name
         StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
-        BodyFile = "$($WorkingDir.FullName)\$Name.tx.json"
-        SignedFile = "$($WorkingDir.FullName)\$Name.tx.signed"
+        BodyFile = "$($WorkingDir.FullName)\$Name.tx.body.json"
+        SignedFile = "$($WorkingDir.FullName)\$Name.tx.signed.json"
         ChangeAllocation = New-CardanoTransactionChangeAllocation `
             -Recipient '' `
             -FeePercentage 0

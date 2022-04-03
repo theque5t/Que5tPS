@@ -17,6 +17,7 @@ function Set-CardanoTransaction {
                 $actionSelection = Get-OptionSelection `
                     -Instruction 'Select an option:' `
                     -Options @(
+                        'Set Witness Quantity'
                         'Set Inputs'
                         if(Test-CardanoTransactionHasInputs -Transaction $Transaction){ 
                             'Set Allocation Recipient(s)'
@@ -36,6 +37,16 @@ function Set-CardanoTransaction {
                     )
             
                 switch($actionSelection){
+                    'Set Witness Quantity' {
+                        $witnessQuantitySelection = Get-FreeformInput `
+                            -Instruction 'Specify the quantity of witnesses (signers)' `
+                            -InputType 'Int64'
+
+                        Set-CardanoTransactionWitnessQuantity `
+                            -Transaction $Transaction `
+                            -Quantity $witnessQuantitySelection
+                    }
+
                     'Set Inputs' {
                         $addresses = Get-FreeformInput `
                             -Instruction $(
@@ -199,10 +210,13 @@ function Set-CardanoTransaction {
                     }
 
                     'Sign Transaction'{
-                        $signingKeysSelection = Get-FreeformInput `
+                        $witnessQuantity = Get-CardanoTransactionWitnessQuantity -Transaction $Transaction
+                        $signingKeysSelection = @()
+                        (1..$witnessQuantity).ForEach({
+                            $signingKeysSelection += Get-FreeformInput `
                             -Instruction $(
-                                "Specify 1 or more signing key strings and/or signing key file paths (e.g. <key1>,</path/to/key2.skey>, ...)." +
-                                "`nSeperate keys using a comma."
+                                "Witness $($_): Specify the signing key string (e.g. <key>)" +
+                                " or signing key file path (e.g. </path/to/key.skey>)."
                             ) `
                             -InputType 'object' `
                             -TransformCommand 'ConvertTo-CardanoKeySecureStringList' `
@@ -211,6 +225,7 @@ function Set-CardanoTransaction {
                             -ValidationParameters @{ Command = 'Test-CardanoSigningKeyIsValid'; ValueArg = 'Key' } `
                             -Delimited `
                             -Sensitive
+                        })
                         
                         Set-CardanoTransactionSigned `
                             -Transaction $Transaction `

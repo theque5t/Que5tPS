@@ -12,9 +12,9 @@ function Get-CardanoTransactionMinimumFee {
         $_args = @(
             'transaction', 'calculate-min-fee'
             '--tx-body-file', $Transaction.BodyFile.FullName
-            '--tx-in-count', $(Get-CardanoTransactionInputs -Transaction $Transaction).Count
-            '--tx-out-count', $(Get-CardanoTransactionOutputs -Transaction $Transaction -Fee 0).Count
-            '--witness-count', $(Get-CardanoTransactionWitnesses -Transaction $Transaction).Count
+            '--tx-in-count', $(Get-CardanoTransactionInputsQuantity -Transaction $Transaction)
+            '--tx-out-count', $(Get-CardanoTransactionOutputsQuantity -Transaction $Transaction -Fee 0)
+            '--witness-count', $(Get-CardanoTransactionWitnessQuantity -Transaction $Transaction)
             '--protocol-params-file', $env:CARDANO_NODE_PROTOCOL_PARAMETERS
             $env:CARDANO_CLI_NETWORK_ARG, $env:CARDANO_CLI_NETWORK_ARG_VALUE
         )

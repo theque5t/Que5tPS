@@ -147,7 +147,7 @@ function Format-CardanoTransactionSummary {
            ForegroundColor = 'DarkGray' }
         @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
         @{ Prefix = @{ Object = '    '; NoNewline = $true }; 
-           Object = Get-CardanoTransactionStatus -Transaction $Transaction | Format-Table | Out-String }
+           Object = Get-CardanoTransactionStatus -Transaction $Transaction | Out-String }
     )
 
     $_footer = @(
