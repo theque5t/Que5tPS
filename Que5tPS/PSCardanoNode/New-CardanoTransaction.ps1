@@ -15,6 +15,7 @@ function New-CardanoTransaction {
         ChangeAllocation = New-CardanoTransactionChangeAllocation `
             -Recipient '' `
             -FeePercentage 0
+        Submitted = $false
     }
     Assert-CardanoTransactionStateFileDoesNotExist -Transaction $transaction
     Assert-CardanoTransactionBodyFileDoesNotExist -Transaction $transaction

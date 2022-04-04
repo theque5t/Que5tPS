@@ -54,6 +54,7 @@ class CardanoTransaction {
     [CardanoTransactionChangeAllocation]$ChangeAllocation
     [Int64]$Fee
     [Int64]$WitnessQuantity
+    [bool]$Submitted
 
     [void]ImportState(){
         Import-CardanoTransactionState -Transaction $this

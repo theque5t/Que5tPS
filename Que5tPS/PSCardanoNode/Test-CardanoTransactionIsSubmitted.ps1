@@ -3,5 +3,5 @@ function Test-CardanoTransactionIsSubmitted {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction        
     )
-    return $false
+    return Get-CardanoTransactionSubmissionState -Transaction $Transaction
 }

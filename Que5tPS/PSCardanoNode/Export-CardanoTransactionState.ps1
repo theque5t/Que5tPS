@@ -11,5 +11,6 @@ function Export-CardanoTransactionState {
         ChangeAllocation = Get-CardanoTransactionChangeAllocation -Transaction $Transaction -State
         Fee = Get-CardanoTransactionMinimumFee -Transaction $Transaction
         SignedStateHash = Get-CardanoTransactionSignedStateHash -Transaction $Transaction
+        Submitted = Get-CardanoTransactionSubmissionState -Transaction $Transaction
     } | ConvertTo-Yaml -Options EmitDefaults -OutFile $Transaction.StateFile -Force
 }

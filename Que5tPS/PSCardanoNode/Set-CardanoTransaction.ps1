@@ -31,7 +31,10 @@ function Set-CardanoTransaction {
                             'Clear Change Recipient'
                         }
                         if(Test-CardanoTransactionSignable -Transaction $Transaction){
-                            'Sign Transaction'
+                            'Sign'
+                        }
+                        if(Test-CardanoTransactionSubmittable -Transaction $Transaction){
+                            'Submit'
                         }
                         'Done Editing'
                     )
@@ -209,7 +212,7 @@ function Set-CardanoTransaction {
                             -FeePercentage $feePercentageSelection
                     }
 
-                    'Sign Transaction'{
+                    'Sign'{
                         $witnessQuantity = Get-CardanoTransactionWitnessQuantity -Transaction $Transaction
                         $signingKeysSelection = @()
                         (1..$witnessQuantity).ForEach({
@@ -230,6 +233,16 @@ function Set-CardanoTransaction {
                         Set-CardanoTransactionSigned `
                             -Transaction $Transaction `
                             -SigningKeys $signingKeysSelection
+                    }
+
+                    'Submit'{
+                        $submitSelection = Get-OptionSelection `
+                            -Instruction 'Confirm transaction should be submitted:' `
+                            -Options @('Continue Editing','Submit')
+                        
+                        if($submitSelection -eq 'Submit'){
+                            Submit-CardanoTransaction -Transaction $Transaction
+                        }
                     }
 
                     'Done Editing'{
