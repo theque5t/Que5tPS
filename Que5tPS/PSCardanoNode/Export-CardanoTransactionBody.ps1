@@ -4,8 +4,12 @@ function Export-CardanoTransactionBody {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [parameter(Mandatory = $true)]
-        [Int64]$Fee
+        [Int64]$Fee,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     New-Item $Transaction.BodyFile -Force | Out-Null
 
     if($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){

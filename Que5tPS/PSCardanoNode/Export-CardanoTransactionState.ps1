@@ -2,8 +2,12 @@ function Export-CardanoTransactionState {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
-        [CardanoTransaction]$Transaction        
+        [CardanoTransaction]$Transaction,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     [ordered]@{ 
         WitnessQuantity = Get-CardanoTransactionWitnessQuantity -Transaction $Transaction
         Inputs = Get-CardanoTransactionInputs -Transaction $Transaction

@@ -2,8 +2,12 @@ function Submit-CardanoTransaction {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
-        [CardanoTransaction]$Transaction
+        [CardanoTransaction]$Transaction,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     Assert-CardanoTransactionSubmittable -Transaction $Transaction
 
     $_args = [System.Collections.ArrayList]@(

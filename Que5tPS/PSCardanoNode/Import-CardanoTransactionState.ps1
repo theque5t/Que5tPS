@@ -2,7 +2,7 @@ function Import-CardanoTransactionState {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
-        [CardanoTransaction]$Transaction        
+        [CardanoTransaction]$Transaction
     )
     Assert-CardanoTransactionStateFileExists -Transaction $Transaction
     $Transaction.StateFile = Get-Item $Transaction.StateFile
@@ -14,7 +14,8 @@ function Import-CardanoTransactionState {
         
         Set-CardanoTransactionWitnessQuantity `
             -Transaction $Transaction `
-            -Quantity $state.WitnessQuantity
+            -Quantity $state.WitnessQuantity `
+            -ROProtection $False
 
         $Transaction.Inputs = [CardanoUtxo[]]@()
         $state.Inputs.ForEach({
@@ -33,7 +34,8 @@ function Import-CardanoTransactionState {
             Add-CardanoTransactionInput `
                 -Transaction $Transaction `
                 -Utxo $utxo `
-                -UpdateState $False
+                -UpdateState $False `
+                -ROProtection $False
         })
         
         $Transaction.Allocations = [CardanoTransactionAllocation[]]@()
@@ -52,7 +54,8 @@ function Import-CardanoTransactionState {
                 -FeePercentage $(
                     ConvertTo-IntPercentage -Number $_.FeePercentage
                 ) `
-                -UpdateState $False
+                -UpdateState $False `
+                -ROProtection $False
         })
 
         Set-CardanoTransactionChangeAllocation `
@@ -62,9 +65,25 @@ function Import-CardanoTransactionState {
                 ConvertTo-IntPercentage -Number `
                     $state.ChangeAllocation.FeePercentage
             ) `
-            -UpdateState $False
+            -UpdateState $False `
+            -ROProtection $False
 
-        $Transaction.Fee = $state.Fee
-        $Transaction.SignedStateHash = $state.SignedStateHash
+        Set-CardanoTransactionFeeState `
+            -Transaction $Transaction `
+            -Fee $state.Fee `
+            -UpdateState $False `
+            -ROProtection $False
+
+        Set-CardanoTransactionSignedStateHash `
+            -Transaction $Transaction `
+            -Hash $state.SignedStateHash `
+            -UpdateState $False `
+            -ROProtection $False
+
+        Set-CardanoTransactionSubmissionState `
+            -Transaction $Transaction `
+            -State $state.Submitted `
+            -UpdateState $False `
+            -ROProtection $False
     }
 }

@@ -8,8 +8,12 @@ function Remove-CardanoTransactionInput {
             $_ -in $Transaction.Inputs.Id
         })]
         [string]$Id,
-        [bool]$UpdateState = $true
+        [bool]$UpdateState = $true,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     $Transaction.Inputs = $Transaction.Inputs.Where({
         $_.Id -ne $Id
     })

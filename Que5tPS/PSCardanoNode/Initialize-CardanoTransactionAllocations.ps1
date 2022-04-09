@@ -5,9 +5,12 @@ function Initialize-CardanoTransactionAllocations {
         [CardanoTransaction]$Transaction,
         [Parameter(Mandatory = $true)]
         [string[]]$Recipients,
-        [bool]$UpdateState = $true
+        [bool]$UpdateState = $true,
+        [bool]$ROProtection = $true
     )
-    
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     $value = Get-CardanoTransactionInputTokens -Transaction $Transaction
     $value.ForEach({ $_.Quantity = 0 })
     $Recipients.ForEach({

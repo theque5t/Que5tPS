@@ -3,8 +3,12 @@ function Update-CardanoTransactionSigned {
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
-        [securestring[]]$SigningKeys
+        [securestring[]]$SigningKeys,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     Export-CardanoTransactionSigned -Transaction $Transaction -SigningKeys $SigningKeys
     Import-CardanoTransactionSigned -Transaction $Transaction
 }

@@ -15,8 +15,12 @@ function Set-CardanoTransactionAllocationValue {
         [string]$Name,
         [Parameter(Mandatory = $true)]
         [Int64]$Quantity,
-        [bool]$UpdateState = $true
+        [bool]$UpdateState = $true,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     $($Transaction.Allocations.Where({
         $_.Recipient -eq $Recipient
     }).Value.Where({

@@ -6,8 +6,12 @@ function Set-CardanoTransaction {
         [Parameter(ParameterSetName = 'Interactive')]
         [switch]$Interactive,
         [Parameter(ParameterSetName = 'NonInteractive')]
-        [switch]$NonInteractive
+        [switch]$NonInteractive,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     switch ($PsCmdlet.ParameterSetName) {
         'Interactive' { 
             do{

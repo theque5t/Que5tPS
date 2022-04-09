@@ -3,8 +3,12 @@ function Export-CardanoTransactionSigned{
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
-        [securestring[]]$SigningKeys
+        [securestring[]]$SigningKeys,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     if(-not $(Test-Path $Transaction.SignedFile)){
         New-Item $Transaction.SignedFile -Force | Out-Null
     }

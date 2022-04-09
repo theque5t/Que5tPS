@@ -1,21 +1,17 @@
-function Set-CardanoTransactionSigned {
+function Set-CardanoTransactionFeeState {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [parameter(Mandatory = $true)]
-        $SigningKeys,
+        [Int64]$Fee,
         [bool]$UpdateState = $true,
         [bool]$ROProtection = $true
     )
     if($ROProtection){
         Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
     }
-    $SigningKeys = ConvertTo-CardanoKeySecureStringList -Objects $SigningKeys
-    Update-CardanoTransaction -Transaction $Transaction -SigningKeys $SigningKeys
-    Set-CardanoTransactionSignedStateHash `
-        -Transaction $Transaction `
-        -Hash $(Get-CardanoTransactionStateHash -Transaction $Transaction)
+    $Transaction.Fee = $Fee
     if($UpdateState){
         Update-CardanoTransaction -Transaction $Transaction
     }

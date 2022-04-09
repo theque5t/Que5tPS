@@ -82,9 +82,11 @@ function Write-VerboseLog {
 
 
 function Write-TerminatingError {
+    [CmdletBinding()]
     param(
         $Exception
     )
+    Write-Debug "$(Get-PSCallStack | Format-List * | Out-String)"
     throw "$Exception"
 }
 
@@ -93,6 +95,8 @@ function Get-FunctionName ([int]$StackNumber = 1) {
 }
 
 function Write-FalseAssertionError {
+    [CmdletBinding()]
+    param()
     Write-TerminatingError "False Assertion: $(Get-FunctionName -StackNumber 2)"
 }
 

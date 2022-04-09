@@ -4,7 +4,11 @@ function Set-CardanoTransactionWitnessQuantity {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [parameter(Mandatory = $true)]
-        [Int64]$Quantity
+        [Int64]$Quantity,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     $Transaction.WitnessQuantity = $Quantity
 }

@@ -9,8 +9,12 @@ function Set-CardanoTransactionAllocation {
         [Parameter(Mandatory = $true)]
         [ValidateScript({ $_ -ge 0 -and $_ -le 100 })]
         [int]$FeePercentage,
-        [bool]$UpdateState = $true
+        [bool]$UpdateState = $true,
+        [bool]$ROProtection = $true
     )
+    if($ROProtection){
+        Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
+    }
     Remove-CardanoTransactionAllocation `
         -Transaction $Transaction `
         -Recipient $Recipient `

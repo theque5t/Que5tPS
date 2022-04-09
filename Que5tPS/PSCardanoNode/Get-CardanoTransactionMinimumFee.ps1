@@ -6,7 +6,10 @@ function Get-CardanoTransactionMinimumFee {
         [switch]$Token    
     )
     $MinimumFee = 0
-    if($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){
+    if($(Test-CardanoTransactionIsReadOnly -Transaction $Transaction)){
+        $MinimumFee = $Transaction.Fee
+    }
+    elseif($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){
         Assert-CardanoNodeInSync
         Export-CardanoTransactionBody -Transaction $Transaction -Fee 0
         $_args = @(
