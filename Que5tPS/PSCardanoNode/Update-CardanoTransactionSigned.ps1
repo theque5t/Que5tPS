@@ -9,6 +9,9 @@ function Update-CardanoTransactionSigned {
     if($ROProtection){
         Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
     }
-    Export-CardanoTransactionSigned -Transaction $Transaction -SigningKeys $SigningKeys
+    Export-CardanoTransactionSigned `
+        -Transaction $Transaction `
+        -SigningKeys $SigningKeys `
+        -ROProtection $ROProtection
     Import-CardanoTransactionSigned -Transaction $Transaction
 }

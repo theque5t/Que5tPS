@@ -1,16 +1,21 @@
 function Get-CardanoAddressesUtxos {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('mainnet','testnet')]
+        $Network,
+        [Parameter(Mandatory = $true)]
         [string[]]$Addresses,
-        [Parameter(Mandatory = $true, Position = 1)]
+        [Parameter(Mandatory = $true)]
         $WorkingDir,
-        [Parameter(Position = 2)]
         [bool]$RemoveOutputFile = $true
     )
     $addressesUtxos = [CardanoUtxo[]]@()
     $Addresses.ForEach({
-        $addressesUtxos += Get-CardanoAddressUtxos -Address $_ -WorkingDir $Transaction.WorkingDir
+        $addressesUtxos += Get-CardanoAddressUtxos `
+            -Network $Network `
+            -Address $_ `
+            -WorkingDir $Transaction.WorkingDir
     })
     return $addressesUtxos
 }

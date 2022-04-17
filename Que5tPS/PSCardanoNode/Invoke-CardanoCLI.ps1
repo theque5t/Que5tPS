@@ -1,17 +1,24 @@
-# The following commands assume the Deadulus Wallet (comes with full node and cli) is setup.
-# If necessary, the commands could be modified to use different node setups, but for now 
-# Deadalus is the only option.
-# https://docs.cardano.org/cardano-components/daedalus-wallet
-# https://daedaluswallet.io/
-
 function Invoke-CardanoCLI {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [System.IO.FileInfo]$Socket,
+        [Parameter(Mandatory=$true)]
+        [System.IO.DirectoryInfo]$Path,
+        [Parameter(Mandatory=$true)]
+        [Array]$Arguments
+    )
     try{
-        $output = &"$env:DEADALUS_HOME\cardano-cli.exe" @args 2>&1
+        $env:CARDANO_NODE_SOCKET_PATH = $Socket
+        $output = &"$Path\cardano-cli.exe" @Arguments 2>&1
         Assert-CommandSuccessful
         return $output
     }
     catch{
         Write-TerminatingError $(@($_.ToString(), $output | Out-String) -join "`n")
+    }
+    finally{
+        Remove-Item env:CARDANO_NODE_SOCKET_PATH
     }
 }
 

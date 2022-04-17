@@ -1,7 +1,14 @@
 function Get-CardanoNodeProcess {
-    $process = $(Get-Process -Verbose:$false).Where({ 
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('mainnet','testnet')]
+        $Network
+    )
+    $nodePath = Get-CardanoNodePath -Network $Network
+    $process = $(Get-Process).Where({ 
         $_.Name -eq 'cardano-node' -and
-        $_.Path -eq "$env:DEADALUS_HOME\cardano-node.exe"
+        $_.Path -eq "$nodePath\cardano-node.exe"
     })
 
     return $process

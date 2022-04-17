@@ -3,38 +3,20 @@ function Open-CardanoNodeSession {
     param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('mainnet','testnet')]
-        $Network
+        $Network,
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('Deadalus')]
+        $NodeType
     )
-    Assert-CardanoNodeSessionIsClosed
+    Assert-CardanoNodeSessionIsClosed -Network $Network
 
     Write-VerboseLog 'Opening Cardano node session...'
     
-    $env:DEADALUS_HOME = "C:\Program Files\Daedalus $Network"
-    
-    $env:CARDANO_NODE_NETWORK = $Network
-    $env:CARDANO_CLI_NETWORK_ARG = "--$Network"
-    $env:CARDANO_CLI_NETWORK_ARG_VALUE = ''
-    switch ($Network) {
-        'testnet' {
-            $env:CARDANO_CLI_NETWORK_ARG = "--$Network-magic"
-            $env:CARDANO_CLI_NETWORK_ARG_VALUE = 1097911063
-        }
-    }
+    Start-CardanoNode -Network $Network -NodeType $NodeType
 
-    Set-CardanoNodeProcessRunning
-    Set-CardanoNodeSocketPath
+    Register-CardanoNodeSession -Network $Network
 
-    do{
-        Write-VerboseLog 'Waiting for Cardano node to respond...'
-        Start-Sleep -Seconds 5
-    }
-    while(-not $(Get-CardanoNodeTip))
+    Assert-CardanoNodeSessionIsOpen -Network $Network
 
-    $env:CARDANO_NODE_PROTOCOL_PARAMETERS = "$env:CARDANO_HOME\protocolParameters-$($(New-Guid).Guid).json" 
-    Set-CardanoNodeProtocolParameters
-
-    $env:CARDANO_NODE_SESSION = $true
-
-    Assert-CardanoNodeSessionIsOpen
     Write-VerboseLog 'Cardano node session opened'
 }

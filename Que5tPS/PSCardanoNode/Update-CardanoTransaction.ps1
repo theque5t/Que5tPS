@@ -10,7 +10,15 @@ function Update-CardanoTransaction {
     if($ROProtection){
         Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
     }
-    Update-CardanoTransactionState -Transaction $Transaction
-    Update-CardanoTransactionBody -Transaction $Transaction -Fee $Fee
-    Update-CardanoTransactionSigned -Transaction $Transaction -SigningKeys $SigningKeys
+    Update-CardanoTransactionState `
+        -Transaction $Transaction `
+        -ROProtection $ROProtection
+    Update-CardanoTransactionBody `
+        -Transaction $Transaction `
+        -Fee $Fee `
+        -ROProtection $ROProtection
+    Update-CardanoTransactionSigned `
+        -Transaction $Transaction `
+        -SigningKeys $SigningKeys `
+        -ROProtection $ROProtection
 }

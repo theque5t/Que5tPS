@@ -12,9 +12,16 @@ function Import-CardanoTransactionState {
         $state.Inputs = [array]$state.Inputs
         $state.Allocations = [array]$state.Allocations
         
+        Set-CardanoTransactionNetwork `
+            -Transaction $Transaction `
+            -Network $state.Network `
+            -UpdateState $False `
+            -ROProtection $False
+
         Set-CardanoTransactionWitnessQuantity `
             -Transaction $Transaction `
             -Quantity $state.WitnessQuantity `
+            -UpdateState $False `
             -ROProtection $False
 
         $Transaction.Inputs = [CardanoUtxo[]]@()

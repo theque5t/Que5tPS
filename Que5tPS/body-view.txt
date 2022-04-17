@@ -1,0 +1,32 @@
+auxiliary scripts: null
+certificates: null
+era: Alonzo
+fee: 0 Lovelace
+inputs:
+- 3789d7b06cb0a30ddb4fc926f92c34676096c03a2bdc0676851b24f2b4eb2bd1#0
+metadata: null
+mint: null
+outputs:
+- address: addr_test1vz6uv8a4e2uvdf7y0wjghs5et8ryzdd0jjmvy06qakm2f5sf7pc8e
+  address era: Shelley
+  amount:
+    lovelace: 9999
+  datum: null
+  network: Testnet
+  payment credential:
+    key hash: b5c61fb5cab8c6a7c47ba48bc29959c64135af94b6c23f40edb6a4d2
+  stake reference: null
+- address: addr_test1vransnkukd22f0kdxnxtcck6v3hed9ukr25jvwrrcpq3gcsqg5kc8
+  address era: Shelley
+  amount:
+    lovelace: 999990001
+  datum: null
+  network: Testnet
+  payment credential:
+    key hash: fb384edcb354a4becd34ccbc62da646f9697961aa9263863c0411462
+  stake reference: null
+update proposal: null
+validity range:
+  lower bound: null
+  upper bound: null
+withdrawals: null

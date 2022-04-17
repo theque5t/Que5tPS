@@ -4,6 +4,7 @@ function Set-CardanoTransactionSignedStateHash {
         [parameter(Mandatory = $true)]
         [CardanoTransaction]$Transaction,
         [parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string]$Hash,
         [bool]$UpdateState = $true,
         [bool]$ROProtection = $true

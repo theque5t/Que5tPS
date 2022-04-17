@@ -1,27 +1,33 @@
 function Get-CardanoAddressUtxos {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, Position = 0)]
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('mainnet','testnet')]
+        $Network,
+        [Parameter(Mandatory = $true)]
         $Address,
-        [Parameter(Mandatory = $true, Position = 1)]
+        [Parameter(Mandatory = $true)]
         $WorkingDir,
-        [Parameter(Position = 2)]
         [bool]$RemoveOutputFile = $true
     )
     process{
         try{
-            Assert-CardanoNodeInSync
+            Assert-CardanoNodeInSync -Network $Network
             Write-VerboseLog "Getting address utxo..."
-
+            $socket = Get-CardanoNodeSocket -Network $Network
+            $nodePath = Get-CardanoNodePath -Network $Network
             $outputFile = "$WorkingDir\queryUtxoOutput-$($(New-Guid).Guid).json"
+            $networkArgs = Get-CardanoNodeNetworkArg -Network $Network
             $_args = @(
                 'query','utxo'
                 '--address', $Address
                 '--out-file', $outputFile
-                $env:CARDANO_CLI_NETWORK_ARG
-                $env:CARDANO_CLI_NETWORK_ARG_VALUE
+                $networkArgs
             )
-            Invoke-CardanoCLI @_args
+            Invoke-CardanoCLI `
+                -Socket $socket `
+                -Path $nodePath `
+                -Arguments $_args
             $queryOutput = Get-Content $outputFile | ConvertFrom-Json -AsHashtable
             $utxos = [CardanoUtxo[]]@()
             $queryOutput.GetEnumerator().ForEach({

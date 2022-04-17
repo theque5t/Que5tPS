@@ -9,6 +9,9 @@ function Update-CardanoTransactionBody {
     if($ROProtection){
         Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
     }
-    Export-CardanoTransactionBody -Transaction $Transaction -Fee $Fee
+    Export-CardanoTransactionBody `
+        -Transaction $Transaction `
+        -Fee $Fee `
+        -ROProtection $ROProtection
     Import-CardanoTransactionBody -Transaction $Transaction
 }

@@ -13,7 +13,8 @@ function Export-CardanoTransactionBody {
     New-Item $Transaction.BodyFile -Force | Out-Null
 
     if($(Test-CardanoTransactionHasInputs -Transaction $Transaction)){
-        Assert-CardanoNodeInSync
+        $network = Get-CardanoTransactionNetwork -Transaction $Transaction
+        Assert-CardanoNodeInSync -Network $network
         
         $templates = @{
             Input = {'{0}#{1}' -f $args[0].TxHash, $args[0].Index}
@@ -52,6 +53,12 @@ function Export-CardanoTransactionBody {
         [void]$_args.Add('--fee')
         [void]$_args.Add($Fee)
         
-        Invoke-CardanoCLI @_args
+        $socket = Get-CardanoNodeSocket -Network $network
+        $nodePath = Get-CardanoNodePath -Network $network
+
+        Invoke-CardanoCLI `
+            -Socket $socket `
+            -Path $nodePath `
+            -Arguments $_args
     }
 }

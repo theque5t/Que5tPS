@@ -1,5 +1,10 @@
 function Assert-CardanoWalletSessionIsOpen {
-    if(-not $(Test-CardanoWalletSessionIsOpen)){
+    [CmdletBinding()]
+    param(
+        [parameter(Mandatory = $true)]
+        [CardanoWallet]$Wallet
+    )
+    if(-not $(Test-CardanoWalletSessionIsOpen -Wallet $Wallet)){
         Write-FalseAssertionError
     }
 }

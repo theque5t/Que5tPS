@@ -1,3 +1,9 @@
 function Test-CardanoWalletSessionIsOpen {
-    return Test-Path env:CARDANO_WALLET_SESSION
+    [CmdletBinding()]
+    param(
+        [parameter(Mandatory = $true)]
+        [CardanoWallet]$Wallet
+    )
+    $walletSessionPath = Get-CardanoWalletSessionPaths
+    return $Wallet.StateFile -in $walletSessionPath
 }

@@ -1,21 +1,19 @@
 function Close-CardanoNodeSession {
     [CmdletBinding()]
-    param()
-    Assert-CardanoNodeSessionIsOpen
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('mainnet','testnet')]
+        $Network
+    )
+    Assert-CardanoNodeSessionIsOpen -Network $Network
 
     Write-VerboseLog 'Closing Cardano node session...'
+
+    Stop-CardanoNode -Network $Network
     
-    Set-CardanoNodeProcessStopped
-    @('env:\DEADALUS_HOME'
-      'env:\CARDANO_NODE_NETWORK'
-      'env:\CARDANO_CLI_NETWORK_ARG'
-      'env:\CARDANO_CLI_NETWORK_ARG_VALUE'
-      $env:CARDANO_NODE_PROTOCOL_PARAMETERS
-      'env:\CARDANO_NODE_PROTOCOL_PARAMETERS'
-      'env:\CARDANO_NODE_SESSION'
-      'env:\CARDANO_NODE_SOCKET_PATH'
-    ).ForEach({ Remove-Item "$_" })
+    Unregister-CardanoNodeSession -Network $Network
     
-    Assert-CardanoNodeSessionIsClosed
+    Assert-CardanoNodeSessionIsClosed -Network $Network
+
     Write-VerboseLog 'Cardano node session closed'
 }

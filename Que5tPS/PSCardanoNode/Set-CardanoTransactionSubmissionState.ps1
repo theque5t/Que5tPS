@@ -13,6 +13,8 @@ function Set-CardanoTransactionSubmissionState {
     }
     $Transaction.Submitted = $State
     if($UpdateState){
-        Update-CardanoTransaction -Transaction $Transaction
+        Update-CardanoTransaction `
+            -Transaction $Transaction `
+            -ROProtection $ROProtection
     }
 }

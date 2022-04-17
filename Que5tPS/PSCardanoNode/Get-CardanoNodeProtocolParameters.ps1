@@ -1,9 +1,13 @@
 function Get-CardanoNodeProtocolParameters{
     [CmdletBinding()]
-    param()
-    Assert-CardanoNodeSessionIsOpen
-    Write-VerboseLog "Getting node protocol parameters..."
-    $parameters = Get-Content -Path $env:CARDANO_NODE_PROTOCOL_PARAMETERS |
-                  ConvertFrom-Json
-    return $parameters
+    param(
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('mainnet','testnet')]
+        $Network
+    )
+    $envProtocalVar = "env:CARDANO_NODE_SESSION_$($Network.ToUpper())_PROTOCOL_PARAMETERS"
+    if($(Test-Path $envProtocalVar)){
+        $protocolParams = $(Get-Item $envProtocalVar).Value
+    }
+    return $protocolParams
 }

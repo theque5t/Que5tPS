@@ -26,14 +26,22 @@ function Export-CardanoTransactionSigned{
                 'transaction', 'sign'
                 '--tx-body-file', $Transaction.BodyFile.FullName
                 '--out-file', $Transaction.SignedFile.FullName
-                $env:CARDANO_CLI_NETWORK_ARG, $env:CARDANO_CLI_NETWORK_ARG_VALUE
             )
             $signingKeyFiles.ForEach({
                 [void]$_args.Add('--signing-key-file')
                 [void]$_args.Add($_)
             })
 
-            Invoke-CardanoCLI @_args
+            $network = Get-CardanoTransactionNetwork -Transaction $Transaction
+            $socket = Get-CardanoNodeSocket -Network $network
+            $nodePath = Get-CardanoNodePath -Network $network
+            $networkArgs = Get-CardanoNodeNetworkArg -Network $network
+            [void]$_args.Add($networkArgs)
+
+            Invoke-CardanoCLI `
+                -Socket $socket `
+                -Path $nodePath `
+                -Arguments $_args
         }
         catch{
             Write-TerminatingError -Exception "Failed to sign transaction: $($Transaction.Name)"

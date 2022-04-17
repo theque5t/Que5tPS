@@ -16,6 +16,7 @@ function Set-CardanoTransaction {
         'Interactive' { 
             do{
                 $interactionComplete = $false
+                $network = Get-CardanoTransactionNetwork -Transaction $Transaction
                 Format-CardanoTransactionSummary -Transaction $Transaction
             
                 $actionSelection = Get-OptionSelection `
@@ -66,6 +67,7 @@ function Set-CardanoTransaction {
                             -Delimited
             
                         $addressesUtxos = Get-CardanoAddressesUtxos `
+                            -Network $network `
                             -Addresses $addresses `
                             -WorkingDir $Transaction.WorkingDir
             
@@ -246,6 +248,7 @@ function Set-CardanoTransaction {
                         
                         if($submitSelection -eq 'Submit'){
                             Submit-CardanoTransaction -Transaction $Transaction
+                            $interactionComplete = $true
                         }
                     }
 
@@ -255,6 +258,7 @@ function Set-CardanoTransaction {
                 }
             }
             until($interactionComplete)
+            Format-CardanoTransactionSummary -Transaction $Transaction
          }
         'NonInteractive'{ Write-Warning 'TODO: Not implemented yet' }
     }

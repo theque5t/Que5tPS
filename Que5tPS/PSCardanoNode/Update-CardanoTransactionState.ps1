@@ -8,6 +8,8 @@ function Update-CardanoTransactionState {
     if($ROProtection){
         Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
     }
-    Export-CardanoTransactionState -Transaction $Transaction
+    Export-CardanoTransactionState `
+        -Transaction $Transaction `
+        -ROProtection $ROProtection
     Import-CardanoTransactionState -Transaction $Transaction
 }
