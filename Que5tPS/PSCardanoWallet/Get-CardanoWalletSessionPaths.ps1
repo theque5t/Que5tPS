@@ -1,9 +1,6 @@
 function Get-CardanoWalletSessionPaths {
     [CmdletBinding()]
-    param(
-        [parameter(Mandatory = $true)]
-        [CardanoWallet]$Wallet
-    )
-    $walletSessionPath = $env:CARDANO_WALLET_SESSION_PATH -split ';'
-    return $walletSessionPath
+    param()
+    $walletSessionPaths = $env:CARDANO_WALLET_SESSION_PATHS -split ';'
+    return $walletSessionPaths
 }

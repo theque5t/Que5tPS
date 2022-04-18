@@ -4,7 +4,8 @@ function Export-CardanoWalletState {
         [parameter(Mandatory = $true)]
         [CardanoWallet]$Wallet
     )
-    [ordered]@{ 
+    [ordered]@{
+        Name = Get-CardanoWalletName -Wallet $Wallet 
         Network = Get-CardanoWalletNetwork -Wallet $Wallet
     } | ConvertTo-Yaml -Options EmitDefaults -OutFile $Wallet.StateFile -Force
 }
