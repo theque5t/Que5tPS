@@ -25,15 +25,11 @@ function Protect-String {
             return [System.Convert]::ToBase64String($encryptedBytes)
         }
         catch{
-            throw 'Failed to protect string.'
+            Write-TerminatingError 'Failed to protect string.'
         }
         finally{
-            @($Password,$shaManaged,$aesManaged,
-              $plainBytes,$encryptor,$encryptedBytes
-            ).Where({ $_ }).ForEach({ 
-                if($_.Dispose){ $_.Dispose() }
-                else{ $_ = $null } 
-            })
+            $shaManaged.Dispose()
+            $aesManaged.Dispose()
         }
     }
 }
@@ -65,15 +61,11 @@ function Unprotect-String {
             return [System.Text.Encoding]::UTF8.GetString($decryptedBytes).Trim([char]0)
         }
         catch{
-            throw 'Failed to unprotect string.'
+            Write-TerminatingError 'Failed to unprotect string.'
         }
         finally{
-            @($Password,$shaManaged,$aesManaged,
-              $cipherBytes,$decryptor,$decryptedBytes
-            ).Where({ $_ }).ForEach({ 
-                if($_.Dispose){ $_.Dispose() }
-                else{ $_ = $null } 
-            })
+            $shaManaged.Dispose()
+            $aesManaged.Dispose()
         }
     }
 }

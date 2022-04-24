@@ -4,17 +4,24 @@ function Format-CardanoWalletSummary {
         [parameter(Mandatory = $true)]
         [CardanoWallet[]]$Wallets
     )
-    $_labelPrefix = @{ Object = '  - '; NoNewline = $true }
-    $_valuePrefix = @{ Object = '    '; NoNewline = $true }
     
     $_header = @(
-        @{ Object = '=' * 126 }
-        @{ Object = ' ' * 56 + 'WALLET SUMMARY' + ' ' * 56 }
-        @{ Object = '=' * 126 }
+        @{ Object = '=' * 129 }
+        @{ Object = ' ' * 57 + 'WALLET SUMMARY' + ' ' * 58 }
+        @{ Object = '=' * 129 }
+    )
+
+    $_config = @(
+        @{ Object = '+---------------+' + '-' * 112; ForegroundColor = 'DarkGray' }
+        @{ Object = '| CONFIGURATION | Description: Configuration associated to wallet'
+           ForegroundColor = 'DarkGray' }
+        @{ Object = '+---------------+'; ForegroundColor = 'DarkGray' }
+        @{ Prefix = @{ Object = '    '; NoNewline = $true }; 
+           Object = Get-CardanoWalletConfigurationStatus -Wallets $Wallets | Format-Table | Out-String }
     )
 
     $_network = @(
-        @{ Object = '+---------+' + '-' * 115; ForegroundColor = 'DarkGray' }
+        @{ Object = '+---------+' + '-' * 118; ForegroundColor = 'DarkGray' }
         @{ Object = '| NETWORK | Description: State of network associated to wallet'
            ForegroundColor = 'DarkGray' }
         @{ Object = '+---------+'; ForegroundColor = 'DarkGray' }
@@ -23,7 +30,7 @@ function Format-CardanoWalletSummary {
     )
 
     $_tokens = @(
-        @{ Object = '+--------+' + '-' * 116; ForegroundColor = 'DarkGray' }
+        @{ Object = '+--------+' + '-' * 119; ForegroundColor = 'DarkGray' }
         @{ Object = '| TOKENS | Description: State of tokens associated to wallet'
            ForegroundColor = 'DarkGray' }
         @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
@@ -32,7 +39,7 @@ function Format-CardanoWalletSummary {
     )
 
     $_transactions = @(
-        @{ Object = '+--------------+' + '-' * 110; ForegroundColor = 'DarkGray' }
+        @{ Object = '+--------------+' + '-' * 113; ForegroundColor = 'DarkGray' }
         @{ Object = '| TRANSACTIONS | Description: State of transactions associated to wallet'
            ForegroundColor = 'DarkGray' }
         @{ Object = '+--------------+'; ForegroundColor = 'DarkGray' }
@@ -41,11 +48,12 @@ function Format-CardanoWalletSummary {
     )
 
     $_footer = @(
-        @{ Object = '=' * 126 }
+        @{ Object = '=' * 129 }
     )
 
     Write-HostBatch $(
         $_header + 
+        $_config +
         $_network +
         $_tokens +
         $_transactions +

@@ -1,26 +1,44 @@
 function Enter-CardanoWalletSession {
     [CmdletBinding()]
-    param()
-    # Assert-CardanoWalletSessionIsOpen
+    param(
+        [parameter(Mandatory = $true)]
+        [CardanoWallet[]]$Wallets
+    )
+    $Wallets.ForEach({
+        $network = Get-CardanoWalletNetwork -Wallet $_
+        Assert-CardanoNodeInSync -Network $network
+    })
     try{
+        $nameDescriptionOptionTemplate = @(
+            @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+            @{ Object = ')' },
+            @{ Object = ' | Name: ' ; NoNewline = $true },
+            @{ Expression = '$($option.Value.Name)'; ForegroundColor = 'Green' },
+            @{ Object = ' | Description: ' ; NoNewline = $true },
+            @{ Expression = '$($option.Value.Description)'; ForegroundColor = 'Green' },
+            @{ NoNewline = $false }
+        )
         do{
-            # $interactionComplete = $false
-            # $wallets = Get-CardanoWalletSessionWallets
-            # Format-CardanoWalletSummary -Wallets $wallets
-        
+            Format-CardanoWalletSummary -Wallets $Wallets
+         
             $actionSelection = Get-OptionSelection `
                 -Instruction 'Select an option:' `
                 -Options @(
+                    'Browse Config'
                     'Browse Tokens'
                     'Browse Transactions'
                     'Add Key Pair'
                     'Add Address'
                     'Perform Transaction'
                     'Mint Tokens'
-                    'Done Editing'
+                    'Exit'
                 )
         
             switch($actionSelection){
+                'Browse Config'{
+                    
+                }
+
                 'Browse Tokens'{
     
                 }
@@ -28,34 +46,68 @@ function Enter-CardanoWalletSession {
     
                 }
                 'Add Key Pair'{
-                    $walletPath = $(Get-CardanoWallet $Name).FullName
-                    $walletKeys = "$walletPath\keys"
-                    $verificationKey = "$walletKeys\$Name.vkey"
-                    $signingKey = "$walletKeys\$Name.skey"
-                    $_args = @(
-                        'address', 'key-gen'
-                        '--verification-key-file', $verificationKey
-                        '--signing-key-file', $signingKey
-                    )
-                    Invoke-CardanoCLI @_args
+                    $walletSelection = Get-OptionSelection `
+                        -Instruction 'Select a wallet:' `
+                        -Options $Wallets `
+                        -OptionDisplayTemplate $nameDescriptionOptionTemplate
+
+                    Add-CardanoWalletKeyPair `
+                        -Wallet $walletSelection `
+                        -Name $(
+                            Get-FreeformInput `
+                                -Instruction "Specify a name for the key pair:" `
+                                -InputType 'string' `
+                                -ValidationType TestCommand `
+                                -ValidationParameters @{ 
+                                    Command = 'Test-CardanoWalletKeyPairNameIsValid'
+                                    CommandArgs = @{ Wallet = $walletSelection }
+                                    ValueArg = 'Name' 
+                                }
+                        ) `
+                        -Description $(
+                            Get-FreeformInput `
+                                -Instruction "Specify a description for the key pair:" `
+                                -InputType 'string'
+                        ) `
+                        -Password $(
+                            Get-PasswordInput `
+                                -Instruction "Specify a password for the key pair:" `
+                        )
                 }
                 'Add Address'{
-                    $walletPath = $(Get-CardanoWallet $Name).FullName
-                    $walletAddresses = "$walletPath\addresses"
-                    $walletConfig = Get-CardanoWalletConfig $Name
-                    $walletAddress = (
-                        "$walletAddresses\" +
-                        "$env:CARDANO_NODE_NETWORK$($walletConfig.nextAddressIndex).addr"
-                    )
-                    $walletVerificationKey = Get-CardanoWalletKeyFile $Name -Type verification
-                    $_args = @(
-                        'address','build'
-                        '--payment-verification-key-file', $walletVerificationKey
-                        '--out-file', $walletAddress
-                        $env:CARDANO_CLI_NETWORK_ARG
-                        $env:CARDANO_CLI_NETWORK_ARG_VALUE
-                    )
-                    Invoke-CardanoCLI @_args
+                    $walletSelection = Get-OptionSelection `
+                        -Instruction 'Select a wallet:' `
+                        -Options $Wallets `
+                        -OptionDisplayTemplate $nameDescriptionOptionTemplate
+
+                    Add-CardanoWalletAddress `
+                        -Wallet $walletSelection `
+                        -Name $(
+                            Get-FreeformInput `
+                                -Instruction "Specify a name for the address:" `
+                                -InputType 'string' `
+                                -ValidationType TestCommand `
+                                -ValidationParameters @{ 
+                                    Command = 'Test-CardanoWalletAddressNameIsValid'
+                                    CommandArgs = @{ Wallet = $walletSelection }
+                                    ValueArg = 'Name' 
+                                }
+                        ) `
+                        -Description $(
+                            Get-FreeformInput `
+                                -Instruction "Specify a description for the address:" `
+                                -InputType 'string'
+                        ) `
+                        -KeyPairName $(
+                            Get-OptionSelection `
+                                -Instruction 'Select a key pair to associate to the address:' `
+                                -Options $(Get-CardanoWalletKeyPairs -Wallet $walletSelection)`
+                                -OptionDisplayTemplate $nameDescriptionOptionTemplate
+                        ).Name `
+                        -Password $(
+                            Get-PasswordInput `
+                                -Instruction "Specify the password for the key pair:" `
+                        )
                 }
                 'Perform Transaction'{
 
@@ -63,7 +115,7 @@ function Enter-CardanoWalletSession {
                 'Mint Tokens'{
     
                 }
-                'Done Editing'{
+                'Exit'{
                     Exit-CardanoWalletSession
                 }
             }
@@ -73,6 +125,5 @@ function Enter-CardanoWalletSession {
     catch{
         if($_.Exception.Message -ne 'Exit'){ $_ }
     }
-
-    # Format-CardanoWalletSummary -Wallets $wallets
+    Format-CardanoWalletSummary -Wallets $Wallets
 }

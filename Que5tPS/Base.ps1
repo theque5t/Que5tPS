@@ -293,7 +293,11 @@ function Get-FreeformInput {
                     $validated = $value -match $ValidationParameters.Pattern
                 }
                 'TestCommand' {
-                    $commandArgs = @{ $ValidationParameters.ValueArg = $value }
+                    $commandArgs = @{}
+                    if($ValidationParameters.CommandArgs){
+                        $commandArgs = $ValidationParameters.CommandArgs
+                    }
+                    $commandArgs[$ValidationParameters.ValueArg] = $value
                     $validated = & $ValidationParameters.Command @commandArgs
                 }
             }
@@ -307,6 +311,18 @@ function Get-FreeformInput {
     while(-not $validInput)
 
     return $inputValue
+}
+
+function Get-PasswordInput {
+    [CmdletBinding()]
+    param(
+        $Instruction
+    )
+    Write-Host $Instruction -ForegroundColor Yellow
+    Write-Host "Input: " -ForegroundColor Yellow -NoNewline
+    $input = Read-Host -AsSecureString
+    Write-Host
+    return $input
 }
 
 function Copy-Object($Object) {

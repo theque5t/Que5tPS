@@ -1,20 +1,17 @@
 function Import-CardanoWallet {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'UsingDefault')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UsingName')]
         [string]$Name,
-        [Parameter(Mandatory=$true, ParameterSetName = 'UsingDefault')]
-        [ValidateSet('mainnet','testnet')]
-        $Network,
-        [Parameter(ParameterSetName = 'UsingDefault')]
+        [Parameter(ParameterSetName = 'UsingName')]
         [System.IO.DirectoryInfo]
-        $WorkingDir = $(Get-Item "$($env:CARDANO_HOME)\wallets\$Network"),
+        $WorkingDir = $(Get-Item "$($env:CARDANO_HOME)\wallets"),
         [Parameter(ParameterSetName = 'UsingStateFile')]
         [System.IO.FileInfo]
         $StateFile
     )
     switch ($PsCmdlet.ParameterSetName) {
-        'UsingDefault' {
+        'UsingName' {
             $wallet = New-Object CardanoWallet -Property @{
                 WorkingDir = $WorkingDir
                 StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"

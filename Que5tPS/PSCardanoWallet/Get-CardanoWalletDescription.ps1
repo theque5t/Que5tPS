@@ -1,8 +1,8 @@
-function Get-CardanoWalletWorkingDirectory {
+function Get-CardanoWalletDescription {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
         [CardanoWallet]$Wallet
     )
-    return $Wallet.WorkingDir
+    return $Wallet.Description
 }

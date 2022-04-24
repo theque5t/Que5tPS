@@ -4,5 +4,5 @@ function Get-CardanoWalletAddresses {
         [parameter(Mandatory = $true)]
         [CardanoWallet]$Wallet
     )
-    # return $Wallet.Addresses
+    return $Wallet.Addresses
 }
