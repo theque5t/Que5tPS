@@ -356,3 +356,49 @@ function ConvertTo-IntPercentage {
     $intPercentage = $roundNumber * 100
     return $intPercentage
 }
+
+function Format-ColoredString {
+    [Cmdletbinding(DefaultParametersetName = 'Match')]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [String[]]$String,
+        [Parameter(Mandatory = $true)]
+        [String]$Pattern,
+        [ValidateSet('Black','DarkBlue','DarkGreen','DarkCyan','DarkRed','DarkMagenta','DarkYellow','Gray','DarkGray','Blue','Green','Cyan','Red','Magenta','Yellow','White')]
+        [String]$ForegroundColor = 'Yellow',
+        [ValidateSet('Black','DarkBlue','DarkGreen','DarkCyan','DarkRed','DarkMagenta','DarkYellow','Gray','DarkGray','Blue','Green','Cyan','Red','Magenta','Yellow','White')]
+        [String]$BackgroundColor = $Host.ui.RawUI.BackgroundColor,
+        [Switch]$CaseSensitive
+    )
+    process {
+        $selectStringArgs = @{
+            Pattern       = $Pattern
+            AllMatches    = $true
+            CaseSensitive = $CaseSensitive
+        }
+        $String.ForEach({
+            $line = $_
+            $matches = $line | Select-String @selectStringArgs
+            if($matches.Count) {
+                $index = 0
+                $matches.Matches.ForEach({
+                    $match = $_
+                    $length = $match.Index - $index
+                    Write-Host $line.Substring($index, $length) -NoNewline
+                    $writeHostArgs = @{
+                        Object          = $line.Substring($match.Index, $match.Length)
+                        NoNewline       = $true
+                        ForegroundColor = $ForegroundColor
+                        BackgroundColor = $BackgroundColor
+                    }
+                    Write-Host @writeHostArgs
+                    $index = $match.Index + $match.Length
+                })
+                Write-Host $line.Substring($index)
+            }
+            else {
+                Write-Host "$line"
+            }
+        })
+    }
+}

@@ -36,9 +36,20 @@ function Enter-CardanoWalletSession {
         
             switch($actionSelection){
                 'Browse Config'{
-                    
-                }
+                    $walletSelection = Get-OptionSelection `
+                        -Instruction 'Select a wallet:' `
+                        -Options $Wallets `
+                        -OptionDisplayTemplate $nameDescriptionOptionTemplate
 
+                    Get-CardanoWalletStateFileContent `
+                        -Wallet $walletSelection `
+                        -Colored
+
+                    Get-FreeformInput `
+                        -Instruction 'Press enter when done browsing' `
+                        -InputType 'string' | 
+                    Out-Null
+                }
                 'Browse Tokens'{
     
                 }
