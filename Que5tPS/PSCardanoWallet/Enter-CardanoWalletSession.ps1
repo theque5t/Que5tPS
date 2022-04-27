@@ -9,15 +9,22 @@ function Enter-CardanoWalletSession {
         Assert-CardanoNodeInSync -Network $network
     })
     try{
-        $nameDescriptionOptionTemplate = @(
-            @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
-            @{ Object = ')' },
-            @{ Object = ' | Name: ' ; NoNewline = $true },
-            @{ Expression = '$($option.Value.Name)'; ForegroundColor = 'Green' },
-            @{ Object = ' | Description: ' ; NoNewline = $true },
-            @{ Expression = '$($option.Value.Description)'; ForegroundColor = 'Green' },
-            @{ NoNewline = $false }
-        )
+        function Get-WalletSelection($Wallets) {
+            $selection = Get-OptionSelection `
+                -Instruction 'Select a wallet:' `
+                -Options $Wallets `
+                -OptionDisplayTemplate @(
+                    @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+                    @{ Object = ')' },
+                    @{ Object = ' | Name: ' ; NoNewline = $true },
+                    @{ Expression = '$($option.Value.Name)'; ForegroundColor = 'Green' },
+                    @{ Object = ' | Description: ' ; NoNewline = $true },
+                    @{ Expression = '$($option.Value.Description)'; ForegroundColor = 'Green' },
+                    @{ NoNewline = $false }
+                )
+            return $selection
+        }
+
         do{
             Format-CardanoWalletSummary -Wallets $Wallets
          
@@ -36,31 +43,30 @@ function Enter-CardanoWalletSession {
         
             switch($actionSelection){
                 'Browse Config'{
-                    $walletSelection = Get-OptionSelection `
-                        -Instruction 'Select a wallet:' `
-                        -Options $Wallets `
-                        -OptionDisplayTemplate $nameDescriptionOptionTemplate
+                    $walletSelection = Get-WalletSelection -Wallets $Wallets
 
                     Get-CardanoWalletStateFileContent `
                         -Wallet $walletSelection `
                         -Colored
 
-                    Get-FreeformInput `
-                        -Instruction 'Press enter when done browsing' `
-                        -InputType 'string' | 
-                    Out-Null
+                    Wait-Enter
                 }
                 'Browse Tokens'{
-    
+                    $walletSelection = Get-WalletSelection -Wallets $Wallets
+
+                    Get-CardanoWalletTokens -Wallet $walletSelection
+
+                    Wait-Enter
                 }
                 'Browse Transactions'{
-    
+                    $walletSelection = Get-WalletSelection -Wallets $Wallets
+                
+                    Get-CardanoWalletTransactions -Wallet $walletSelection
+
+                    Wait-Enter
                 }
                 'Add Key Pair'{
-                    $walletSelection = Get-OptionSelection `
-                        -Instruction 'Select a wallet:' `
-                        -Options $Wallets `
-                        -OptionDisplayTemplate $nameDescriptionOptionTemplate
+                    $walletSelection = Get-WalletSelection -Wallets $Wallets
 
                     Add-CardanoWalletKeyPair `
                         -Wallet $walletSelection `
@@ -86,10 +92,7 @@ function Enter-CardanoWalletSession {
                         )
                 }
                 'Add Address'{
-                    $walletSelection = Get-OptionSelection `
-                        -Instruction 'Select a wallet:' `
-                        -Options $Wallets `
-                        -OptionDisplayTemplate $nameDescriptionOptionTemplate
+                    $walletSelection = Get-WalletSelection -Wallets $Wallets
 
                     Add-CardanoWalletAddress `
                         -Wallet $walletSelection `
@@ -113,7 +116,15 @@ function Enter-CardanoWalletSession {
                             Get-OptionSelection `
                                 -Instruction 'Select a key pair to associate to the address:' `
                                 -Options $(Get-CardanoWalletKeyPairs -Wallet $walletSelection)`
-                                -OptionDisplayTemplate $nameDescriptionOptionTemplate
+                                -OptionDisplayTemplate @(
+                                    @{ Expression = '$($option.Key)'; ForegroundColor = 'Cyan'; NoNewline = $true},
+                                    @{ Object = ')' },
+                                    @{ Object = ' | Name: ' ; NoNewline = $true },
+                                    @{ Expression = '$($option.Value.Name)'; ForegroundColor = 'Green' },
+                                    @{ Object = ' | Description: ' ; NoNewline = $true },
+                                    @{ Expression = '$($option.Value.Description)'; ForegroundColor = 'Green' },
+                                    @{ NoNewline = $false }
+                                )
                         ).Name `
                         -Password $(
                             Get-PasswordInput `

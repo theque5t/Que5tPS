@@ -325,6 +325,15 @@ function Get-PasswordInput {
     return $input
 }
 
+function Wait-Enter {
+    [CmdletBinding()]
+    param()
+    Get-FreeformInput `
+        -Instruction 'Press enter when done' `
+        -InputType 'string' | 
+    Out-Null
+}
+
 function Copy-Object($Object) {
     $copy = @()
     $Object.ForEach({

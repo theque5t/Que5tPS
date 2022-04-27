@@ -10,6 +10,7 @@ function Get-CardanoAddressesUtxos {
         $WorkingDir,
         [bool]$RemoveOutputFile = $true
     )
+    Assert-CardanoNodeInSync -Network $Network
     $addressesUtxos = [CardanoUtxo[]]@()
     $Addresses.ForEach({
         $addressesUtxos += Get-CardanoAddressUtxos `
