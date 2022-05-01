@@ -11,10 +11,6 @@ class CardanoUtxo {
     [CardanoToken[]]$Value
     [string]$Address
     [string]$Data
-
-    [void]AddToken([CardanoToken]$Token){
-        Add-CardanoUtxoToken -Transaction $this -Token $Token
-    }
 }
 
 class CardanoTransactionAllocation {
@@ -35,6 +31,7 @@ class CardanoTransactionOutput {
 
 class CardanoTransaction {
     [System.IO.DirectoryInfo]$WorkingDir
+    $TransactionDir
     [string]$Name
     [string]$Network
     $BodyFile

@@ -14,6 +14,8 @@ class CardanoWalletAddress {
 
 class CardanoWallet {
     [System.IO.DirectoryInfo]$WorkingDir
+    $WalletDir
+    $TransactionsDir
     [string]$Name
     [string]$Description
     [string]$Network

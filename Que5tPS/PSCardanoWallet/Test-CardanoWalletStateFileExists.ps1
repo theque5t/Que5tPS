@@ -3,5 +3,6 @@ function Test-CardanoWalletStateFileExists {
         [parameter(Mandatory = $true)]
         [CardanoWallet]$Wallet
     )
-    return Test-Path $Wallet.StateFile
+    $stateFile = Get-CardanoWalletStateFile -Wallet $Wallet
+    return Test-Path $stateFile
 }

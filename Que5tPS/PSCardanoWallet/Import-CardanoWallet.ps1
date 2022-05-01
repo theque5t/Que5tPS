@@ -6,25 +6,31 @@ function Import-CardanoWallet {
         [Parameter(ParameterSetName = 'UsingName')]
         [System.IO.DirectoryInfo]
         $WorkingDir = $(Get-Item "$($env:CARDANO_HOME)\wallets"),
-        [Parameter(ParameterSetName = 'UsingStateFile')]
+        [Parameter(Mandatory = $true, ParameterSetName = 'UsingStateFile')]
         [System.IO.FileInfo]
         $StateFile
     )
     switch ($PsCmdlet.ParameterSetName) {
         'UsingName' {
+            $walletDir = Get-Item -Path "$($WorkingDir.FullName)\$Name"
             $wallet = New-Object CardanoWallet -Property @{
                 WorkingDir = $WorkingDir
-                StateFile = "$($WorkingDir.FullName)\$Name.state.yaml"
+                WalletDir = $walletDir
+                StateFile = "$($walletDir.FullName)\state.yaml"
+                TransactionsDir = "$($walletDir.FullName)\transactions"
             }
         }
         'UsingStateFile'{
+            $workingDir = $StateFile.Directory.Parent
+            $walletDir = $StateFile.Directory
             $wallet = New-Object CardanoWallet -Property @{
-                WorkingDir = $StateFile.Directory
+                WorkingDir = $workingDir
+                WalletDir = $walletDir
                 StateFile = $StateFile
+                TransactionsDir = "$($walletDir.FullName)\transactions"
             }
         }
     }
-    Assert-CardanoWalletStateFileExists -Wallet $wallet
     Import-CardanoWalletState -Wallet $Wallet
     return $wallet
 }

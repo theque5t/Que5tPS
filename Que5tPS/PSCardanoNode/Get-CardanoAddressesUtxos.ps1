@@ -16,7 +16,7 @@ function Get-CardanoAddressesUtxos {
         $addressesUtxos += Get-CardanoAddressUtxos `
             -Network $Network `
             -Address $_ `
-            -WorkingDir $Transaction.WorkingDir
+            -WorkingDir $WorkingDir
     })
     return $addressesUtxos
 }

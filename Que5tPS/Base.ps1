@@ -329,7 +329,7 @@ function Wait-Enter {
     [CmdletBinding()]
     param()
     Get-FreeformInput `
-        -Instruction 'Press enter when done' `
+        -Instruction "`nPress enter when done" `
         -InputType 'string' | 
     Out-Null
 }
@@ -364,6 +364,22 @@ function ConvertTo-IntPercentage {
     $roundNumber = ConvertTo-RoundNumber -Number $Number -DecimalPlaces 2
     $intPercentage = $roundNumber * 100
     return $intPercentage
+}
+
+function Format-ColoredYaml {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [String[]]$Yaml,
+        [ValidateSet('Black','DarkBlue','DarkGreen','DarkCyan','DarkRed','DarkMagenta','DarkYellow','Gray','DarkGray','Blue','Green','Cyan','Red','Magenta','Yellow','White')]
+        $Color = 'Blue'
+    )
+    process{
+        Format-ColoredString `
+            -String $Yaml `
+            -Pattern '[a-zA-Z]+:' `
+            -ForegroundColor $Color
+    }
 }
 
 function Format-ColoredString {

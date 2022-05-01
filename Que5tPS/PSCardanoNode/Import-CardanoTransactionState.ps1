@@ -35,8 +35,7 @@ function Import-CardanoTransactionState {
                             -PolicyId $_.PolicyId `
                             -Name $_.Name `
                             -Quantity $_.Quantity
-                    ) `
-                    -UpdateState $False
+                    )
             })
             Add-CardanoTransactionInput `
                 -Transaction $Transaction `
