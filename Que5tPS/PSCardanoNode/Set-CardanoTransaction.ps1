@@ -5,8 +5,8 @@ function Set-CardanoTransaction {
         [CardanoTransaction]$Transaction,
         [Parameter(ParameterSetName = 'Interactive')]
         [switch]$Interactive,
-        [Parameter(ParameterSetName = 'NonInteractive')]
-        [switch]$NonInteractive,
+        [string[]]$Addresses,
+        $SigningKeys,
         [bool]$ROProtection = $true
     )
     if($ROProtection){
@@ -56,20 +56,22 @@ function Set-CardanoTransaction {
                     }
 
                     'Set Inputs' {
-                        $addresses = Get-FreeformInput `
-                            -Instruction $(
-                                "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." +
-                                "`nSeperate addresses using a comma."
-                            ) `
-                            -InputType 'string' `
-                            -ValidationType TestCommand `
-                            -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' } `
-                            -Delimited
-            
+                        if(-not $Addresses){
+                            $Addresses = Get-FreeformInput `
+                                -Instruction $(
+                                    "Specify 1 or more addresses holding UTXOs (e.g. <address1>,<address2>, ...)." +
+                                    "`nSeperate addresses using a comma."
+                                ) `
+                                -InputType 'string' `
+                                -ValidationType TestCommand `
+                                -ValidationParameters @{ Command = 'Test-CardanoAddressIsValid'; ValueArg = 'Address' } `
+                                -Delimited
+                        }
+                        
                         $addressesUtxos = Get-CardanoAddressesUtxos `
                             -Network $network `
-                            -Addresses $addresses `
-                            -WorkingDir $Transaction.WorkingDir
+                            -Addresses $Addresses `
+                            -WorkingDir $Transaction.TransactionDir
             
                         $addressesUtxosSelection = Get-OptionSelection `
                             -MultipleChoice `

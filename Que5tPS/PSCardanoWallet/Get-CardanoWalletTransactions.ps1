@@ -6,7 +6,7 @@ function Get-CardanoWalletTransactions {
     )
     $transactionStateFiles = Get-ChildItem `
         -Path $(Get-CardanoWalletTransactionsDirectory -Wallet $Wallet) `
-        -File state.yaml
+        -File state.yaml `
         -Recurse
     $transactions = [CardanoTransaction[]]@()
     $transactionStateFiles.ForEach({

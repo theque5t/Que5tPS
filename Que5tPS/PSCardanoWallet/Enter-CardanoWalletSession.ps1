@@ -84,7 +84,9 @@ function Enter-CardanoWalletSession {
                 'Browse Transactions'{
                     $walletSelection = Get-WalletSelection -Wallets $Wallets
                 
-                    Get-CardanoWalletTransactions -Wallet $walletSelection
+                    Get-CardanoWalletTransactions -Wallet $walletSelection |
+                        Format-Table |
+                        Out-String
 
                     Wait-Enter
                 }
@@ -208,7 +210,7 @@ function Enter-CardanoWalletSession {
                 'New Transaction'{
                     $walletSelection = Get-WalletSelection -Wallets $Wallets
                     
-                    $transaction = New-CardanoWalletTransaction `
+                    $transaction = Add-CardanoWalletTransaction `
                         -Wallet $walletSelection `
                         -Name $(
                             Get-FreeformInput `
@@ -224,6 +226,10 @@ function Enter-CardanoWalletSession {
                     
                     Set-CardanoTransaction `
                         -Transaction $transaction `
+                        -Addresses $(
+                            Get-CardanoWalletAddresses `
+                                -Wallet $walletSelection
+                        ).Hash `
                         -Interactive
                 }
                 'Continue Transaction'{
@@ -234,6 +240,10 @@ function Enter-CardanoWalletSession {
                             Get-CardanoWalletCurrentTransaction `
                                 -Wallet $walletSelection
                         ) `
+                        -Addresses $(
+                            Get-CardanoWalletAddresses `
+                                -Wallet $walletSelection
+                        ).Hash `
                         -Interactive
                 }
                 'Mint Tokens'{

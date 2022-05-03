@@ -7,10 +7,10 @@ function Get-CardanoWalletUtxos {
     $network = Get-CardanoWalletNetwork -Wallet $Wallet
     Assert-CardanoNodeInSync -Network $network
     $addresses = $(Get-CardanoWalletAddresses -Wallet $Wallet).Hash
-    $workingDir = Get-CardanoWalletWorkingDirectory -Wallet $Wallet
+    $walletDir = Get-CardanoWalletDirectory -Wallet $Wallet
     $utxos = Get-CardanoAddressesUtxos `
         -Network $network `
         -Addresses $addresses `
-        -WorkingDir $workingDir
+        -WorkingDir $walletDir
     return $utxos
 }

@@ -150,10 +150,6 @@ function Format-CardanoTransactionSummary {
            Object = Get-CardanoTransactionStatus -Transaction $Transaction | Out-String }
     )
 
-    $_footer = @(
-        @{ Object = '=' * 129 }
-    )
-
     Write-HostBatch $(
         $_header + 
         $_inputsSection + 
@@ -161,7 +157,6 @@ function Format-CardanoTransactionSummary {
         $_changeSection + 
         $_feeSection + 
         $_outputs +
-        $_status +
-        $_footer
+        $_status
     )
 }

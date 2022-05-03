@@ -24,9 +24,9 @@ function Add-CardanoWalletKeyPair {
             $network = Get-CardanoWalletNetwork -Wallet $Wallet
             Assert-CardanoNodeSessionIsOpen -Network $Network
 
-            $WorkingDir = Get-CardanoWalletWorkingDirectory -Wallet $Wallet
-            $verificationKeyFile = "$WorkingDir\$($(New-Guid).Guid).vkey"
-            $signingKeyFile = "$WorkingDir\$($(New-Guid).Guid).skey"
+            $WalletDir = Get-CardanoWalletDirectory -Wallet $Wallet
+            $verificationKeyFile = "$WalletDir\$($(New-Guid).Guid).vkey"
+            $signingKeyFile = "$WalletDir\$($(New-Guid).Guid).skey"
             $socket = Get-CardanoNodeSocket -Network $Network
             $nodePath = Get-CardanoNodePath -Network $Network
             $_args = @(

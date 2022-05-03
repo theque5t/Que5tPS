@@ -47,16 +47,11 @@ function Format-CardanoWalletSummary {
            Object = Get-CardanoWalletTransactionsStatus -Wallets $Wallets | Format-Table | Out-String }
     )
 
-    $_footer = @(
-        @{ Object = '=' * 129 }
-    )
-
     Write-HostBatch $(
         $_header + 
         $_config +
         $_network +
         $_tokens +
-        $_transactions +
-        $_footer
+        $_transactions
     )
 }

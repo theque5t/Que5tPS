@@ -7,7 +7,7 @@ function Get-CardanoWalletCurrentTransaction {
     $transactions = Get-CardanoWalletTransactions `
         -Wallet $Wallet
     $currentTransaction = $transactions.Where({
-        -not ($_ | Test-CardanoTransactionIsReadOnly)
+        -not (Test-CardanoTransactionIsReadOnly -Transaction $_)
     })
     return $currentTransaction
 }

@@ -9,7 +9,7 @@ function Add-CardanoWalletTransaction {
     $network = Get-CardanoWalletNetwork -Wallet $Wallet
     Assert-CardanoNodeInSync -Network $network
     $transaction = New-CardanoTransaction `
-        -WorkingDir $(Get-CardanoWalletTransactionsDir -Wallet $Wallet) `
+        -WorkingDir $(Get-CardanoWalletTransactionsDirectory -Wallet $Wallet) `
         -Name $Name `
         -Network $network
     return $transaction

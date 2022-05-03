@@ -16,7 +16,7 @@ function Export-CardanoTransactionSigned{
         try{
             $signingKeyFiles = @()
             $SigningKeys.ForEach({
-                $signingKeyFile = "$($Transaction.WorkingDir)\skey-$($(New-Guid).Guid).json"
+                $signingKeyFile = "$($Transaction.TransactionDir)\skey-$($(New-Guid).Guid).json"
                 $signingKey = $_ | ConvertFrom-SecureString -AsPlainText
                 Set-Content -Path $signingKeyFile -Value $signingKey
                 $signingKeyFiles += $signingKeyFile

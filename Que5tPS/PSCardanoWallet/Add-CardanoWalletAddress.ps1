@@ -27,14 +27,14 @@ function Add-CardanoWalletAddress {
             $network = Get-CardanoWalletNetwork -Wallet $Wallet
             Assert-CardanoNodeSessionIsOpen -Network $network
             
-            $WorkingDir = Get-CardanoWalletWorkingDirectory -Wallet $Wallet
-            $addressFile = "$WorkingDir\$($(New-Guid).Guid).addr"
+            $WalletDir = Get-CardanoWalletDirectory -Wallet $Wallet
+            $addressFile = "$WalletDir\$($(New-Guid).Guid).addr"
             $verificationKey = Get-CardanoWalletVerificationKey `
                 -Wallet $Wallet `
                 -KeyPairName $KeyPairName `
                 -Decrypt `
                 -Password $Password
-            $verificationKeyFile = "$WorkingDir\$($(New-Guid).Guid).vkey"
+            $verificationKeyFile = "$WalletDir\$($(New-Guid).Guid).vkey"
             $verificationKey | Out-File $verificationKeyFile
             $socket = Get-CardanoNodeSocket -Network $network
             $nodePath = Get-CardanoNodePath -Network $network
