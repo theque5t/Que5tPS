@@ -9,6 +9,8 @@ function Export-CardanoTransactionState {
         Assert-CardanoTransactionIsNotReadOnly -Transaction $Transaction
     }
     [ordered]@{ 
+        Name = Get-CardanoTransactionName -Transaction $Transaction
+        Description = Get-CardanoTransactionDescription -Transaction $Transaction
         Network = Get-CardanoTransactionNetwork -Transaction $Transaction
         WitnessQuantity = Get-CardanoTransactionWitnessQuantity -Transaction $Transaction
         Inputs = Get-CardanoTransactionInputs -Transaction $Transaction

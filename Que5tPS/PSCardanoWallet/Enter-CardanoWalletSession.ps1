@@ -35,8 +35,10 @@ function Enter-CardanoWalletSession {
         }
 
         do{
+            Clear-CardanoWalletUnsubmittedTransactions -Wallets $Wallets
+            
             Format-CardanoWalletSummary -Wallets $Wallets
-         
+
             $actionSelection = Get-OptionSelection `
                 -Instruction 'Select an option:' `
                 -Options @(
@@ -207,8 +209,20 @@ function Enter-CardanoWalletSession {
                                 -InputType 'string'
                         ) `
                 }
-                'New Transaction'{
+                'Perform Transaction'{
                     $walletSelection = Get-WalletSelection -Wallets $Wallets
+
+                    $addressesSelection = Get-OptionSelection `
+                        -Instruction 'Select which address(es) to associate to the transaction:' `
+                        -Options $(Get-CardanoWalletAddresses -Wallet $walletSelection)`
+                        -OptionDisplayTemplate $nameDescriptionOptionTemplate
+                    
+                    $signingKeys = $(
+                        Get-CardanoWalletKeys `
+                            -Wallet $walletSelection `
+                            -KeyPairNames $addressesSelection.KeyPairName `
+                            -Decrypt
+                    ).SigningKey
                     
                     $transaction = Add-CardanoWalletTransaction `
                         -Wallet $walletSelection `
@@ -226,24 +240,8 @@ function Enter-CardanoWalletSession {
                     
                     Set-CardanoTransaction `
                         -Transaction $transaction `
-                        -Addresses $(
-                            Get-CardanoWalletAddresses `
-                                -Wallet $walletSelection
-                        ).Hash `
-                        -Interactive
-                }
-                'Continue Transaction'{
-                    $walletSelection = Get-WalletSelection -Wallets $Wallets
-
-                    Set-CardanoTransaction `
-                        -Transaction $(
-                            Get-CardanoWalletCurrentTransaction `
-                                -Wallet $walletSelection
-                        ) `
-                        -Addresses $(
-                            Get-CardanoWalletAddresses `
-                                -Wallet $walletSelection
-                        ).Hash `
+                        -Addresses $addressesSelection.Hash `
+                        -SigningKeys $signingKeys `
                         -Interactive
                 }
                 'Mint Tokens'{

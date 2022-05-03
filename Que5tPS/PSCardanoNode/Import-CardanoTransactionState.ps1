@@ -11,7 +11,19 @@ function Import-CardanoTransactionState {
         $state = Get-Content $Transaction.StateFile | ConvertFrom-Yaml
         $state.Inputs = [array]$state.Inputs
         $state.Allocations = [array]$state.Allocations
-        
+
+        Set-CardanoTransactionName `
+            -Transaction $Transaction `
+            -Name $state.Name `
+            -UpdateState $False `
+            -ROProtection $False
+
+        Set-CardanoTransactionDescription `
+            -Transaction $Transaction `
+            -Description $state.Description `
+            -UpdateState $False `
+            -ROProtection $False
+
         Set-CardanoTransactionNetwork `
             -Transaction $Transaction `
             -Network $state.Network `

@@ -5,6 +5,8 @@ function New-CardanoTransaction {
         [System.IO.DirectoryInfo]$WorkingDir,
         [Parameter(Mandatory = $true)]
         [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string]$Description,
         [Parameter(Mandatory=$true)]
         [ValidateSet('mainnet','testnet')]
         $Network
@@ -14,6 +16,7 @@ function New-CardanoTransaction {
         WorkingDir = $WorkingDir
         TransactionDir = $transactionDir
         Name = $Name
+        Description = $Description
         Network = $Network
         StateFile = "$transactionDir\state.yaml"
         BodyFile = "$transactionDir\tx.body.json"

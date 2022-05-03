@@ -1,4 +1,4 @@
-function Get-CardanoWalletVerificationKey {
+function Get-CardanoWalletSigningKey {
     [CmdletBinding()]
     param(
         [parameter(Mandatory = $true)]
@@ -12,15 +12,15 @@ function Get-CardanoWalletVerificationKey {
         [securestring]$Password
     )
     $keyPair = Get-CardanoWalletKeyPair -Wallet $Wallet -Name $KeyPairName
-    $verificationKey = $keyPair.VerificationKey
+    $signingKey = $keyPair.SigningKey
     if($Decrypt){
         if(-not $Password){
             $Password = Get-PasswordInput `
                 -Instruction "Specify the password for key pair `"$KeyPairName`":"
         }
-        $verificationKey = Unprotect-String `
-            -String $verificationKey `
+        $signingKey = Unprotect-String `
+            -String $signingKey `
             -Password $Password
     }
-    return $verificationKey
+    return $signingKey
 }
