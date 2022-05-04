@@ -36,7 +36,7 @@ function Enter-CardanoWalletSession {
 
         do{
             Clear-CardanoWalletUnsubmittedTransactions -Wallets $Wallets
-            
+
             Format-CardanoWalletSummary -Wallets $Wallets
 
             $actionSelection = Get-OptionSelection `
@@ -50,8 +50,7 @@ function Enter-CardanoWalletSession {
                     'Import Key Pair'
                     'New Address'
                     'Import Address'
-                    'New Transaction'
-                    'Continue Transaction'
+                    'Perform Transaction'
                     'Mint Tokens'
                     'Exit'
                 )
@@ -236,6 +235,11 @@ function Enter-CardanoWalletSession {
                                     CommandArgs = @{ Wallet = $walletSelection }
                                     ValueArg = 'Name' 
                                 }
+                        ) `
+                        -Description $(
+                            Get-FreeformInput `
+                                -Instruction "Specify a description for the transaction:" `
+                                -InputType 'string'
                         )
                     
                     Set-CardanoTransaction `

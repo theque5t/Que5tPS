@@ -9,7 +9,7 @@ function Clear-CardanoWalletUnsubmittedTransactions {
         $(Get-CardanoWalletUnsubmittedTransactions -Wallet $wallet).ForEach({
             $transactionName = Get-CardanoTransactionName -Transaction $_
             Remove-CardanoWalletTransaction `
-                -Wallet $wallet
+                -Wallet $wallet `
                 -Name $transactionName
         })
     })

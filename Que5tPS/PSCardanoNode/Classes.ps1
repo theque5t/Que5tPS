@@ -33,6 +33,7 @@ class CardanoTransaction {
     [System.IO.DirectoryInfo]$WorkingDir
     $TransactionDir
     [string]$Name
+    [string]$Description
     [string]$Network
     $BodyFile
     $BodyFileContent

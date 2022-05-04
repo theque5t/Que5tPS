@@ -221,26 +221,28 @@ function Set-CardanoTransaction {
                     }
 
                     'Sign'{
-                        $witnessQuantity = Get-CardanoTransactionWitnessQuantity -Transaction $Transaction
-                        $signingKeysSelection = @()
-                        (1..$witnessQuantity).ForEach({
-                            $signingKeysSelection += Get-FreeformInput `
-                            -Instruction $(
-                                "Witness $($_): Specify the signing key string (e.g. <key>)" +
-                                " or signing key file path (e.g. </path/to/key.skey>)."
-                            ) `
-                            -InputType 'object' `
-                            -TransformCommand 'ConvertTo-CardanoKeySecureStringList' `
-                            -TransformValueArg 'Objects' `
-                            -ValidationType TestCommand `
-                            -ValidationParameters @{ Command = 'Test-CardanoSigningKeyIsValid'; ValueArg = 'Key' } `
-                            -Delimited `
-                            -Sensitive
-                        })
-                        
+                        if(-not $SigningKeys){
+                            $witnessQuantity = Get-CardanoTransactionWitnessQuantity -Transaction $Transaction
+                            $SigningKeys = @()
+                            (1..$witnessQuantity).ForEach({
+                                $SigningKeys += Get-FreeformInput `
+                                    -Instruction $(
+                                        "Witness $($_): Specify the signing key string (e.g. <key>)" +
+                                        " or signing key file path (e.g. </path/to/key.skey>)."
+                                    ) `
+                                    -InputType 'object' `
+                                    -TransformCommand 'ConvertTo-CardanoKeySecureStringList' `
+                                    -TransformValueArg 'Objects' `
+                                    -ValidationType TestCommand `
+                                    -ValidationParameters @{ Command = 'Test-CardanoSigningKeyIsValid'; ValueArg = 'Key' } `
+                                    -Delimited `
+                                    -Sensitive
+                            })
+                        }
+
                         Set-CardanoTransactionSigned `
                             -Transaction $Transaction `
-                            -SigningKeys $signingKeysSelection
+                            -SigningKeys $SigningKeys
                     }
 
                     'Submit'{
