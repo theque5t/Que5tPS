@@ -8,7 +8,7 @@ function Get-CardanoWalletTokensStatus {
     $Wallets.ForEach({
         $walletTokensStatus += [PSCustomObject]@{
             Wallet = Get-CardanoWalletName -Wallet $_
-            LovelaceTokens = $(Get-CardanoWalletToken -Wallet $_ -PolicyId '' -Name 'lovelace').Quantity
+            LovelaceTokens = $($(Get-CardanoWalletToken -Wallet $_ -PolicyId '' -Name 'lovelace').Quantity  | Measure-Object -Sum).Sum
             OtherTokens = $($(Get-CardanoWalletTokens -Wallet $_ -Filter 'Exclude' -PolicyId '' -Name 'lovelace').Quantity | Measure-Object -Sum).Sum
             UnMinted = 'TODO'
             Minted = 'TODO'

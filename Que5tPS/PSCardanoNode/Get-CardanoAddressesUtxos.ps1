@@ -5,6 +5,7 @@ function Get-CardanoAddressesUtxos {
         [ValidateSet('mainnet','testnet')]
         $Network,
         [Parameter(Mandatory = $true)]
+        [AllowNull()]
         [string[]]$Addresses,
         [Parameter(Mandatory = $true)]
         $WorkingDir,
