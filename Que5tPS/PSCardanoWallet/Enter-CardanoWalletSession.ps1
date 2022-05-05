@@ -35,7 +35,7 @@ function Enter-CardanoWalletSession {
         }
 
         do{
-            Clear-CardanoWalletUnsubmittedTransactions -Wallets $Wallets
+            # Clear-CardanoWalletUnsubmittedTransactions -Wallets $Wallets
 
             Format-CardanoWalletSummary -Wallets $Wallets
 
@@ -84,12 +84,23 @@ function Enter-CardanoWalletSession {
                 }
                 'Browse Transactions'{
                     $walletSelection = Get-WalletSelection -Wallets $Wallets
-                
-                    Get-CardanoWalletTransactions -Wallet $walletSelection |
-                        Format-Table |
-                        Out-String
+                    
+                    do{
+                        $transactionSelection = Get-OptionSelection `
+                            -Instruction 'Select which transaction to browse:' `
+                            -Options $(Get-CardanoWalletTransactions -Wallet $walletSelection)`
+                            -OptionDisplayTemplate $nameDescriptionOptionTemplate
+                    
+                        Format-CardanoTransactionSummary -Transaction $transactionSelection
 
-                    Wait-Enter
+                        $continueSelection = Get-OptionSelection `
+                            -Instruction 'Select an option:' `
+                            -Options @(
+                                'Continue browsing'
+                                'Done browsing'
+                            )
+                        }
+                    while($continueSelection -eq 'Continue browsing')
                 }
                 'New Key Pair'{
                     $walletSelection = Get-WalletSelection -Wallets $Wallets
@@ -212,7 +223,11 @@ function Enter-CardanoWalletSession {
                     $walletSelection = Get-WalletSelection -Wallets $Wallets
 
                     $addressesSelection = Get-OptionSelection `
-                        -Instruction 'Select which address(es) to associate to the transaction:' `
+                        -MultipleChoice `
+                        -Instruction $(
+                            'Select which address(es) to associate to the transaction:' +
+                            "`nSeperate numbers using a comma.`n"
+                        ) `
                         -Options $(Get-CardanoWalletAddresses -Wallet $walletSelection)`
                         -OptionDisplayTemplate $nameDescriptionOptionTemplate
                     

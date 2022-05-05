@@ -11,6 +11,14 @@ function Format-CardanoTransactionSummary {
         @{ Object = '=' * 129 }
         @{ Object = ' ' * 55 + 'TRANSACTION SUMMARY' + ' ' * 55 }
         @{ Object = '=' * 129 }
+        @{ NoNewLine = $false }
+        @{ Prefix = @{ Object = '    '; NoNewline = $true }; 
+           Object = 'Name: '; ForegroundColor = 'Green'; NoNewline = $true }
+        @{ Object = Get-CardanoTransactionName -Transaction $Transaction }
+        @{ Prefix = @{ Object = '    '; NoNewline = $true }; 
+           Object = 'Description: '; ForegroundColor = 'Green'; NoNewline = $true }
+        @{ Object = Get-CardanoTransactionDescription -Transaction $Transaction }
+        @{ NoNewLine = $false }
     )
 
     $_hasInputs = Test-CardanoTransactionHasInputs -Transaction $Transaction
