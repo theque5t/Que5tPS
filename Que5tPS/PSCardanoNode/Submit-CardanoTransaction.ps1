@@ -20,10 +20,10 @@ function Submit-CardanoTransaction {
         $networkArgs
     )
 
-    # Invoke-CardanoCLI `
-    #     -Socket $socket `
-    #     -Path $nodePath `
-    #     -Arguments $_args
+    Invoke-CardanoCLI `
+        -Socket $socket `
+        -Path $nodePath `
+        -Arguments $_args
 
     Set-CardanoTransactionSubmissionState `
         -Transaction $Transaction `
