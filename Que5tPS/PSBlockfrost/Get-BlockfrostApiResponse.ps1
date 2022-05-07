@@ -1,10 +1,14 @@
 function Get-BlockfrostApiResponse {
     param(
-        $Method = 'Get',
-        $ApiHost = 'cardano-mainnet.blockfrost.io',
-        $ApiVersion = 'v0',
+        [Parameter(Mandatory=$true)]
+        [ValidateSet('mainnet','testnet')]
+        $Network,
+        [Parameter(Mandatory=$true)]
         $ApiPath,
-        $BlockfrostApiKey = $env:BLOCKFROST_API_KEY
+        $Method = 'Get',
+        $ApiHost = "cardano-$Network.blockfrost.io",
+        $ApiVersion = 'v0',
+        $BlockfrostApiKey = $(Get-Item -Path "env:BLOCKFROST_API_KEY_$($Network.ToUpper())").Value
     )
     try{
         $uri = "https://$ApiHost/api/$ApiVersion/$ApiPath"

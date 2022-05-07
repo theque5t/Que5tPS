@@ -1,12 +1,12 @@
-function Get-CardanoTransactionUtxos {
+function Get-CardanoAddressTransactions {
     param(
         [Parameter(Mandatory=$true)]
         [ValidateSet('mainnet','testnet')]
         $Network,
         [Parameter(Mandatory=$true)]
-        $Hash
+        $Address
     )
     return Get-BlockfrostApiResponse `
         -Network $Network `
-        -ApiPath "txs/$Hash/utxos"
+        -ApiPath "addresses/$Address/transactions"
 }
