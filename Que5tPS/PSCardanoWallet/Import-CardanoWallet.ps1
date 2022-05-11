@@ -18,6 +18,7 @@ function Import-CardanoWallet {
                 WalletDir = $walletDir
                 StateFile = "$($walletDir.FullName)\state.yaml"
                 TransactionsDir = "$($walletDir.FullName)\transactions"
+                TokenDiesDir = "$($walletDir.FullName)\tokenDies"
             }
         }
         'UsingStateFile'{
@@ -28,6 +29,7 @@ function Import-CardanoWallet {
                 WalletDir = $walletDir
                 StateFile = $StateFile
                 TransactionsDir = "$($walletDir.FullName)\transactions"
+                TokenDiesDir = "$($walletDir.FullName)\tokenDies"
             }
         }
     }

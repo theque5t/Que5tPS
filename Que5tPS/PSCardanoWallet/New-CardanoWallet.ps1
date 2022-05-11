@@ -26,6 +26,7 @@ function New-CardanoWallet {
     }
     $walletDir = "$($WorkingDir.FullName)\$Name"
     $transactionDir = "$walletDir\transactions"
+    $tokenDiesDir = "$walletDir\tokenDies"
     $wallet = New-Object CardanoWallet -Property @{
         WorkingDir = $WorkingDir
         WalletDir = $walletDir
@@ -34,10 +35,12 @@ function New-CardanoWallet {
         Network = $Network
         StateFile = "$walletDir\state.yaml"
         TransactionsDir = $transactionDir
+        TokenDiesDir = $tokenDiesDir
     }
     Assert-CardanoWalletDirectoryDoesNotExist -Wallet $wallet
     New-Item -Path $walletDir -ItemType Directory | Out-Null
     New-Item -Path $transactionDir -ItemType Directory | Out-Null
+    New-Item -Path $tokensDir -ItemType Directory | Out-Null
     Update-CardanoWallet -Wallet $wallet
     return $wallet
 }

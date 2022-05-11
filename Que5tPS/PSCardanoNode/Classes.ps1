@@ -1,7 +1,43 @@
+class CardanoScriptBlock {
+    [string]$Key
+    [string]$Value
+}
+
+class CardanoScript {
+    [CardanoScriptBlock[]]$Scripts
+    [string]$Type
+}
+
+class CardanoPolicy {
+    [string]$Id
+    [CardanoScript]$Script
+}
+
 class CardanoToken {
     [string]$PolicyId
     [string]$Name
     [Int64]$Quantity
+}
+
+class CardanoTokenSpecification {
+    [string]$Name
+    [Int64]$Supply
+}
+
+class CardanoMintContract {
+    [System.IO.DirectoryInfo]$WorkingDir
+    $MintContractDir
+    [string]$Name
+    [string]$Description
+    [string]$Network
+    [string[]]$Witnesses
+    [CardanoTokenSpecification[]]$TokenSpecs
+    $StateFile
+    $StateFileContent
+}
+
+class CardanoMintAction {
+
 }
 
 class CardanoUtxo {
@@ -48,6 +84,8 @@ class CardanoTransaction {
     $SignedFileViewObject
     $StateFile
     $StateFileContent
+    [CardanoMintAction[]]$Mint
+    [CardanoMintAction[]]$Burn
     [CardanoUtxo[]]$Inputs
     [CardanoTransactionAllocation[]]$Allocations
     [CardanoTransactionChangeAllocation]$ChangeAllocation

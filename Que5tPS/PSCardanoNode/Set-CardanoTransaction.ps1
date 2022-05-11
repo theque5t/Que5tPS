@@ -19,7 +19,9 @@ function Set-CardanoTransaction {
             -Instruction 'Select an option:' `
             -Options @(
                 'Set Witness Quantity'
-                'Set Inputs'
+                'Mint Tokens'
+                'Burn Tokens'
+                'Set UTXO Inputs'
                 if(Test-CardanoTransactionHasInputs -Transaction $Transaction){ 
                     'Set Allocation Recipient(s)'
                     'Set Change Recipient' 
@@ -51,7 +53,32 @@ function Set-CardanoTransaction {
                     -Quantity $witnessQuantitySelection
             }
 
-            'Set Inputs' {
+            'Mint Tokens' {
+                $mintContractsPathSelection = Get-FreeformInput `
+                    -Instruction $(
+                        "Specify 1 or paths to import mint contracts from (e.g. <C:\path\one\to\mintContracts>,<C:\path\two\to\mintContracts>, ...)." +
+                        "`nSeperate paths using a comma."
+                    ) `
+                    -InputType 'string' `
+                    -ValidationType TestCommand `
+                    -ValidationParameters @{ Command = 'Test-Path'; ValueArg = 'Path' } `
+                    -Delimited
+
+                $mintContractsSelection = Get-OptionSelection `
+                    -MultipleChoice `
+                    -Instruction $(
+                        "Select 1 or more mint contracts to mint from." +
+                        "`nSeperate numbers using a comma.`n"
+                    ) `
+                    -Options $(Get-CardanoTokenDies -Path $mintContractsPathSelection)
+
+            }
+
+            'Burn Tokens' {
+
+            }
+
+            'Set UTXO Inputs' {
                 if(-not $Addresses){
                     $Addresses = Get-FreeformInput `
                         -Instruction $(
@@ -72,7 +99,7 @@ function Set-CardanoTransaction {
                 $addressesUtxosSelection = Get-OptionSelection `
                     -MultipleChoice `
                     -Instruction $(
-                        "Select 1 or more UTXOs to spend by specifying number associated to UTXO (e.g. 1,3, ...)." +
+                        "Select 1 or more UTXOs to spend." +
                         "`nSeperate numbers using a comma.`n"
                     ) `
                     -Options $addressesUtxos `
@@ -97,7 +124,7 @@ function Set-CardanoTransaction {
                     -Utxos $addressesUtxosSelection
                 Clear-CardanoTransactionAllocations -Transaction $Transaction
             }
-    
+            
             'Set Allocation Recipient(s)' {
                 $allocationRecipientsSelection = Get-FreeformInput `
                     -Instruction $(
