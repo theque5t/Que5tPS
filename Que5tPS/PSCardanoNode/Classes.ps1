@@ -21,7 +21,32 @@ class CardanoToken {
 
 class CardanoTokenSpecification {
     [string]$Name
-    [Int64]$Supply
+    [Int64]$SupplyLimit # SupplyLimit is static, supply is dynamic
+    # See: https://developers.cardano.org/docs/native-tokens/minting-nfts#metadata-attributes
+    $MetaData # Stores value of "policy_name" key below
+    # {
+    #     "721": {
+    #       "{policy_id}": {
+    #         "{policy_name}": {
+    #           "name": "<required>",
+    #           "description": "<optional>",
+    #           "sha256": "<required>",
+    #           "type": "<required>",
+    #           "image": "<required>",
+    #           "location": {
+    #             "ipfs": "<required>",
+    #             "https": "<optional>",
+    #             "arweave": "<optional>"
+    #           }
+    #         }
+    #       }
+    #     }
+    # }
+}
+
+class CardanoTokenImplementation {
+    [Int64]$Minted #
+    [Int64]$Burned # # Both are used to calculate supply
 }
 
 class CardanoMintContract {
@@ -30,8 +55,12 @@ class CardanoMintContract {
     [string]$Name
     [string]$Description
     [string]$Network
-    [string[]]$Witnesses
-    [CardanoTokenSpecification[]]$TokenSpecs
+    [string[]]$Witnesses # hash1, hash2
+    [Int64]$WitnessesRequired # 1, 2, 3
+    [int64]$TimeLockAfterSlot # 1000
+    [int64]$TimeLockBeforeSlot # 1100
+    [CardanoTokenSpecification[]]$TokenSpecifications
+    [CardanoTokenImplementation[]]$TokenImplementations
     $StateFile
     $StateFileContent
 }

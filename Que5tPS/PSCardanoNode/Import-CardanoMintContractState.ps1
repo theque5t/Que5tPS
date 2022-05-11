@@ -9,8 +9,6 @@ function Import-CardanoMintContractState {
     $MintContract.StateFileContent = Get-Content $MintContract.StateFile
     if($MintContract.StateFileContent){
         $state = Get-Content $MintContract.StateFile | ConvertFrom-Yaml
-        $state.KeyPairs = [array]$state.KeyPairs
-        $state.Addresses = [array]$state.Addresses
 
         Set-CardanoMintContractName `
             -MintContract $MintContract `
