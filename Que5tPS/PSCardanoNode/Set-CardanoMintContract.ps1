@@ -25,7 +25,7 @@ function Set-CardanoMintContract {
                             -Instruction $(
                                 "Specify 1 or more verification key strings" +
                                 " or file paths to witness minting (e.g. <key>,</path/to/key.vkey>)"
-                                "`nSeperate addresses using a comma."
+                                "`nSeperate witnesses using a comma."
                             ) `
                             -InputType 'object' `
                             -TransformCommand 'ConvertTo-CardanoKeySecureStringList' `
@@ -35,6 +35,31 @@ function Set-CardanoMintContract {
                             -Delimited `
                             -Sensitive
                     )
+            }
+            'Set Time Lock' {
+                $timelock = Get-FreeformInput `
+                    -Instruction $(
+                        "Specify the slots to bound minting/burning actions within" +
+                        " (e.g. <afterSlot>,<beforeSlot>)" +
+                        "`nEmpty value is the equivalent of any slot." +
+                        "`nSeperate slots using a comma."
+                    ) `
+                    -InputType 'int64' `
+                    -ValidateEach $false `
+                    -ValidateTogether $true `
+                    -ValidationType TestCommand `
+                    -ValidationParameters @{ 
+                        Command = 'Test-CardanoMintContractTimeLockIsValid'
+                        ValueArgs = @(
+                            @{ Arg = 'AfterSlot'; Input = 1 }
+                            @{ Arg = 'BeforeSlot'; Input = 2 }
+                        )
+                     } `
+                    -Delimited
+                Set-CardanoMintContractTimeLock `
+                    -MintContract $MintContract `
+                    -AfterSlot $timelock[0] `
+                    -BeforeSlot $timelock[1]
             }
             'Add Token Allocation' {
                 Add-CardanoMintContractTokenAllocation `

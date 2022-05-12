@@ -247,6 +247,8 @@ function Get-FreeformInput {
         $TransformCommand,
         [parameter(ParameterSetName = 'Transform')]
         $TransformValueArg,
+        $ValidateEach = $true,
+        $ValidateTogether = $false,
         [ValidateSet('InRange','MatchPattern','TestCommand')]
         $ValidationType,
         $ValidationParameters,
@@ -277,36 +279,57 @@ function Get-FreeformInput {
                 $value = & $TransformCommand @TransformCommandArgs
             }
             $validated = $true
-            switch ($ValidationType) {
-                'InRange' { 
-                    Write-Verbose "`$ValidationType: $_"
-                    Write-Verbose "`$value: $value"
-                    Write-Verbose "`$ValidationParameters.Minimum: $($ValidationParameters.Minimum)"
-                    Write-Verbose "`$ValidationParameters.Maximum: $($ValidationParameters.Maximum)"
-                    $validated = (
-                        ( $value -ge $ValidationParameters.Minimum ) -and 
-                        ( $value -le $ValidationParameters.Maximum )
-                    )
-                    Write-Verbose "`$validated: $validated"
-                 }
-                'MatchPattern' {
-                    $validated = $value -match $ValidationParameters.Pattern
-                }
-                'TestCommand' {
-                    $commandArgs = @{}
-                    if($ValidationParameters.CommandArgs){
-                        $commandArgs = $ValidationParameters.CommandArgs
+            if($ValidateEach) {
+                switch ($ValidationType) {
+                    'InRange' { 
+                        Write-Verbose "`$ValidationType: $_"
+                        Write-Verbose "`$value: $value"
+                        Write-Verbose "`$ValidationParameters.Minimum: $($ValidationParameters.Minimum)"
+                        Write-Verbose "`$ValidationParameters.Maximum: $($ValidationParameters.Maximum)"
+                        $validated = (
+                            ( $value -ge $ValidationParameters.Minimum ) -and 
+                            ( $value -le $ValidationParameters.Maximum )
+                        )
+                        Write-Verbose "`$validated: $validated"
+                     }
+                    'MatchPattern' {
+                        $validated = $value -match $ValidationParameters.Pattern
                     }
-                    $commandArgs[$ValidationParameters.ValueArg] = $value
-                    $validated = & $ValidationParameters.Command @commandArgs
+                    'TestCommand' {
+                        $commandArgs = @{}
+                        if($ValidationParameters.CommandArgs){
+                            $commandArgs = $ValidationParameters.CommandArgs
+                        }
+                        $commandArgs[$ValidationParameters.ValueArg] = $value
+                        $validated = & $ValidationParameters.Command @commandArgs
+                    }
                 }
             }
             if($validated){ $inputValue.Add($value) | Out-Null }
             else{ 
                 $validInput = $false
-                Write-Host "Invalid Selection: $value" -ForegroundColor Red 
+                Write-Host "Invalid Input: $value" -ForegroundColor Red 
             }
         })
+        if($ValidateTogether -and $validated){
+            switch ($ValidationType) {
+                'TestCommand' {
+                    $commandArgs = @{}
+                    if($ValidationParameters.CommandArgs){
+                        $commandArgs = $ValidationParameters.CommandArgs
+                    }
+                    $ValidationParameters.ValueArgs.ForEach({
+                        $commandArgs[$_.Arg] = $inputValue[$($_.Input - 1)]
+                    })
+                    
+                    $validated = & $ValidationParameters.Command @commandArgs
+                }
+            }
+        }
+        if(-not $validated){ 
+            $validInput = $false
+            Write-Host "Invalid Input: $inputValue" -ForegroundColor Red 
+        }
     }
     while(-not $validInput)
 

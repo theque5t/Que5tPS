@@ -5,4 +5,5 @@ function Update-CardanoMintContract {
         [CardanoMintContract]$MintContract
     )
     Update-CardanoMintContractState -MintContract $MintContract
+    # Update-CardanoMintContractPolicy
 }

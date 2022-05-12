@@ -45,6 +45,7 @@ class CardanoTokenSpecification {
 }
 
 class CardanoTokenImplementation {
+    [string]$Name
     [Int64]$Minted #
     [Int64]$Burned # # Both are used to calculate supply
 }
@@ -56,11 +57,12 @@ class CardanoMintContract {
     [string]$Description
     [string]$Network
     [string[]]$Witnesses # hash1, hash2
-    [Int64]$WitnessesRequired # 1, 2, 3
     [int64]$TimeLockAfterSlot # 1000
     [int64]$TimeLockBeforeSlot # 1100
     [CardanoTokenSpecification[]]$TokenSpecifications
     [CardanoTokenImplementation[]]$TokenImplementations
+    $PolicyFile
+    $PolicyFileContent
     $StateFile
     $StateFileContent
 }
