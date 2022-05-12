@@ -61,14 +61,43 @@ function Set-CardanoMintContract {
                     -AfterSlot $timelock[0] `
                     -BeforeSlot $timelock[1]
             }
-            'Add Token Allocation' {
-                Add-CardanoMintContractTokenAllocation `
-                    -Name $name `
-                    -Quantity $quantity
+            'Set Token Specification' {
+                Set-CardanoMintContractTokenSpecification `
+                    -MintContract $MintContract `
+                    -Name $(
+                        Get-FreeformInput `
+                            -Instruction $(
+                                "Specify the token name"
+                            )
+                    ) `
+                    -SupplyLimit $(
+                        Get-FreeformInput `
+                            -Instruction $(
+                                "Specify the token supply limit"
+                            )
+                    ) `
+                    -MetaData $(
+                        Get-FreeformInput `
+                            -Instruction $(
+                                "Specify the token meta data"
+                            )
+                    )
             }
-            'Remove Token Allocation' {
-                Remove-CardanoMintContractTokenAllocation `
-                    -Name $name
+            'Set Token Implementation' {
+                Set-CardanoMintContractTokenImplementation `
+                    -MintContract $MintContract `
+                    -Minted $(
+                        Get-FreeformInput `
+                            -Instruction $(
+                                "Specify the amount minted"
+                            )
+                    ) `
+                    -Burned $(
+                        Get-FreeformInput `
+                            -Instruction $(
+                                "Specify the amount burned"
+                            )
+                    )
             }
             'Done Editing'{
                 $interactionComplete = $true

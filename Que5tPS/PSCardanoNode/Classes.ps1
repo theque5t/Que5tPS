@@ -1,16 +1,6 @@
-class CardanoScriptBlock {
-    [string]$Key
-    [string]$Value
-}
-
-class CardanoScript {
-    [CardanoScriptBlock[]]$Scripts
-    [string]$Type
-}
-
 class CardanoPolicy {
     [string]$Id
-    [CardanoScript]$Script
+    $Script
 }
 
 class CardanoToken {
@@ -61,8 +51,10 @@ class CardanoMintContract {
     [int64]$TimeLockBeforeSlot # 1100
     [CardanoTokenSpecification[]]$TokenSpecifications
     [CardanoTokenImplementation[]]$TokenImplementations
+    [string]$PolicyId
     $PolicyFile
     $PolicyFileContent
+    $PolicyFileObject
     $StateFile
     $StateFileContent
 }
