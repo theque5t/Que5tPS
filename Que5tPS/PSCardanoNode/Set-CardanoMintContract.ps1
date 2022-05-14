@@ -11,8 +11,10 @@ function Set-CardanoMintContract {
         $actionSelection = Get-OptionSelection `
             -Instruction 'Select an option:' `
             -Options @(
-                'Set Policy'
-                'Set Tokens'
+                'Set Witnesses'
+                'Set Time Lock'
+                'Set Token Specification'
+                'Minted Token Implementation'
                 'Done Editing'
             )
     
@@ -67,14 +69,27 @@ function Set-CardanoMintContract {
                     -Name $(
                         Get-FreeformInput `
                             -Instruction $(
-                                "Specify the token name"
-                            )
+                                "Specify the token name:"
+                            ) `
+                            -InputType 'string' `
+                            -ValidationType TestCommand `
+                            -ValidationParameters @{ 
+                                Command = 'Test-CardanoTokenNameIsValid'
+                                ValueArg = 'Name' 
+                            }
+
                     ) `
                     -SupplyLimit $(
                         Get-FreeformInput `
                             -Instruction $(
                                 "Specify the token supply limit"
-                            )
+                            ) `
+                            -InputType 'Int64' `
+                            -ValidationType InRange `
+                            -ValidationParameters @{ 
+                                Minimum = 1
+                                Maximum = 10000 # arbitrary limit for now
+                            }
                     ) `
                     -MetaData $(
                         Get-FreeformInput `
@@ -83,20 +98,68 @@ function Set-CardanoMintContract {
                             )
                     )
             }
-            'Set Token Implementation' {
-                Set-CardanoMintContractTokenImplementation `
-                    -MintContract $MintContract `
-                    -Minted $(
-                        Get-FreeformInput `
-                            -Instruction $(
-                                "Specify the amount minted"
-                            )
+            'Minted Token Implementation' {
+                $tokenName = Get-FreeformInput `
+                    -Instruction $(
+                        "Specify the token name:"
                     ) `
-                    -Burned $(
+                    -InputType 'string' `
+                    -ValidationType TestCommand `
+                    -ValidationParameters @{ 
+                        Command = 'Test-CardanoTokenNameIsValid'
+                        ValueArg = 'Name' 
+                    }
+
+                Update-CardanoMintContractTokenImplementation `
+                    -MintContract $MintContract `
+                    -Name $tokenName `
+                    -MintedDifference $(
                         Get-FreeformInput `
                             -Instruction $(
-                                "Specify the amount burned"
-                            )
+                                "Specify the amount minted:"
+                            ) `
+                            -InputType 'Int64' `
+                            -ValidationType InRange `
+                            -ValidationParameters @{ 
+                                Minimum = 0
+                                Maximum = $(
+                                    Get-CardanoMintContractTokenImplementationUnMinted `
+                                        -MintContract $MintContract `
+                                        -Name $tokenName
+                                )
+                            }
+                    )
+            }
+            'Burned Token Implementation' {
+                $tokenName = Get-FreeformInput `
+                    -Instruction $(
+                        "Specify the token name:"
+                    ) `
+                    -InputType 'string' `
+                    -ValidationType TestCommand `
+                    -ValidationParameters @{ 
+                        Command = 'Test-CardanoTokenNameIsValid'
+                        ValueArg = 'Name' 
+                    }
+
+                Update-CardanoMintContractTokenImplementation `
+                    -MintContract $MintContract `
+                    -Name $tokenName `
+                    -BurnedDifference $(
+                        Get-FreeformInput `
+                            -Instruction $(
+                                "Specify the amount burned:"
+                            ) `
+                            -InputType 'Int64' `
+                            -ValidationType InRange `
+                            -ValidationParameters @{ 
+                                Minimum = 0
+                                Maximum = $(
+                                    Get-CardanoMintContractTokenImplementationMinted `
+                                        -MintContract $MintContract `
+                                        -Name $tokenName
+                                )
+                            }
                     )
             }
             'Done Editing'{

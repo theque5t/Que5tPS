@@ -39,12 +39,12 @@ function Format-CardanoMintContractSummary {
     )
 
     $_tokenImplementations = @(
-        @{ Object = '+--------+' + '-' * 119; ForegroundColor = 'DarkGray' }
+        @{ Object = '+-----------------------+' + '-' * 119; ForegroundColor = 'DarkGray' }
         @{ Object = '| TOKEN IMPLEMENTATIONS | Description: Implementations of token specifications'
            ForegroundColor = 'DarkGray' }
-        @{ Object = '+--------+'; ForegroundColor = 'DarkGray' }
+        @{ Object = '+-----------------------+'; ForegroundColor = 'DarkGray' }
         @{ Prefix = @{ Object = '    '; NoNewline = $true }; 
-           Object = Get-MintContractTokenImplementations -MintContract $MintContract | Format-Table | Out-String }
+           Object = Get-MintContractTokenImplementationsStatus -MintContract $MintContract | Format-Table | Out-String }
     )
 
     Write-HostBatch $(
