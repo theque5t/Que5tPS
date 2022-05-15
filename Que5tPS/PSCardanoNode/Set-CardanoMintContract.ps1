@@ -12,9 +12,13 @@ function Set-CardanoMintContract {
             -Instruction 'Select an option:' `
             -Options @(
                 'Set Witnesses'
-                'Set Time Lock'
-                'Set Token Specification'
-                'Minted Token Implementation'
+                if(Test-CardanoMintContractHasPolicyId -MintContract $MintContract){
+                    'Set Time Lock'
+                    'Set Token Specification'
+                }
+                if(Test-CardanoMintContractHasTokenSpecifications -MintContract $MintContract){
+                    'Minted Token Implementation'
+                }
                 'Done Editing'
             )
     
@@ -22,7 +26,7 @@ function Set-CardanoMintContract {
             'Set Witnesses' {
                 Set-CardanoMintContractWitnesses `
                     -MintContract $MintContract `
-                    -Witnesses $(
+                    -VerificationKeys $(
                         Get-FreeformInput `
                             -Instruction $(
                                 "Specify 1 or more verification key strings" +
