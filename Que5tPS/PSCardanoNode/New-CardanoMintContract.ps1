@@ -19,6 +19,7 @@ function New-CardanoMintContract {
         Description = $Description
         Network = $Network
         StateFile = "$mintContractDir\state.yaml"
+        PolicyFile = "$mintContractDir\policy.json"
     }
     Assert-CardanoMintContractDirectoryDoesNotExist -MintContract $mintContract
     New-Item -Path $mintContractDir -ItemType Directory | Out-Null

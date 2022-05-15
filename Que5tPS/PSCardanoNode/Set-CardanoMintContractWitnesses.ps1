@@ -5,6 +5,7 @@ function Set-CardanoMintContractWitnesses {
         [Parameter(Mandatory = $true, ParameterSetName = 'VerificationKeys')]
         [securestring[]]$VerificationKeys,
         [Parameter(Mandatory = $true, ParameterSetName = 'Witnesses')]
+        [AllowNull()]
         [string[]]$Witnesses,
         [bool]$UpdateState = $true
     )

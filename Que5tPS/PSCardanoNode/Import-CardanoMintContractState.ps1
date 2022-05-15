@@ -25,7 +25,7 @@ function Import-CardanoMintContractState {
             -Network $state.Network `
             -UpdateState $False
         
-        Set-CardanoMintContractWitnesses
+        Set-CardanoMintContractWitnesses `
             -MintContract $MintContract `
             -Witnesses $state.Witnesses `
             -UpdateState $False
